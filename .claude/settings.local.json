@@ -18,7 +18,14 @@
       "Bash(curl:*)",
       "Bash(npm run dev:*)",
       "Bash(npx prisma:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(git remote add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: SOPHI v3.0.0 - Sistema completo con Prisma + NextAuth\n\n✨ Features principales:\n- Arquitectura Orchestrator v3.0 (4 agentes LLM especializados)\n- Base de datos PostgreSQL (Neon) con Prisma ORM\n- Autenticación con Google OAuth (NextAuth v5)\n- Sistema de roles (STUDENT/TEACHER/ADMIN)\n- Sistema de reportes de estudiantes\n- Sistema de alertas pedagógicas\n- 6 momentos pedagógicos (M0-M5) con sub-momentos\n- Interfaz completa para profesores y estudiantes\n- Chat interactivo con evaluación en tiempo real\n\n📦 Stack técnico:\n- Next.js 14 (App Router)\n- TypeScript\n- Prisma ORM\n- Neon PostgreSQL\n- NextAuth v5\n- OpenAI GPT-4o-mini\n- shadcn/ui components\n- Tailwind CSS\n\n🔧 Configuración:\n- Variables de entorno en .env.local\n- Migraciones de BD ejecutadas\n- Build de producción testeado\n\n📚 Documentación:\n- CLAUDE.md - Guía completa del proyecto\n- DEPLOYMENT.md - Guía de deployment\n- README.md - Quick start\n\n🚀 Listo para deployment en Vercel\n\n🤖 Generated with Claude Code (claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(openssl rand:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)"
     ],
     "deny": [],
     "ask": []

@@ -26,12 +26,12 @@ model User {
 
   // NextAuth Relations
   accounts      Account[]
-  sessions      Session[]
+  sessions  Session[]
 
   // App Relations
-  studentSessions StudentSession[]
-  lessonsCreated  Lesson[]  @relation("CreatedBy")
-  alerts          Alert[]
+  sessions       Session[]
+  lessonsCreated Lesson[]  @relation("CreatedBy")
+  alerts         Alert[]
 
   @@map("users")
 }
@@ -101,17 +101,17 @@ model Lesson {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  studentSessions StudentSession[]
+  sessions Session[]
 
   @@index([createdById])
   @@map("lessons")
 }
 
 // ============================================
-// STUDENT SESSIONS (renamed to avoid conflict)
+// STUDENT SESSIONS
 // ============================================
 
-model StudentSession {
+model Session {
   id              String   @id @default(cuid())
   userId          String
   lessonId        String
@@ -121,8 +121,8 @@ model StudentSession {
   currentQuestion String?
 
   chatHistory    Json
-  studentReports Json?
-  metadata       Json?
+  studentReports Json?  // Array de reportes cuando estudiante tiene problemas
+  metadata    Json?
 
   startedAt    DateTime @default(now())
   lastActivity DateTime @updatedAt
@@ -135,7 +135,7 @@ model StudentSession {
   @@index([userId])
   @@index([lessonId])
   @@index([lastActivity])
-  @@map("student_sessions")
+  @@map("sessions")
 }
 
 // ============================================
@@ -162,7 +162,7 @@ model Alert {
   resolved  Boolean @default(false)
   createdAt DateTime @default(now())
 
-  session StudentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
