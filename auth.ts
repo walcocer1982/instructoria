@@ -5,6 +5,6 @@ import { prisma } from '@/lib/db';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  session: { strategy: 'database' },
+  session: { strategy: 'jwt' }, // JWT works on edge runtime
   ...authConfig,
 });
