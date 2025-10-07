@@ -8,33 +8,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: 'jwt' },
   ...authConfig,
   callbacks: {
-    async signIn({ user, account, profile }) {
-      // Assign role based on email domain or first-time login
-      if (user.email) {
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email },
-        });
-
-        if (!existingUser && user.id) {
-          // First time login - determine role
-          let role: 'STUDENT' | 'TEACHER' | 'ADMIN' = 'STUDENT';
-
-          // Assign TEACHER role to specific domains (customize as needed)
-          const teacherDomains = ['teacher.com', 'educador.com', 'sophi.edu'];
-          const emailDomain = user.email.split('@')[1];
-
-          if (teacherDomains.includes(emailDomain)) {
-            role = 'TEACHER';
-          }
-
-          // Update user role in database
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { role },
-          });
-        }
-      }
-
+    async signIn({ user }) {
+      // Prisma adapter handles user creation automatically
+      // Just allow the sign in
       return true;
     },
 
@@ -50,6 +26,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (dbUser) {
           session.user.role = dbUser.role;
+        } else {
+          // Default role for new users
+          session.user.role = 'STUDENT';
         }
       }
 
