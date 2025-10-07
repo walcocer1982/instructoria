@@ -15,10 +15,12 @@ export default {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
+      const isOnStudent = nextUrl.pathname.startsWith('/student');
       const isOnTeacher = nextUrl.pathname.startsWith('/teacher');
+      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
 
-      if (isOnDashboard || isOnTeacher) {
+      // Protected routes - require authentication
+      if (isOnStudent || isOnTeacher || isOnDashboard) {
         if (isLoggedIn) return true;
         return false; // Redirect unauthenticated users to login page
       }
