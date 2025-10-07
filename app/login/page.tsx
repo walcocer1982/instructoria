@@ -1,338 +1,57 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  // Form state
-  const [nombre, setNombre] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [rol, setRol] = useState<'profesor' | 'estudiante'>('estudiante');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const endpoint = `/api/auth?action=${mode}`;
-      const body = mode === 'register'
-        ? { nombre, email, password, rol }
-        : { email, password };
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      const result = await response.json();
-
-      if (!result.success) {
-        setError(result.error || 'Error en la autenticación');
-        setLoading(false);
-        return;
-      }
-
-      // Guardar token en localStorage
-      localStorage.setItem('auth_token', result.session.token);
-      localStorage.setItem('user', JSON.stringify(result.user));
-
-      // Redirigir según rol
-      if (result.user.rol === 'profesor') {
-        router.push('/teacher');
-      } else {
-        router.push('/student');
-      }
-
-    } catch (err: any) {
-      setError(err.message || 'Error de conexión');
-      setLoading(false);
-    }
+  const handleGoogleSignIn = () => {
+    signIn('google', { callbackUrl: '/student' });
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '1rem',
-    }}>
-      <div style={{
-        background: 'white',
-        borderRadius: '12px',
-        boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
-        width: '100%',
-        maxWidth: '440px',
-        padding: '2.5rem',
-      }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1a202c', marginBottom: '0.5rem' }}>
-            SOPHI
-          </h1>
-          <p style={{ color: '#718096', fontSize: '0.875rem' }}>
-            Sistema Pedagógico Híbrido Inteligente
-          </p>
-        </div>
-
-        {/* Tabs */}
-        <div style={{
-          display: 'flex',
-          marginBottom: '1.5rem',
-          background: '#f7fafc',
-          borderRadius: '8px',
-          padding: '0.25rem',
-        }}>
-          <button
-            onClick={() => setMode('login')}
-            style={{
-              flex: 1,
-              padding: '0.75rem',
-              borderRadius: '6px',
-              border: 'none',
-              background: mode === 'login' ? 'white' : 'transparent',
-              color: mode === 'login' ? '#667eea' : '#718096',
-              fontWeight: mode === 'login' ? '600' : '400',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              transition: 'all 0.2s',
-              boxShadow: mode === 'login' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-            }}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl font-bold">SOPHI</CardTitle>
+          <CardDescription>Sistema Pedagógico Híbrido Inteligente</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button
+            onClick={handleGoogleSignIn}
+            className="w-full"
+            size="lg"
+            variant="outline"
           >
-            Iniciar Sesión
-          </button>
-          <button
-            onClick={() => setMode('register')}
-            style={{
-              flex: 1,
-              padding: '0.75rem',
-              borderRadius: '6px',
-              border: 'none',
-              background: mode === 'register' ? 'white' : 'transparent',
-              color: mode === 'register' ? '#667eea' : '#718096',
-              fontWeight: mode === 'register' ? '600' : '400',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              transition: 'all 0.2s',
-              boxShadow: mode === 'register' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-            }}
-          >
-            Registrarse
-          </button>
-        </div>
-
-        {/* Error message */}
-        {error && (
-          <div style={{
-            padding: '0.75rem',
-            background: '#fed7d7',
-            color: '#c53030',
-            borderRadius: '6px',
-            marginBottom: '1rem',
-            fontSize: '0.875rem',
-          }}>
-            {error}
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          {mode === 'register' && (
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '0.5rem',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                color: '#2d3748',
-              }}>
-                Nombre completo
-              </label>
-              <input
-                type="text"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                required
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '6px',
-                  fontSize: '0.875rem',
-                  outline: 'none',
-                  transition: 'border-color 0.2s',
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+            <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
               />
-            </div>
-          )}
+              <path
+                fill="currentColor"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="currentColor"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              />
+              <path
+                fill="currentColor"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              />
+            </svg>
+            Continuar con Google
+          </Button>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.5rem',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              color: '#2d3748',
-            }}>
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: '1px solid #e2e8f0',
-                borderRadius: '6px',
-                fontSize: '0.875rem',
-                outline: 'none',
-                transition: 'border-color 0.2s',
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#667eea'}
-              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-            />
+          <div className="text-center text-sm text-muted-foreground">
+            <p>Al iniciar sesión, aceptas nuestros términos y condiciones</p>
+            <p className="mt-2">
+              El sistema asignará automáticamente tu rol al primer inicio de sesión
+            </p>
           </div>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.5rem',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              color: '#2d3748',
-            }}>
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: '1px solid #e2e8f0',
-                borderRadius: '6px',
-                fontSize: '0.875rem',
-                outline: 'none',
-                transition: 'border-color 0.2s',
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#667eea'}
-              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-            />
-          </div>
-
-          {mode === 'register' && (
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '0.5rem',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                color: '#2d3748',
-              }}>
-                Rol
-              </label>
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <label style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '0.75rem',
-                  border: rol === 'estudiante' ? '2px solid #667eea' : '1px solid #e2e8f0',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  background: rol === 'estudiante' ? '#f7fafc' : 'white',
-                }}>
-                  <input
-                    type="radio"
-                    name="rol"
-                    value="estudiante"
-                    checked={rol === 'estudiante'}
-                    onChange={() => setRol('estudiante')}
-                    style={{ marginRight: '0.5rem' }}
-                  />
-                  <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>Estudiante</span>
-                </label>
-                <label style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '0.75rem',
-                  border: rol === 'profesor' ? '2px solid #667eea' : '1px solid #e2e8f0',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  background: rol === 'profesor' ? '#f7fafc' : 'white',
-                }}>
-                  <input
-                    type="radio"
-                    name="rol"
-                    value="profesor"
-                    checked={rol === 'profesor'}
-                    onChange={() => setRol('profesor')}
-                    style={{ marginRight: '0.5rem' }}
-                  />
-                  <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>Profesor</span>
-                </label>
-              </div>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '0.875rem',
-              background: loading ? '#a0aec0' : '#667eea',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '0.9375rem',
-              fontWeight: '600',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'background 0.2s',
-            }}
-            onMouseOver={(e) => !loading && (e.currentTarget.style.background = '#5a67d8')}
-            onMouseOut={(e) => !loading && (e.currentTarget.style.background = '#667eea')}
-          >
-            {loading ? 'Procesando...' : mode === 'login' ? 'Iniciar Sesión' : 'Registrarse'}
-          </button>
-        </form>
-
-        {/* Footer */}
-        <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: '#a0aec0' }}>
-          {mode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
-          {' '}
-          <button
-            onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#667eea',
-              cursor: 'pointer',
-              textDecoration: 'underline',
-              fontSize: '0.75rem',
-            }}
-          >
-            {mode === 'login' ? 'Regístrate' : 'Inicia sesión'}
-          </button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
