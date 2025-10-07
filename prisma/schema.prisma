@@ -1,0 +1,188 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USERS & AUTHENTICATION  
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(STUDENT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // NextAuth Relations
+  accounts      Account[]
+  authSessions  AuthSession[]
+
+  // App Relations
+  sessions       Session[]
+  lessonsCreated Lesson[]  @relation("CreatedBy")
+  alerts         Alert[]
+
+  @@map("users")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+// NextAuth Required Tables
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model AuthSession {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("auth_sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================
+// LESSONS
+// ============================================
+
+model Lesson {
+  id                   String   @id @default(cuid())
+  titulo               String
+  objetivo             String   @db.Text
+  duracion_estimada    Int
+  criterios_evaluacion String[]
+
+  momentos Json
+  imagenes Json
+
+  createdById String
+  createdBy   User     @relation("CreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sessions Session[]
+
+  @@index([createdById])
+  @@map("lessons")
+}
+
+// ============================================
+// STUDENT SESSIONS
+// ============================================
+
+model Session {
+  id              String   @id @default(cuid())
+  userId          String
+  lessonId        String
+
+  currentState    String
+  currentMomento  String
+  currentQuestion String?
+
+  chatHistory    Json
+  studentReports Json?  // Array de reportes cuando estudiante tiene problemas
+  metadata    Json?
+
+  startedAt    DateTime @default(now())
+  lastActivity DateTime @updatedAt
+  completedAt  DateTime?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  alerts Alert[]
+
+  @@index([userId])
+  @@index([lessonId])
+  @@index([lastActivity])
+  @@map("sessions")
+}
+
+// ============================================
+// ALERTS & STUDENT ISSUES
+// ============================================
+
+model Alert {
+  id        String   @id @default(cuid())
+  sessionId String
+  userId    String
+
+  alertType AlertType
+  severity  AlertSeverity @default(LOW)
+
+  momentoId       String
+  messageType     String
+  studentMessage  String  @db.Text
+
+  actionTaken     String
+  tutorResponse   String? @db.Text
+  attemptNumber   Int     @default(1)
+
+  metadata  Json?
+  resolved  Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([alertType])
+  @@index([createdAt])
+  @@map("alerts")
+}
+
+enum AlertType {
+  NO_SE
+  OFF_TOPIC
+  INCORRECT_REPEATED
+  INCOMPLETE
+  CONCEPTUAL_ERROR
+  TIME_STUCK
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "token": "9d524f89-93e5-45b5-bb75-d21c611d220b",
+    "userId": "eb7a6daa-3713-4e3e-abac-4376fb2ebcb1",
+    "email": "estudiante@test.com",
+    "rol": "estudiante",
+    "createdAt": "2025-10-04T22:54:08.586Z",
+    "expiresAt": "2025-10-05T22:54:08.586Z"
+  },
+  {
+    "token": "2c8d1c63-410c-44d4-b1f6-983b36d64bf4",
+    "userId": "eb7a6daa-3713-4e3e-abac-4376fb2ebcb1",
+    "email": "estudiante@test.com",
+    "rol": "estudiante",
+    "createdAt": "2025-10-04T22:59:51.348Z",
+    "expiresAt": "2025-10-05T22:59:51.348Z"
+  },
+  {
+    "token": "a08fae79-ec2c-48d7-85b1-faac6dabd8fc",
+    "userId": "eb7a6daa-3713-4e3e-abac-4376fb2ebcb1",
+    "email": "estudiante@test.com",
+    "rol": "estudiante",
+    "createdAt": "2025-10-06T08:43:03.371Z",
+    "expiresAt": "2025-10-07T08:43:03.371Z"
+  },
+  {
+    "token": "2c8a53ce-cc7a-4a51-8d95-7674fd288c92",
+    "userId": "26b7516a-da54-4310-888e-540734f183c4",
+    "email": "profesor@test.com",
+    "rol": "profesor",
+    "createdAt": "2025-10-06T12:40:51.327Z",
+    "expiresAt": "2025-10-07T12:40:51.327Z"
+  },
+  {
+    "token": "a6ae6d52-65ac-4d2a-afd3-78ebb5c8f553",
+    "userId": "eb7a6daa-3713-4e3e-abac-4376fb2ebcb1",
+    "email": "estudiante@test.com",
+    "rol": "estudiante",
+    "createdAt": "2025-10-06T21:35:30.647Z",
+    "expiresAt": "2025-10-07T21:35:30.647Z"
+  },
+  {
+    "token": "3239414b-89b0-4fa0-80fb-0f3a2b7ff512",
+    "userId": "eb7a6daa-3713-4e3e-abac-4376fb2ebcb1",
+    "email": "estudiante@test.com",
+    "rol": "estudiante",
+    "createdAt": "2025-10-07T00:44:44.341Z",
+    "expiresAt": "2025-10-08T00:44:44.341Z"
+  }
+]

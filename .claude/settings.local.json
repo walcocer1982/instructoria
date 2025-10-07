@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(node:*)",
+      "Bash(cat:*)",
+      "Bash(git add:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx shadcn@latest init:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss init:*)",
+      "Bash(npx tsx:*)",
+      "Bash(timeout 10 npx tsc --noEmit)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(timeout 15 npx tsc --noEmit)",
+      "Bash(curl:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx prisma:*)",
+      "Bash(git reset:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

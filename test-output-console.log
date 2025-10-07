@@ -1,0 +1,28 @@
+🧪 TEST: Planner v3.2.0 - Campos Enriquecidos Contextuales
+
+================================================================================
+
+📝 INPUT DEL TEST:
+Objetivo: Aprender a identificar peligros en el trabajo y evaluar riesgos para trabajar de forma segura
+Imágenes: 4
+  1. [contexto] Trabajador en almacén sacando caja de 20 kg a 5 metros de altura sin línea de vida
+  2. [recurso] Ejemplos de peligros comunes: caídas, objetos pesados, electricidad, químicos
+  3. [recurso] Matriz de riesgos simple con colores: Verde (bajo), Amarillo (medio), Naranja (alto), Rojo (crítico)
+  4. [recurso] Pirámide de controles: lo mejor es eliminar el peligro, lo último es usar EPP
+
+⏳ Generando plan con Planner v3.2.0...
+
+✅ PLAN GENERADO EXITOSAMENTE
+
+================================================================================
+
+📊 ANÁLISIS GENERAL:
+- Momentos generados: 0
+- Nivel de complejidad: undefined
+- Criterios de evaluación: 0
+
+🔍 CAMPOS ENRIQUECIDOS POR MOMENTO:
+================================================================================
+
+❌ ERROR EN EL TEST:
+Cannot read properties of undefined (reading 'forEach')

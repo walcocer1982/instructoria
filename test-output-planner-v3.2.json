@@ -1,0 +1,90 @@
+{
+  "momentos": [
+    {
+      "id": "M0",
+      "nombre": "Motivación",
+      "min": 5,
+      "actividad": "Presentar una situación real de peligro en el trabajo para motivar la reflexión sobre seguridad laboral.",
+      "evidencias": [
+        "Identificación de peligros evidentes en la situación",
+        "Interés en discutir medidas de seguridad",
+        "Preguntas sobre la seguridad en situaciones similares"
+      ],
+      "pregunta_guia": "Observando esta situación, ¿qué peligros específicos identificas y por qué son peligrosos?",
+      "contexto": "Imagina que llegas al turno de la mañana y ves a tu compañero Juan subido en una plataforma a 5 metros de altura, estirándose para alcanzar una caja de 20 kg. Notas que no lleva arnés de seguridad y la plataforma parece inestable. Esta situación real ocurre todos los días en almacenes como el tuyo."
+    },
+    {
+      "id": "M1",
+      "nombre": "Saberes Previos",
+      "min": 5,
+      "actividad": "Facilitar una discusión guiada sobre experiencias personales con peligros en el entorno laboral.",
+      "evidencias": [
+        "Relatos de experiencias personales con peligros",
+        "Reconocimiento de peligros comunes en su entorno",
+        "Participación activa en la discusión"
+      ],
+      "pregunta_guia": "En tu experiencia diaria, ¿qué tipos de peligros has encontrado y cómo los has manejado?",
+      "contexto": "En tu experiencia diaria, has visto diferentes tipos de peligros: caídas, objetos pesados, electricidad, químicos. Cada uno tiene características únicas que debemos aprender a identificar y clasificar para trabajar de forma segura."
+    },
+    {
+      "id": "M2",
+      "nombre": "Modelado",
+      "min": 10,
+      "actividad": "Enseñar de manera explícita cómo identificar peligros y usar una matriz de riesgos para evaluarlos.",
+      "evidencias": [
+        "Comprensión de cómo utilizar la matriz de riesgos",
+        "Capacidad para clasificar peligros según su riesgo",
+        "Reconocimiento de controles adecuados para diferentes peligros"
+      ],
+      "pregunta_guia": "¿Cómo puedes utilizar la matriz de riesgos para evaluar el peligro que observamos y qué medidas tomarías?",
+      "contexto": "El facilitador presenta una matriz de riesgos simple con colores: Verde (bajo), Amarillo (medio), Naranja (alto), Rojo (crítico), y explica cómo clasificar peligros usando ejemplos prácticos. La prioridad es siempre identificar y mitigar estos riesgos eficientemente."
+    },
+    {
+      "id": "M3",
+      "nombre": "Práctica Guiada",
+      "min": 10,
+      "actividad": "Guiar la práctica de identificación y evaluación de riesgos usando la matriz de riesgos.",
+      "evidencias": [
+        "Uso correcto de la matriz de riesgos en un ejemplo guiado",
+        "Identificación de medidas de control adecuadas",
+        "Discusión sobre la elección de controles"
+      ],
+      "pregunta_guia": "¿Qué medidas específicas elegirías para un peligro clasificado como alto riesgo y por qué?",
+      "contexto": "Con un ejemplo práctico, los participantes aplican la matriz de riesgos a una situación simulada, discutiendo en grupo qué medidas tomar para mitigar los riesgos, utilizando la pirámide de controles como guía para seleccionar las mejores opciones de mitigación."
+    },
+    {
+      "id": "M4",
+      "nombre": "Práctica Independiente",
+      "min": 10,
+      "actividad": "Proporcionar un ejercicio donde los participantes identifiquen y clasifiquen peligros de manera autónoma.",
+      "evidencias": [
+        "Clasificación autónoma de peligros",
+        "Propuesta de medidas de control efectivas",
+        "Justificación de las decisiones tomadas"
+      ],
+      "pregunta_guia": "¿Cómo clasificarías los peligros en tu entorno de trabajo y qué medidas tomarías para controlarlos?",
+      "contexto": "Los trabajadores realizan un ejercicio individual donde deben identificar peligros en su propio entorno laboral, clasificarlos usando la matriz de riesgos y proponer medidas de control. Este ejercicio les permite aplicar lo aprendido de manera directa a su realidad laboral."
+    },
+    {
+      "id": "M5",
+      "nombre": "Evaluación",
+      "min": 5,
+      "actividad": "Realizar una verificación del aprendizaje mediante preguntas y un resumen de lo aprendido.",
+      "evidencias": [
+        "Respuesta correcta a preguntas de evaluación",
+        "Capacidad para resumir los conceptos principales",
+        "Confianza en aplicar lo aprendido"
+      ],
+      "pregunta_guia": "¿Qué pasos seguirías para evaluar un nuevo peligro en tu trabajo y asegurar un entorno seguro?",
+      "contexto": "El facilitador recapitula los conceptos principales de la lección, realizando preguntas que verifican el entendimiento de los participantes sobre la identificación y evaluación de riesgos, así como las medidas de control adecuadas."
+    }
+  ],
+  "criterios_evaluacion": [
+    "Capacidad para identificar y clasificar peligros de manera precisa",
+    "Uso efectivo de la matriz de riesgos para evaluar situaciones de peligro",
+    "Propuesta adecuada de medidas de control para diferentes niveles de riesgo",
+    "Participación activa en discusiones y ejercicios de clase",
+    "Confianza y habilidad para aplicar conceptos de seguridad en el entorno laboral"
+  ],
+  "nivel_complejidad": "básico"
+}

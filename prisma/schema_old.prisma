@@ -1,0 +1,156 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USERS & AUTHENTICATION
+// ============================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      Role     @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  sessions       Session[]
+  lessonsCreated Lesson[]  @relation("CreatedBy")
+  alerts         Alert[]
+
+  @@map("users")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+// ============================================
+// LESSONS
+// ============================================
+
+model Lesson {
+  id                   String   @id @default(cuid())
+  titulo               String
+  objetivo             String   @db.Text
+  duracion_estimada    Int      // minutos
+  criterios_evaluacion String[] // array de strings
+
+  // Estructura pedagógica (JSON)
+  momentos Json // Array de momentos M0-M5 con sub-momentos
+  imagenes Json // Array de imágenes con url, descripción, tipo, momento_id
+
+  // Metadata
+  createdById String
+  createdBy   User     @relation("CreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  sessions Session[]
+
+  @@index([createdById])
+  @@map("lessons")
+}
+
+// ============================================
+// STUDENT SESSIONS
+// ============================================
+
+model Session {
+  id              String   @id @default(cuid())
+  userId          String
+  lessonId        String
+
+  // Estado actual
+  currentState    String   // QUESTIONING, WAITING_RESPONSE, EVALUATING, etc.
+  currentMomento  String   // M0, M1, M2, M2.1, M3, etc.
+  currentQuestion String?  // ID de pregunta actual
+
+  // Historial y metadata
+  chatHistory Json     // Array de mensajes con role, content, message_type, metadata
+  metadata    Json?    // Evaluaciones, progreso, stats
+
+  // Timestamps
+  startedAt    DateTime @default(now())
+  lastActivity DateTime @updatedAt
+  completedAt  DateTime?
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  alerts Alert[]
+
+  @@index([userId])
+  @@index([lessonId])
+  @@index([lastActivity])
+  @@map("sessions")
+}
+
+// ============================================
+// ALERTS & STUDENT ISSUES
+// ============================================
+
+model Alert {
+  id        String   @id @default(cuid())
+  sessionId String
+  userId    String
+
+  // Tipo de problema detectado
+  alertType AlertType
+  severity  AlertSeverity @default(LOW)
+
+  // Contexto
+  momentoId       String  // M0, M1, M2.1, etc.
+  messageType     String  // answer, question_brief, no_se, off_topic
+  studentMessage  String  @db.Text
+
+  // Respuesta del sistema
+  actionTaken     String  // hint, scaffold, redirect, feedback
+  tutorResponse   String? @db.Text
+  attemptNumber   Int     @default(1)
+
+  // Metadata adicional
+  metadata  Json?   // Checker evaluation, concepts_missing, etc.
+  resolved  Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([alertType])
+  @@index([createdAt])
+  @@map("alerts")
+}
+
+enum AlertType {
+  NO_SE              // Estudiante dice "no sé"
+  OFF_TOPIC          // Respuesta fuera de tema
+  INCORRECT_REPEATED // Respuesta incorrecta repetida (>2 intentos)
+  INCOMPLETE         // Respuesta parcial sin mejora
+  CONCEPTUAL_ERROR   // Error conceptual grave
+  TIME_STUCK         // Más de X minutos en misma pregunta
+}
+
+enum AlertSeverity {
+  LOW     // 1 intento fallido
+  MEDIUM  // 2-3 intentos fallidos
+  HIGH    // >3 intentos o error conceptual grave
+}
