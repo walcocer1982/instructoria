@@ -559,10 +559,15 @@ async function transitionToNextMoment(session: StudentSession, lesson: any) {
         message_type: 'TRANSITIONING',
       });
 
+      const metadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
+
       await updateSession(session.id, {
-        current_momento: nextSubMoment.id,
+        current_moment: nextSubMoment.id,
         current_state: 'INTRODUCING',
-        momento_progress: (session.metadata as any)?.momento_progress,
+        progress: {
+          ...metadata,
+          momento_progress: (metadata as any).momento_progress,
+        },
       });
 
       const refreshedSession = await getSessionById(session.id);
@@ -612,10 +617,15 @@ async function transitionToNextMoment(session: StudentSession, lesson: any) {
     message_type: 'TRANSITIONING',
   });
 
+  const metadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
+
   await updateSession(session.id, {
-    current_momento: nextMoment.id,
+    current_moment: nextMoment.id,
     current_state: 'INTRODUCING',
-    momento_progress: (session.metadata as any)?.momento_progress,
+    progress: {
+      ...metadata,
+      momento_progress: (metadata as any).momento_progress,
+    },
   });
 
   const refreshedSession = await getSessionById(session.id);
@@ -630,9 +640,14 @@ async function transitionToNextMoment(session: StudentSession, lesson: any) {
       const firstSubProgress = ensureMomentProgress(refreshedSession, firstSubPlan.momentId);
       firstSubProgress.started_at = now;
 
+      const refreshedMetadata = refreshedSession.metadata && typeof refreshedSession.metadata === 'object' ? refreshedSession.metadata : {};
+
       await updateSession(refreshedSession.id, {
-        current_momento: firstSubPlan.momentId,
-        momento_progress: refreshedSession.momento_progress,
+        current_moment: firstSubPlan.momentId,
+        progress: {
+          ...refreshedMetadata,
+          momento_progress: (refreshedMetadata as any).momento_progress,
+        },
       });
 
       const updatedSession = await getSessionById(refreshedSession.id);
@@ -777,10 +792,14 @@ export async function processStudentResponse(
         student_message: studentResponse,
         objective: lesson.objetivo,
       });
-    
+      const sessionMetadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
+
       await updateSession(session.id, {
         current_state: 'EVALUATING',
-        momento_progress: (session.metadata as any)?.momento_progress,
+        progress: {
+          ...sessionMetadata,
+          momento_progress: (sessionMetadata as any).momento_progress,
+        },
       });
     
       const { message_type, detected_question, redirect_message } = checkerResponse;
@@ -810,7 +829,12 @@ export async function processStudentResponse(
       } else if (message_type === 'no_se') {
         // NO SÉ → Usar Evaluator con acción 'hint' para scaffold contextual
         progress.attempts = Math.min((progress.attempts || 0) + 1, progress.max_attempts || 3);
-        await updateSession(session.id, { momento_progress: (session.metadata as any)?.momento_progress });
+        await updateSession(session.id, {
+          progress: {
+            ...sessionMetadata,
+            momento_progress: (sessionMetadata as any).momento_progress,
+          },
+        });
     
         // Obtener TODOS los mensajes del momento actual para acumular evidencias
         const firstQuestioningIndex = session.chatHistory.findIndex(
@@ -913,7 +937,12 @@ export async function processStudentResponse(
       } else if (message_type === 'answer') {
         // RESPUESTA → Evaluator evalúa
         progress.attempts = Math.min((progress.attempts || 0) + 1, progress.max_attempts || 3);
-        await updateSession(session.id, { momento_progress: (session.metadata as any)?.momento_progress });
+        await updateSession(session.id, {
+          progress: {
+            ...sessionMetadata,
+            momento_progress: (sessionMetadata as any).momento_progress,
+          },
+        });
     
         // Obtener TODOS los mensajes del momento actual para acumular evidencias
         // Encuentra el índice del primer mensaje QUESTIONING de este momento
@@ -969,7 +998,12 @@ export async function processStudentResponse(
           // CORRECT → Avanzar al siguiente momento
           progress.attempts = 0;
           progress.completed_at = new Date().toISOString();
-          await updateSession(session.id, { momento_progress: (session.metadata as any)?.momento_progress });
+          await updateSession(session.id, {
+            progress: {
+              ...sessionMetadata,
+              momento_progress: (sessionMetadata as any).momento_progress,
+            },
+          });
     
           const refreshedSession = await getSessionById(sessionId);
           if (refreshedSession) {
@@ -1019,8 +1053,11 @@ export async function processStudentResponse(
             evidenceAttempt.final_score = evidenceAttempt.best_score;
     
             await updateSession(session.id, {
-              evidence_attempts: (session.metadata as any)?.evidence_attempts,
-              momento_progress: (session.metadata as any)?.momento_progress,
+              progress: {
+                ...sessionMetadata,
+                evidence_attempts: (sessionMetadata as any).evidence_attempts,
+                momento_progress: (sessionMetadata as any).momento_progress,
+              },
             });
     
             // Remover evidencia actual de missing_concepts
@@ -1078,7 +1115,12 @@ export async function processStudentResponse(
     
               progress.attempts = 0;
               progress.completed_at = new Date().toISOString();
-              await updateSession(session.id, { momento_progress: (session.metadata as any)?.momento_progress });
+              await updateSession(session.id, {
+                progress: {
+                  ...sessionMetadata,
+                  momento_progress: (sessionMetadata as any).momento_progress,
+                },
+              });
     
               const refreshedSession = await getSessionById(sessionId);
               if (refreshedSession) {
@@ -1091,8 +1133,11 @@ export async function processStudentResponse(
             console.log(`   🔄 Generando nueva pregunta con ayuda nivel ${evidenceAttempt.attempt_count}`);
     
             await updateSession(session.id, {
-              evidence_attempts: (session.metadata as any)?.evidence_attempts,
-              momento_progress: (session.metadata as any)?.momento_progress,
+              progress: {
+                ...sessionMetadata,
+                evidence_attempts: (sessionMetadata as any).evidence_attempts,
+                momento_progress: (sessionMetadata as any).momento_progress,
+              },
             });
     
             const nextQuestion = generateNextQuestionFromMissingEvidence(
