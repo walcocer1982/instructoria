@@ -4,6 +4,88 @@ Todos los cambios notables del proyecto serán documentados aquí.
 
 ---
 
+## [v3.6.2] - 2025-10-08
+
+### 🛡️ FIX CRÍTICO: MODERATION API BLOQUEANDO RESPUESTAS EDUCATIVAS
+
+**Resumen:** Moderation API movido DESPUÉS del Checker para permitir vocabulario educativo (fracturas, lesiones, golpes) mientras mantiene filtro de contenido inapropiado.
+
+#### Bug Fixed
+
+**Problema reportado por usuario:**
+```
+Usuario: "te puedes fracturar"
+Sistema: ❌ "No puedo ayudarte con ese tipo de contenido"
+Usuario: "si te caes te puedes fracturar los huesos"
+Sistema: ❌ "No puedo ayudarte con ese tipo de contenido"
+```
+
+**Root Cause:**
+- Moderation API ejecutándose ANTES del Checker
+- Detectaba keywords ("fracturar", "golpear", "lesión") como "violencia"
+- NO entendía contexto educativo de seguridad laboral
+- Bloqueaba respuestas correctas del estudiante
+
+#### Solution: Checker-First Architecture (v3.6.2)
+
+**ANTES (v3.5.0 - BUGGY):**
+```
+1. Moderation API check → Bloqueaba "fracturar" ❌
+2. Checker clasificaba (NUNCA SE EJECUTABA)
+3. Evaluator generaba feedback (NUNCA SE EJECUTABA)
+```
+
+**AHORA (v3.6.2 - CORRECTO):**
+```
+1. Checker clasifica tipo de mensaje (con contexto educativo)
+   → "fracturar" = answer (respuesta educativa) ✅
+2. IF answer/question/no_se → SKIP Moderation (es educativo)
+3. IF off_topic → Moderation API verifica si es inapropiado
+4. Evaluator genera feedback + hints (SIEMPRE SE EJECUTA para respuestas)
+```
+
+#### Changed
+
+**Orchestrator v3.6.2 (lines 996-1065):**
+- 🔄 Checker se ejecuta PRIMERO (con contexto del objetivo de lección)
+- 🔄 Moderation API solo para mensajes `off_topic` (no educativos)
+- 🔄 Respuestas educativas (`answer`, `question`, `no_se`) SKIP moderation
+- 🔄 Logs mejorados:
+  - `[Orchestrator] 🔍 Checker clasificando mensaje...`
+  - `[Orchestrator] 📊 Tipo de mensaje: answer`
+  - `[Orchestrator] ⚠️ Mensaje off-topic detectado, verificando Moderation API...`
+
+**Benefits:**
+1. ✅ **Vocabulario educativo permitido:** fracturas, lesiones, golpes, traumatismos, muerte (contextual)
+2. ✅ **Filtro de contenido mantiene seguridad:** sexual, odio, acoso (solo si es off-topic)
+3. ✅ **Genérico para cualquier curso:** medicina, construcción, química, biología
+4. ✅ **Feedback siempre generado:** Evaluator trabaja con todas las respuestas educativas
+
+#### Test Case
+
+**Input:**
+```
+Pregunta: "¿Qué consecuencias puede tener caerse desde una altura?"
+Respuesta: "te puedes fracturar los huesos"
+```
+
+**ANTES (v3.5.0):**
+```
+❌ Bloqueado por Moderation API
+❌ No feedback
+❌ No pregunta siguiente
+```
+
+**AHORA (v3.6.2):**
+```
+✅ Checker: message_type = 'answer'
+✅ Skip Moderation (es respuesta educativa)
+✅ Evaluator: genera feedback + hints
+✅ Sistema: "¡Muy bien! Mencionaste fracturas. ¿Qué otros tipos de lesiones...?"
+```
+
+---
+
 ## [v3.6.1] - 2025-10-08
 
 ### ⚡ OPTIMIZACIÓN DE PERFORMANCE: LLAMADAS LLM COMBINADAS

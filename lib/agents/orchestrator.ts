@@ -992,32 +992,9 @@ export async function processStudentResponse(
         .find((msg: any) => msg.message_type === 'QUESTIONING');
     
       const currentQuestion = (lastQuestion as any)?.content || plan.guidingQuestion || plan.activity;
-    
-      // 2. MODERATION API v3.5.0 - Filtro de contenido severo (gratis, rápido)
-      const moderationCheck = await checkModeration(studentResponse);
-    
-      if (moderationCheck.flagged) {
-        console.log('[Orchestrator] 🚫 Contenido inapropiado detectado:', moderationCheck.categories);
-    
-        await addChatMessage(session.id, {
-          role: 'assistant',
-          content: 'No puedo ayudarte con ese tipo de contenido. Por favor, enfoquémonos en la lección.',
-          message_type: 'CORRECTING',
-          metadata: {
-            momento_id: plan.momentId,
-            source: 'moderation_api_blocked',
-            categories: moderationCheck.categories,
-          },
-        });
-    
-        await updateSession(session.id, {
-          current_state: 'WAITING_RESPONSE',
-        });
-    
-        return; // Detener procesamiento
-      }
-    
-      // 3. CHECKER v3.0 - Clasificar tipo de mensaje (solo si pasó moderación)
+
+      // 2. CHECKER v3.6.2 - Clasificar tipo de mensaje PRIMERO (con contexto educativo)
+      console.log('[Orchestrator] 🔍 Checker clasificando mensaje...');
       const checkerResponse = await runCheckerAgent({
         question: currentQuestion,
         student_message: studentResponse,
@@ -1032,17 +1009,46 @@ export async function processStudentResponse(
           momento_progress: (sessionMetadata as any).momento_progress,
         },
       });
-    
+
       const { message_type, detected_question, redirect_message } = checkerResponse;
-    
+
+      console.log(`[Orchestrator] 📊 Tipo de mensaje: ${message_type}`);
+
       const filteredImages = filterImagesByMoment((lesson.imagenes as any) || [], plan.momentId);
       const flexibilityBonus = calculateFlexibilityBonus();
-    
-      // 4. RUTEAR según tipo de mensaje (Checker clasifica contexto educativo)
+
+      // 3. MODERATION API v3.6.2 - Solo para mensajes OFF-TOPIC (no educativos)
+      // Si el mensaje es respuesta educativa (answer/question/no_se) → SKIP moderation
+      // Si es off_topic → verificar si es contenido inapropiado
       if (message_type === 'off_topic') {
-        // OFF-TOPIC → Mostrar mensaje de redirección del Checker v3.1
+        console.log('[Orchestrator] ⚠️ Mensaje off-topic detectado, verificando Moderation API...');
+        const moderationCheck = await checkModeration(studentResponse);
+
+        if (moderationCheck.flagged) {
+          console.log('[Orchestrator] 🚫 Contenido inapropiado confirmado:', moderationCheck.categories);
+
+          await addChatMessage(session.id, {
+            role: 'assistant',
+            content: 'No puedo ayudarte con ese tipo de contenido. Por favor, enfoquémonos en la lección.',
+            message_type: 'CORRECTING',
+            metadata: {
+              momento_id: plan.momentId,
+              source: 'moderation_api_blocked',
+              categories: moderationCheck.categories,
+            },
+          });
+
+          await updateSession(session.id, {
+            current_state: 'WAITING_RESPONSE',
+          });
+
+          return; // Detener procesamiento
+        }
+
+        // OFF-TOPIC pero NO inapropiado → Mostrar mensaje de redirección del Checker
+        console.log('[Orchestrator] ✅ Off-topic educativo (no inapropiado), redirigiendo...');
         const finalMessage = redirect_message || `Entiendo que puedas tener otras dudas, pero enfoquémonos en la actividad de aprendizaje. Volvamos a la pregunta sobre ${lesson.objetivo.toLowerCase()}.`;
-    
+
         await addChatMessage(session.id, {
           role: 'assistant',
           content: finalMessage,
@@ -1052,11 +1058,11 @@ export async function processStudentResponse(
             source: 'checker_off_topic_redirect'
           }
         });
-    
+
         await updateSession(session.id, {
           current_state: 'WAITING_RESPONSE',
         });
-    
+
       } else if (message_type === 'no_se') {
         // NO SÉ → Usar Evaluator con acción 'hint' para scaffold contextual
         progress.attempts = Math.min((progress.attempts || 0) + 1, progress.max_attempts || 3);
