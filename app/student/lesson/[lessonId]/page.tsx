@@ -361,7 +361,7 @@ export default function StudentLessonPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {session.chatHistory.map((msg, index) => (
+              {(Array.isArray(session.chatHistory) ? session.chatHistory : []).map((msg: any, index: number) => (
                 <div
                   key={index}
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
