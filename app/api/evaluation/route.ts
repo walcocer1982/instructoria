@@ -113,8 +113,8 @@ export async function POST(request: NextRequest) {
         }
 
         return {
-          question: questionMsg?.content || 'Sin pregunta',
-          answer: userMsg.content,
+          question: (questionMsg as any)?.content || 'Sin pregunta',
+          answer: (userMsg as any).content,
           evaluation: evaluationLevel,
         };
       });
