@@ -35,7 +35,7 @@ interface SessionWithEvaluations {
   student: Student;
   lesson_title: string;
   lesson_id: string;
-  started_at: string;
+  started_at: string; // Keep as-is since it's created in the map
   evaluations: Evaluation[];
 }
 

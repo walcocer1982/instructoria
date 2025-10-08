@@ -51,43 +51,16 @@ interface Evaluation {
 
 interface Session {
   id: string;
-  student_id: string;
-  lesson_id: string;
-  started_at: string;
-  completed_at?: string;
-  current_state: string;
-  current_momento: string;
-  chat_history: ChatMessage[];
-  momento_progress: MomentoProgress[];
-  evaluations: Evaluation[];
-  evidence_attempts?: Record<string, {
-    attempt_count: number;
-    best_score: number;
-    student_responses: string[];
-    status?: string;
-    final_score?: number;
-  }>;
-  error_count?: number;
-  last_error?: {
-    timestamp: string;
-    message: string;
-    type: string;
-  };
-  student_reports?: Array<{
-    id: string;
-    timestamp: string;
-    momento_id: string;
-    student_message: string;
-    context: {
-      last_question: string;
-      chat_history_length: number;
-      error_count: number;
-      attempts: number;
-    };
-    status: 'pending' | 'reviewed' | 'resolved';
-    instructor_notes?: string;
-    resolved_at?: string;
-  }>;
+  userId: string;
+  lessonId: string;
+  startedAt: Date;
+  completedAt?: Date | null;
+  currentState: string;
+  currentMomento: string;
+  chatHistory: any; // Json type from Prisma
+  metadata?: any; // Json type - contains momento_progress, evaluations, evidence_attempts, error_count, last_error
+  studentReports?: any; // Json type from Prisma
+  lastActivity: Date;
 }
 
 interface Lesson {
