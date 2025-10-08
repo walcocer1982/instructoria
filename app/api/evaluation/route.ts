@@ -152,8 +152,14 @@ export async function POST(request: NextRequest) {
       submitted_work,
     };
 
+    const sessionMetadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
+    const existingEvaluations = Array.isArray((sessionMetadata as any).evaluations) ? (sessionMetadata as any).evaluations : [];
+
     await updateSession(session_id, {
-      evaluations: [...(session.evaluations || []), newEvaluation],
+      progress: {
+        ...sessionMetadata,
+        evaluations: [...existingEvaluations, newEvaluation],
+      },
     });
 
     return NextResponse.json({

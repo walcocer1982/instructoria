@@ -85,7 +85,10 @@ export default function TeacherEvaluationsPage() {
 
       // Filtrar sesiones que tienen evaluaciones
       const sessionsWithEvaluations = (data.sessions || [])
-        .filter((session: any) => session.evaluations && session.evaluations.length > 0)
+        .filter((session: any) => {
+          const evaluations = (session.metadata as any)?.evaluations;
+          return Array.isArray(evaluations) && evaluations.length > 0;
+        })
         .map((session: any) => ({
           session_id: session.id,
           student: {
@@ -96,7 +99,7 @@ export default function TeacherEvaluationsPage() {
           lesson_title: session.lesson_title,
           lesson_id: session.lessonId,
           started_at: session.startedAt,
-          evaluations: session.evaluations,
+          evaluations: (session.metadata as any)?.evaluations || [],
         }));
 
       setSessions(sessionsWithEvaluations);

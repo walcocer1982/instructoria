@@ -362,7 +362,7 @@ export default function SessionDetailPage() {
             </TabsTrigger>
             <TabsTrigger value="evaluation" className="gap-2">
               <CheckCircle2 className="h-4 w-4" />
-              Evaluaciones ({session.evaluations?.length || 0})
+              Evaluaciones ({Array.isArray((session.metadata as any)?.evaluations) ? (session.metadata as any).evaluations.length : 0})
             </TabsTrigger>
             <TabsTrigger value="reports" className="gap-2">
               <FileText className="h-4 w-4" />
@@ -506,9 +506,9 @@ export default function SessionDetailPage() {
 
           {/* Evaluation Tab */}
           <TabsContent value="evaluation" className="mt-6">
-            {session.evaluations && session.evaluations.length > 0 ? (
+            {Array.isArray((session.metadata as any)?.evaluations) && (session.metadata as any).evaluations.length > 0 ? (
               <div className="space-y-6">
-                {session.evaluations.map((evaluation, idx) => (
+                {(session.metadata as any).evaluations.map((evaluation: any, idx: number) => (
                   <Card key={evaluation.id || idx}>
                     <CardHeader>
                       <div className="flex justify-between items-start">
