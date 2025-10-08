@@ -80,8 +80,8 @@ export async function POST(request: NextRequest) {
       const updatedSession = await getSessionById(session_id);
 
       console.log('[API /api/chat] ✅ Sesión actualizada');
-      console.log('[API /api/chat] Estado final:', updatedSession?.current_state);
-      console.log('[API /api/chat] Mensajes en chat:', updatedSession?.chat_history.length);
+      console.log('[API /api/chat] Estado final:', updatedSession?.currentState);
+      console.log('[API /api/chat] Mensajes en chat:', updatedSession?.chatHistory?.length || 0);
 
       return NextResponse.json({
         success: true,
