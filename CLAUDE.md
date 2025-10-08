@@ -259,6 +259,60 @@ Rules:
 
 Images have `momento_id` or `tipo` properties for filtering.
 
+## Activity Type Detection (v3.5.7 - LLM-based)
+
+**CRITICAL:** The system uses LLM to detect what the teacher wants in each activity.
+
+### 3 Types of Activities (Detected Automatically)
+
+Every momento/sub-momento activity is analyzed by LLM and classified as:
+
+1. **📖 NARRATIVE** - System TELLS a story
+   - Teacher writes: "Cuenta una situación...", "Narra un caso...", "Presenta una historia..."
+   - System generates: Vivid narrative with characters + question
+   - Example: "Cuenta un caso peligroso real que pasa en el trabajo"
+   → System: "Imagina a Juan en el almacén, a 5 metros sin arnés..."
+
+2. **🎓 EXPLANATION** - System TEACHES a concept
+   - Teacher writes: "Explica la diferencia entre...", "Define...", "Enseña el concepto de..."
+   - System generates: Didactic explanation (3-5 sentences) + verification question
+   - Example: "Explica la diferencia entre peligro y riesgo"
+   → System: "Un peligro es... mientras que el riesgo es... La diferencia clave es..."
+
+3. **❓ QUESTION** - System ASKS student to answer
+   - Teacher writes: "Identifica...", "Analiza...", "Menciona...", "Compara tú..."
+   - System generates: Socratic question only (student must respond)
+   - Example: "Identifica los elementos del IPERC"
+   → System: "¿Cuáles son los tres elementos principales del IPERC?"
+
+### How It Works
+
+**Location:** `lib/agents/orchestrator.ts`
+
+**Function:** `detectActivityType(actividad)` - Lines 352-410
+- Called by `sendContextAndQuestion()` for EVERY momento/sub-momento
+- Uses LLM (gpt-4o-mini, temp=0.3) to interpret teacher's intention
+- Returns: `'narrative' | 'explanation' | 'question'` + reasoning
+
+**Functions called based on type:**
+- `narrative` → `generateContextoYPregunta()` (existing)
+- `explanation` → `generateExplanation()` (NEW v3.5.7)
+- `question` → `generateDirectQuestion()` (v3.5.7)
+
+**Works for:**
+- ✅ All base moments (M0-M5)
+- ✅ All sub-momentos (M2.1, M2.2, M3.1, etc.)
+- ✅ Any subject (not hardcoded to "security")
+
+**Logging:**
+Console shows detection for debugging:
+```
+📝 [ACTIVIDAD] "Explica la diferencia entre peligro y riesgo"
+   Tipo detectado: 🎓 EXPLICACIÓN
+   Razonamiento LLM: "El verbo 'Explica' indica que el sistema debe enseñar"
+   → Generando explicación educativa con LLM...
+```
+
 ## Teacher Interface & Lesson Creation Workflow (v3.5.0 - October 2025)
 
 ### Lesson Creation Flow
