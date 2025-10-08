@@ -143,28 +143,34 @@ async function rollbackToCheckpoint(sessionId: string, errorMessage: string, err
     return;
   }
 
-  if (!session.last_known_good_state) {
+  const metadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
+  const checkpoint = (metadata as any).last_known_good_state;
+
+  if (!checkpoint) {
     console.error(`[ROLLBACK] No hay checkpoint guardado para sesión ${sessionId}`);
     return;
   }
 
-  const checkpoint = session.last_known_good_state;
-
   console.log(`\n⏮️ [ROLLBACK] Revirtiendo a checkpoint - State: ${checkpoint.state}, Momento: ${checkpoint.momento_id}`);
+
+  const chatHistory = Array.isArray(session.chatHistory) ? session.chatHistory : [];
 
   // Restaurar estado desde checkpoint
   await updateSession(sessionId, {
     current_state: checkpoint.state,
-    current_momento: checkpoint.momento_id,
-    chat_history: session.chatHistory.slice(0, checkpoint.chat_history_length),
-    momento_progress: checkpoint.momento_progress,
-    evidence_attempts: checkpoint.evidence_attempts,
-    error_count: (session.error_count || 0) + 1,
-    is_recovering: false,
-    last_error: {
-      timestamp: new Date().toISOString(),
-      message: errorMessage,
-      type: errorType,
+    current_moment: checkpoint.momento_id,
+    chat_history: chatHistory.slice(0, checkpoint.chat_history_length),
+    progress: {
+      ...metadata,
+      momento_progress: checkpoint.momento_progress,
+      evidence_attempts: checkpoint.evidence_attempts,
+      error_count: ((metadata as any).error_count || 0) + 1,
+      is_recovering: false,
+      last_error: {
+        timestamp: new Date().toISOString(),
+        message: errorMessage,
+        type: errorType,
+      },
     },
   });
 
