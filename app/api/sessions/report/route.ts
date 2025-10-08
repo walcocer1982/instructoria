@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       .filter((m: any) => m.role === 'assistant')
       .pop();
 
-    const lastQuestion = lastAssistantMessage?.content || 'Sin pregunta previa';
+    const lastQuestion = (lastAssistantMessage as any)?.content || 'Sin pregunta previa';
 
     // Obtener progreso actual
     const metadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
