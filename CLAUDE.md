@@ -120,6 +120,12 @@ The system uses **1 Orchestrator Agent** that coordinates **3 specialized LLM ag
 - ✅ **-91 líneas** en Checker (solo clasificación)
 - ✅ **-47 líneas** en Tutor (solo explicaciones)
 
+**Optimización v3.6.1 (Performance):**
+- ⚡ **Llamadas LLM combinadas**: Feedback + Hints en 1 sola llamada (antes: 2 secuenciales)
+- ⚡ **~40% más rápido**: De ~3.5s a ~2s en respuesta del Evaluator
+- ⚡ **Mismo costo**: Mismos tokens, menos overhead de red
+- ⚡ **Más confiable**: 1 punto de falla vs 2
+
 ### Pedagogical Moments (M0-M5)
 
 Lessons are structured into 6 moments following the **Gradual Release** model:
