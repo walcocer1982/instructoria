@@ -110,17 +110,23 @@ import { buildSystemMessage } from '@/lib/promptConstants';
  * Se llama ANTES de procesar la respuesta del estudiante
  */
 async function saveCheckpoint(session: StudentSession): Promise<void> {
+  const chatHistory = Array.isArray(session.chatHistory) ? session.chatHistory : [];
+  const metadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
+
   const checkpoint = {
     state: session.currentState,
     momento_id: session.currentMomento,
     timestamp: new Date().toISOString(),
-    chat_history_length: session.chatHistory.length,
-    momento_progress: JSON.parse(JSON.stringify(session.momento_progress || [])),
-    evidence_attempts: session.evidence_attempts ? JSON.parse(JSON.stringify(session.evidence_attempts)) : undefined,
+    chat_history_length: chatHistory.length,
+    momento_progress: JSON.parse(JSON.stringify((metadata as any).momento_progress || [])),
+    evidence_attempts: (metadata as any).evidence_attempts ? JSON.parse(JSON.stringify((metadata as any).evidence_attempts)) : undefined,
   };
 
   await updateSession(session.id, {
-    last_known_good_state: checkpoint,
+    progress: {
+      ...(metadata as any),
+      last_known_good_state: checkpoint,
+    },
   });
 
   console.log(`\n💾 [CHECKPOINT] Estado guardado - State: ${checkpoint.state}, Momento: ${checkpoint.momento_id}`);
@@ -225,11 +231,11 @@ function parseMomentId(momentId: string): { baseMoment: string; subIndex: number
 }
 
 function ensureMomentProgress(session: StudentSession, momentId: string) {
-  if (!session.momento_progress) {
-    session.momento_progress = [];
+  if (!(session.metadata as any)?.momento_progress) {
+    (session.metadata as any)?.momento_progress = [];
   }
 
-  let progress = session.momento_progress.find((entry: any) => entry.momento_id === momentId);
+  let progress = (session.metadata as any)?.momento_progress.find((entry: any) => entry.momento_id === momentId);
 
   if (!progress) {
     const { baseMoment, subIndex } = parseMomentId(momentId);
@@ -243,7 +249,7 @@ function ensureMomentProgress(session: StudentSession, momentId: string) {
       parent_momento_id: subIndex !== null ? baseMoment : undefined,
       sub_momento_index: subIndex !== null ? subIndex : undefined,
     };
-    session.momento_progress.push(progress);
+    (session.metadata as any)?.momento_progress.push(progress);
   } else {
     progress.max_attempts = progress.max_attempts ?? 3;
     progress.attempts = progress.attempts ?? 0;
@@ -522,7 +528,7 @@ async function transitionToNextMoment(session: StudentSession, lesson: any) {
 
       // Marcar sub-momento actual como completado
       ensureMomentProgress(session, session.currentMomento);
-      const currentProgress = session.momento_progress?.find(p => p.momento_id === session.currentMomento);
+      const currentProgress = (session.metadata as any)?.momento_progress?.find(p => p.momento_id === session.currentMomento);
       if (currentProgress && !currentProgress.completed_at) {
         currentProgress.completed_at = now;
       }
@@ -540,7 +546,7 @@ async function transitionToNextMoment(session: StudentSession, lesson: any) {
       await updateSession(session.id, {
         current_momento: nextSubMoment.id,
         current_state: 'INTRODUCING',
-        momento_progress: session.momento_progress,
+        momento_progress: (session.metadata as any)?.momento_progress,
       });
 
       const refreshedSession = await getSessionById(session.id);
@@ -563,7 +569,7 @@ async function transitionToNextMoment(session: StudentSession, lesson: any) {
 
   // Marcar momento base actual como completado
   ensureMomentProgress(session, baseMoment);
-  const currentProgress = session.momento_progress?.find(p => p.momento_id === baseMoment);
+  const currentProgress = (session.metadata as any)?.momento_progress?.find(p => p.momento_id === baseMoment);
   if (currentProgress && !currentProgress.completed_at) {
     currentProgress.completed_at = now;
   }
@@ -593,7 +599,7 @@ async function transitionToNextMoment(session: StudentSession, lesson: any) {
   await updateSession(session.id, {
     current_momento: nextMoment.id,
     current_state: 'INTRODUCING',
-    momento_progress: session.momento_progress,
+    momento_progress: (session.metadata as any)?.momento_progress,
   });
 
   const refreshedSession = await getSessionById(session.id);
@@ -758,7 +764,7 @@ export async function processStudentResponse(
     
       await updateSession(session.id, {
         current_state: 'EVALUATING',
-        momento_progress: session.momento_progress,
+        momento_progress: (session.metadata as any)?.momento_progress,
       });
     
       const { message_type, detected_question, redirect_message } = checkerResponse;
@@ -788,7 +794,7 @@ export async function processStudentResponse(
       } else if (message_type === 'no_se') {
         // NO SÉ → Usar Evaluator con acción 'hint' para scaffold contextual
         progress.attempts = Math.min((progress.attempts || 0) + 1, progress.max_attempts || 3);
-        await updateSession(session.id, { momento_progress: session.momento_progress });
+        await updateSession(session.id, { momento_progress: (session.metadata as any)?.momento_progress });
     
         // Obtener TODOS los mensajes del momento actual para acumular evidencias
         const firstQuestioningIndex = session.chatHistory.findIndex(
@@ -891,7 +897,7 @@ export async function processStudentResponse(
       } else if (message_type === 'answer') {
         // RESPUESTA → Evaluator evalúa
         progress.attempts = Math.min((progress.attempts || 0) + 1, progress.max_attempts || 3);
-        await updateSession(session.id, { momento_progress: session.momento_progress });
+        await updateSession(session.id, { momento_progress: (session.metadata as any)?.momento_progress });
     
         // Obtener TODOS los mensajes del momento actual para acumular evidencias
         // Encuentra el índice del primer mensaje QUESTIONING de este momento
@@ -947,7 +953,7 @@ export async function processStudentResponse(
           // CORRECT → Avanzar al siguiente momento
           progress.attempts = 0;
           progress.completed_at = new Date().toISOString();
-          await updateSession(session.id, { momento_progress: session.momento_progress });
+          await updateSession(session.id, { momento_progress: (session.metadata as any)?.momento_progress });
     
           const refreshedSession = await getSessionById(sessionId);
           if (refreshedSession) {
@@ -960,19 +966,19 @@ export async function processStudentResponse(
           const currentEvidenceKey = missing_concepts[0]; // Primera evidencia faltante
     
           // Inicializar tracking de intentos por evidencia si no existe
-          if (!session.evidence_attempts) {
-            session.evidence_attempts = {};
+          if (!(session.metadata as any)?.evidence_attempts) {
+            (session.metadata as any)?.evidence_attempts = {};
           }
     
-          if (!session.evidence_attempts[currentEvidenceKey]) {
-            session.evidence_attempts[currentEvidenceKey] = {
+          if (!(session.metadata as any)?.evidence_attempts[currentEvidenceKey]) {
+            (session.metadata as any)?.evidence_attempts[currentEvidenceKey] = {
               attempt_count: 0,
               best_score: 0,
               student_responses: [],
             };
           }
     
-          const evidenceAttempt = session.evidence_attempts[currentEvidenceKey];
+          const evidenceAttempt = (session.metadata as any)?.evidence_attempts[currentEvidenceKey];
           evidenceAttempt.attempt_count += 1;
           evidenceAttempt.student_responses.push(studentResponse);
     
@@ -994,8 +1000,8 @@ export async function processStudentResponse(
             evidenceAttempt.final_score = evidenceAttempt.best_score;
     
             await updateSession(session.id, {
-              evidence_attempts: session.evidence_attempts,
-              momento_progress: session.momento_progress,
+              evidence_attempts: (session.metadata as any)?.evidence_attempts,
+              momento_progress: (session.metadata as any)?.momento_progress,
             });
     
             // Remover evidencia actual de missing_concepts
@@ -1053,7 +1059,7 @@ export async function processStudentResponse(
     
               progress.attempts = 0;
               progress.completed_at = new Date().toISOString();
-              await updateSession(session.id, { momento_progress: session.momento_progress });
+              await updateSession(session.id, { momento_progress: (session.metadata as any)?.momento_progress });
     
               const refreshedSession = await getSessionById(sessionId);
               if (refreshedSession) {
@@ -1066,8 +1072,8 @@ export async function processStudentResponse(
             console.log(`   🔄 Generando nueva pregunta con ayuda nivel ${evidenceAttempt.attempt_count}`);
     
             await updateSession(session.id, {
-              evidence_attempts: session.evidence_attempts,
-              momento_progress: session.momento_progress,
+              evidence_attempts: (session.metadata as any)?.evidence_attempts,
+              momento_progress: (session.metadata as any)?.momento_progress,
             });
     
             const nextQuestion = generateNextQuestionFromMissingEvidence(
