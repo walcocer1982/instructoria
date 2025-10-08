@@ -332,14 +332,14 @@ export default function SessionDetailPage() {
             </div>
 
             {/* Error info if exists */}
-            {session.error_count && session.error_count > 0 && (
+            {(session.metadata as any)?.error_count && (session.metadata as any).error_count > 0 && (
               <Card className="mt-4 border-yellow-500/50 bg-yellow-50/50">
                 <CardContent className="pt-4">
                   <p className="text-sm text-yellow-800">
-                    ⚠️ Errores de procesamiento: {session.error_count}
-                    {session.last_error && (
+                    ⚠️ Errores de procesamiento: {(session.metadata as any).error_count}
+                    {(session.metadata as any)?.last_error && (
                       <span className="block text-xs mt-1 text-muted-foreground">
-                        Último: {session.last_error.message} ({session.last_error.type})
+                        Último: {(session.metadata as any).last_error.message} ({(session.metadata as any).last_error.type})
                       </span>
                     )}
                   </p>
@@ -430,7 +430,7 @@ export default function SessionDetailPage() {
             {/* Momento Progress */}
             <div className="space-y-4">
               <h3 className="text-xl font-semibold">Progreso por Momento</h3>
-              {session.momento_progress.map((progress) => (
+              {((session.metadata as any)?.momento_progress || []).map((progress: any) => (
                 <Card key={progress.momento_id}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
@@ -465,10 +465,10 @@ export default function SessionDetailPage() {
             </div>
 
             {/* Evidence Attempts */}
-            {session.evidence_attempts && Object.keys(session.evidence_attempts).length > 0 && (
+            {(session.metadata as any)?.evidence_attempts && Object.keys((session.metadata as any).evidence_attempts).length > 0 && (
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold">📝 Intentos por Evidencia</h3>
-                {Object.entries(session.evidence_attempts).map(([evidenceKey, data]) => (
+                {Object.entries((session.metadata as any).evidence_attempts).map(([evidenceKey, data]: [string, any]) => (
                   <Card key={evidenceKey}>
                     <CardHeader>
                       <div className="flex justify-between items-start">
@@ -681,7 +681,7 @@ export default function SessionDetailPage() {
             </Card>
 
             {/* Technical Errors */}
-            {session.last_error && (
+            {(session.metadata as any)?.last_error && (
               <Card className="border-destructive/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -695,13 +695,13 @@ export default function SessionDetailPage() {
                 <CardContent>
                   <div className="bg-destructive/10 p-4 rounded border border-destructive/20">
                     <p className="text-sm font-semibold mb-2">Último error:</p>
-                    <p className="text-sm mb-2">{session.last_error.message}</p>
+                    <p className="text-sm mb-2">{(session.metadata as any).last_error.message}</p>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>Tipo: {session.last_error.type}</span>
+                      <span>Tipo: {(session.metadata as any).last_error.type}</span>
                       <span>•</span>
-                      <span>{new Date(session.last_error.timestamp).toLocaleString('es-ES')}</span>
+                      <span>{new Date((session.metadata as any)?.last_error?.timestamp).toLocaleString('es-ES')}</span>
                       <span>•</span>
-                      <span>Total de errores: {session.error_count || 0}</span>
+                      <span>Total de errores: {(session.metadata as any)?.error_count || 0}</span>
                     </div>
                   </div>
                 </CardContent>
