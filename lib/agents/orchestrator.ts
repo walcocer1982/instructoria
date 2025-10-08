@@ -346,6 +346,123 @@ async function generateWelcomeMessageViaLLM(
 }
 
 /**
+ * v3.5.6: Detecta si la actividad requiere NARRATIVA o PREGUNTA DIRECTA
+ * Usa LLM para interpretar la intención del docente
+ */
+async function detectActivityType(actividad: string): Promise<'narrative' | 'direct_question'> {
+  const llm = getLLMClient();
+
+  const ActivityTypeSchema = z.object({
+    type: z.enum(['narrative', 'direct_question']).describe('Tipo de actividad detectado'),
+    reasoning: z.string().describe('Breve explicación de por qué se eligió ese tipo'),
+  });
+
+  const prompt = `Eres un experto en pedagogía. Analiza esta actividad del docente y determina si requiere que el SISTEMA genere una NARRATIVA o que haga una PREGUNTA DIRECTA al estudiante.
+
+**Actividad del docente**: "${actividad}"
+
+**TIPOS DE ACTIVIDAD:**
+
+1. **"narrative"** - El SISTEMA debe CONTAR/PRESENTAR una historia, situación o caso:
+   - Actividad empieza con verbos como: "Cuenta...", "Narra...", "Presenta...", "Describe una situación...", "Muestra un caso..."
+   - El docente quiere que el sistema CREE un escenario motivador
+   - Ejemplo: "Cuenta una caso peligroso real que pasa en el trabajo"
+
+2. **"direct_question"** - El SISTEMA debe hacer una PREGUNTA DIRECTA al estudiante (sin contar historia):
+   - Actividad empieza con verbos como: "Explica...", "Define...", "Compara...", "Identifica...", "Analiza...", "Menciona..."
+   - El docente quiere que el estudiante RESPONDA con su conocimiento
+   - Ejemplo: "Explica la diferencia entre peligro y riesgo en el trabajo"
+
+**INSTRUCCIONES:**
+- Lee cuidadosamente la actividad
+- Identifica el verbo principal (primer verbo imperativo)
+- Determina si ese verbo pide que el sistema CUENTE algo (narrative) o que el estudiante EXPLIQUE algo (direct_question)
+- Genera el JSON con "type" y "reasoning"
+
+Responde en JSON:`;
+
+  const jsonSchema = {
+    name: 'activity_type_output',
+    strict: true,
+    schema: zodToJsonSchema(ActivityTypeSchema, {
+      target: 'openAi',
+      $refStrategy: 'none'
+    })
+  };
+
+  const response = await llm.chatStructured<z.infer<typeof ActivityTypeSchema>>(
+    [{ role: 'user', content: prompt }],
+    jsonSchema,
+    { model: 'gpt-4o-mini', temperature: 0.3 } // Baja temperatura para consistencia
+  );
+
+  const validated = ActivityTypeSchema.parse(response);
+  console.log(`   Razonamiento LLM: "${validated.reasoning}"`);
+
+  return validated.type;
+}
+
+/**
+ * v3.5.6: Genera SOLO pregunta directa (sin narrativa)
+ * Para actividades como "Explica...", "Define...", "Compara..."
+ */
+async function generateDirectQuestion(
+  actividad: string,
+  evidencias: string[],
+  preguntaGuia: string
+): Promise<string> {
+  const llm = getLLMClient();
+
+  const DirectQuestionSchema = z.object({
+    pregunta: z.string().describe('Pregunta directa basada en la actividad y evidencias esperadas'),
+  });
+
+  const prompt = `Eres un experto en pedagogía. Convierte esta actividad en una pregunta Socrática directa.
+
+**Actividad del docente**: ${actividad}
+**Evidencias esperadas**: ${evidencias.join(', ')}
+**Pregunta guía base**: ${preguntaGuia}
+
+TAREA:
+Genera UNA pregunta directa que:
+- Se basa en la actividad del docente
+- Pide al estudiante que responda (NO cuentes una historia)
+- Amarra TODAS las evidencias esperadas
+- Es clara y específica
+- Motiva reflexión crítica
+
+EJEMPLOS:
+
+Actividad: "Explica la diferencia entre peligro y riesgo"
+Evidencias: ["Define peligro", "Define riesgo", "Identifica diferencias"]
+✅ PREGUNTA: "¿Cuál es la diferencia entre peligro y riesgo en el contexto laboral? Define cada concepto y explica cómo se diferencian."
+
+Actividad: "Identifica los elementos del IPERC"
+Evidencias: ["Menciona 3 elementos", "Explica para qué sirve"]
+✅ PREGUNTA: "¿Cuáles son los tres elementos principales del IPERC y para qué sirve este proceso?"
+
+Genera el JSON con la pregunta:`;
+
+  const jsonSchema = {
+    name: 'direct_question_output',
+    strict: true,
+    schema: zodToJsonSchema(DirectQuestionSchema, {
+      target: 'openAi',
+      $refStrategy: 'none'
+    })
+  };
+
+  const response = await llm.chatStructured<z.infer<typeof DirectQuestionSchema>>(
+    [{ role: 'user', content: prompt }],
+    jsonSchema,
+    { model: 'gpt-4o-mini', temperature: 0.5 } // Menor temperatura = más consistente
+  );
+
+  const validated = DirectQuestionSchema.parse(response);
+  return validated.pregunta;
+}
+
+/**
  * v4.0: Genera contexto + pregunta dinámicamente usando LLM
  * Basado en: actividad + descripción de imagen + evidencias + pregunta_guia
  */
@@ -445,17 +562,39 @@ async function sendContextAndQuestion(
   let contexto = '';
   let question = '';
 
-  // v4.0: Generar contexto + pregunta dinámicamente
-  if (!plan.contexto && plan.imageDescription) {
-    // Si NO hay contexto en el plan Y hay imagen, generar ambos con LLM
-    const generated = await generateContextoYPregunta(
-      plan.activity,
-      plan.imageDescription,
-      plan.evidences,
-      plan.originalGuidingQuestion || plan.guidingQuestion
-    );
-    contexto = generated.contexto;
-    question = generated.pregunta;
+  // v3.5.6: Detectar tipo de actividad basado en verbos (con LLM)
+  const activityType = await detectActivityType(plan.activity);
+
+  console.log(`\n📝 [ACTIVIDAD] "${plan.activity}"`);
+  console.log(`   Tipo detectado: ${activityType === 'narrative' ? '📖 NARRATIVA' : '❓ PREGUNTA DIRECTA'}`);
+
+  // v3.5.6: Generar contenido según tipo de actividad
+  if (!plan.contexto) {
+    if (activityType === 'narrative' && plan.imageDescription) {
+      // NARRATIVA: Generar historia vívida con contexto
+      console.log(`   → Generando historia con LLM...`);
+      const generated = await generateContextoYPregunta(
+        plan.activity,
+        plan.imageDescription,
+        plan.evidences,
+        plan.originalGuidingQuestion || plan.guidingQuestion
+      );
+      contexto = generated.contexto;
+      question = generated.pregunta;
+    } else if (activityType === 'direct_question') {
+      // PREGUNTA DIRECTA: Solo pregunta, sin narrativa
+      console.log(`   → Generando pregunta directa con LLM...`);
+      question = await generateDirectQuestion(
+        plan.activity,
+        plan.evidences,
+        plan.originalGuidingQuestion || plan.guidingQuestion
+      );
+      contexto = ''; // Sin narrativa
+    } else {
+      // Fallback: usar pregunta guía simple
+      contexto = '';
+      question = replaceConceptPlaceholders(plan.guidingQuestion || plan.activity, lesson);
+    }
   } else {
     // Usar contexto del plan (si existe) y pregunta original
     contexto = plan.contexto || '';
