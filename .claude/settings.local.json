@@ -25,7 +25,12 @@
       "Bash(git commit:*)",
       "Bash(openssl rand:*)",
       "Bash(git checkout:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(set PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=ok)",
+      "Bash($env:PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"ok\")"
     ],
     "deny": [],
     "ask": []
