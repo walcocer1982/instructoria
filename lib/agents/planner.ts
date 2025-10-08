@@ -9,7 +9,8 @@ import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { getLLMClient, mixTextAndImages } from '@/lib/llm';
 import { buildSystemMessage } from '@/lib/promptConstants';
-import { ImageRef, Lesson } from '@/types';
+import { ImageRef } from '@/types';
+import type { Lesson } from '@prisma/client';
 import { LessonMomentPlan, MomentState } from '@/types/lessonPlan';
 import { loadMoment, initializeMomentState } from './planUtils';
 
