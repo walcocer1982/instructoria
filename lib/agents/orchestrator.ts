@@ -866,7 +866,7 @@ export async function processStudentResponse(
           expected_answers: plan.expected_answers, // v3.2.0: Respuestas específicas
           student_answer: studentResponse, // "no sé" se procesa como respuesta
           attempt_number: progress.attempts,
-          chat_history: currentMomentoMessages.map(msg => ({
+          chat_history: currentMomentoMessages.map((msg: any) => ({
             role: msg.role as 'user' | 'assistant',
             content: msg.content,
           })),
@@ -981,7 +981,7 @@ export async function processStudentResponse(
           expected_answers: plan.expected_answers, // v3.2.0: Respuestas específicas
           student_answer: studentResponse,
           attempt_number: progress.attempts,
-          chat_history: currentMomentoMessages.map(msg => ({
+          chat_history: currentMomentoMessages.map((msg: any) => ({
             role: msg.role as 'user' | 'assistant',
             content: msg.content,
           })),
