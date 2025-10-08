@@ -89,13 +89,13 @@ export default function TeacherEvaluationsPage() {
         .map((session: any) => ({
           session_id: session.id,
           student: {
-            id: session.student_id,
+            id: session.userId,
             nombre: session.student_name,
             email: session.student_email,
           },
           lesson_title: session.lesson_title,
-          lesson_id: session.lesson_id,
-          started_at: session.started_at,
+          lesson_id: session.lessonId,
+          started_at: session.startedAt,
           evaluations: session.evaluations,
         }));
 

@@ -156,7 +156,7 @@ export default function SessionDetailPage() {
       setSession(sessionData.session);
 
       // Cargar lección
-      const lessonResponse = await fetch(`/api/lessons?lesson_id=${sessionData.session.lesson_id}`, {
+      const lessonResponse = await fetch(`/api/lessons?lesson_id=${sessionData.session.lessonId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -313,20 +313,20 @@ export default function SessionDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-semibold text-muted-foreground mb-1">Estudiante</p>
-                <p className="text-lg">{session.student_id}</p>
+                <p className="text-lg">{session.userId}</p>
               </div>
               <div>
                 <p className="text-sm font-semibold text-muted-foreground mb-1">Lección</p>
-                <p className="text-lg">{lesson?.titulo || session.lesson_id}</p>
+                <p className="text-lg">{lesson?.titulo || session.lessonId}</p>
               </div>
               <div>
                 <p className="text-sm font-semibold text-muted-foreground mb-1">Iniciada</p>
-                <p>{new Date(session.started_at).toLocaleString('es-ES')}</p>
+                <p>{new Date(session.startedAt).toLocaleString('es-ES')}</p>
               </div>
               <div>
                 <p className="text-sm font-semibold text-muted-foreground mb-1">Estado Actual</p>
                 <Badge variant="outline">
-                  {session.current_state} @ {session.current_momento}
+                  {session.currentState} @ {session.currentMomento}
                 </Badge>
               </div>
             </div>
@@ -354,7 +354,7 @@ export default function SessionDetailPage() {
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="chat" className="gap-2">
               <MessageSquare className="h-4 w-4" />
-              Chat ({session.chat_history.length})
+              Chat ({Array.isArray(session.chatHistory) ? session.chatHistory.length : 0})
             </TabsTrigger>
             <TabsTrigger value="progress" className="gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -366,7 +366,7 @@ export default function SessionDetailPage() {
             </TabsTrigger>
             <TabsTrigger value="reports" className="gap-2">
               <FileText className="h-4 w-4" />
-              Reportes ({session.student_reports?.filter(r => r.status === 'pending').length || 0})
+              Reportes ({Array.isArray(session.studentReports) ? session.studentReports.filter((r: any) => r.status === 'pending').length : 0})
             </TabsTrigger>
           </TabsList>
 
@@ -374,7 +374,7 @@ export default function SessionDetailPage() {
           <TabsContent value="chat" className="mt-6">
             <ScrollArea className="h-[600px] w-full rounded-md border p-4">
               <div className="space-y-4">
-                {session.chat_history.map((msg, idx) => (
+                {(Array.isArray(session.chatHistory) ? session.chatHistory : []).map((msg: any, idx: number) => (
                   <Card
                     key={msg.id || idx}
                     className={`${msg.role === 'assistant' ? `border-l-4 ${getMessageTypeColor(msg.message_type)}` : 'border-l-4 border-l-gray-300'}`}
@@ -578,9 +578,9 @@ export default function SessionDetailPage() {
                 <CardContent>
                   <ProgressTree
                     momentos={lesson.momentos}
-                    momentoProgress={session.momento_progress}
-                    currentMomento={session.current_momento}
-                    errorCount={session.error_count}
+                    momentoProgress={(session.metadata as any)?.momento_progress || []}
+                    currentMomento={session.currentMomento}
+                    errorCount={(session.metadata as any)?.error_count || 0}
                     onRestart={handleRestartFromMomento}
                   />
                 </CardContent>
@@ -596,11 +596,11 @@ export default function SessionDetailPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {session.student_reports && session.student_reports.length > 0 ? (
+                {Array.isArray(session.studentReports) && session.studentReports.length > 0 ? (
                   <div className="space-y-4">
-                    {session.student_reports
-                      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                      .map((report) => (
+                    {session.studentReports
+                      .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                      .map((report: any) => (
                         <Card
                           key={report.id}
                           className={`${
