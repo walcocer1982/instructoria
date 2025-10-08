@@ -13,7 +13,7 @@ const prisma = new PrismaClient();
 export async function getSessionsByStudent(studentId: string) {
   return await prisma.studentSession.findMany({
     where: {
-      student_id: studentId,
+      userId: studentId,
     },
     include: {
       lesson: {
@@ -26,7 +26,7 @@ export async function getSessionsByStudent(studentId: string) {
       },
     },
     orderBy: {
-      createdAt: 'desc',
+      startedAt: 'desc',
     },
   });
 }
@@ -51,15 +51,15 @@ export async function getSessionById(sessionId: string) {
 export async function findActiveSession(studentId: string, lessonId: string) {
   return await prisma.studentSession.findFirst({
     where: {
-      student_id: studentId,
-      lesson_id: lessonId,
-      completed: false,
+      userId: studentId,
+      lessonId: lessonId,
+      completedAt: null, // No completada
     },
     include: {
       lesson: true,
     },
     orderBy: {
-      createdAt: 'desc',
+      startedAt: 'desc',
     },
   });
 }
@@ -75,15 +75,13 @@ export async function createSession(data: {
 }) {
   return await prisma.studentSession.create({
     data: {
-      student_id: data.student_id,
-      lesson_id: data.lesson_id,
-      current_moment: data.current_moment,
-      current_state: data.current_state,
-      current_question: null,
-      chat_history: [],
-      progress: {},
-      completed: false,
-      score: null,
+      userId: data.student_id,
+      lessonId: data.lesson_id,
+      currentMomento: data.current_moment,
+      currentState: data.current_state,
+      currentQuestion: null,
+      chatHistory: [],
+      metadata: {},
     },
     include: {
       lesson: true,
@@ -106,11 +104,33 @@ export async function updateSession(
     score?: number | null;
   }
 ) {
+  // Map snake_case to camelCase for Prisma
+  const prismaUpdates: any = {};
+
+  if (updates.current_moment !== undefined) {
+    prismaUpdates.currentMomento = updates.current_moment;
+  }
+  if (updates.current_state !== undefined) {
+    prismaUpdates.currentState = updates.current_state;
+  }
+  if (updates.current_question !== undefined) {
+    prismaUpdates.currentQuestion = updates.current_question;
+  }
+  if (updates.chat_history !== undefined) {
+    prismaUpdates.chatHistory = updates.chat_history;
+  }
+  if (updates.progress !== undefined) {
+    prismaUpdates.metadata = updates.progress;
+  }
+  if (updates.completed !== undefined) {
+    prismaUpdates.completedAt = updates.completed ? new Date() : null;
+  }
+
   return await prisma.studentSession.update({
     where: {
       id: sessionId,
     },
-    data: updates,
+    data: prismaUpdates,
     include: {
       lesson: true,
     },
@@ -135,8 +155,8 @@ export async function addChatMessage(
     throw new Error('Sesión no encontrada');
   }
 
-  const chatHistory = Array.isArray(session.chat_history)
-    ? session.chat_history
+  const chatHistory = Array.isArray(session.chatHistory)
+    ? session.chatHistory
     : [];
 
   const newMessage = {
@@ -144,10 +164,12 @@ export async function addChatMessage(
     timestamp: new Date().toISOString(),
   };
 
-  chatHistory.push(newMessage);
+  (chatHistory as any[]).push(newMessage);
 
-  return await updateSession(sessionId, {
-    chat_history: chatHistory,
+  return await prisma.studentSession.update({
+    where: { id: sessionId },
+    data: { chatHistory },
+    include: { lesson: true },
   });
 }
 
@@ -165,26 +187,33 @@ export async function updateMomentProgress(
     throw new Error('Sesión no encontrada');
   }
 
-  const progress = typeof session.progress === 'object' && session.progress !== null
-    ? session.progress
+  const metadata = typeof session.metadata === 'object' && session.metadata !== null
+    ? session.metadata
     : {};
 
-  (progress as any)[momentId] = {
-    ...(progress as any)[momentId],
+  (metadata as any)[momentId] = {
+    ...(metadata as any)[momentId],
     ...progressData,
     updated_at: new Date().toISOString(),
   };
 
-  return await updateSession(sessionId, { progress });
+  return await prisma.studentSession.update({
+    where: { id: sessionId },
+    data: { metadata },
+    include: { lesson: true },
+  });
 }
 
 /**
  * Marca una sesión como completada
  */
 export async function completeSession(sessionId: string, finalScore?: number) {
-  return await updateSession(sessionId, {
-    completed: true,
-    score: finalScore || null,
+  return await prisma.studentSession.update({
+    where: { id: sessionId },
+    data: {
+      completedAt: new Date(),
+    },
+    include: { lesson: true },
   });
 }
 
@@ -192,14 +221,17 @@ export async function completeSession(sessionId: string, finalScore?: number) {
  * Reinicia una sesión (para volver a empezar)
  */
 export async function restartSession(sessionId: string) {
-  return await updateSession(sessionId, {
-    current_moment: 'M0',
-    current_state: 'INTRODUCING',
-    current_question: null,
-    chat_history: [],
-    progress: {},
-    completed: false,
-    score: null,
+  return await prisma.studentSession.update({
+    where: { id: sessionId },
+    data: {
+      currentMomento: 'M0',
+      currentState: 'INTRODUCING',
+      currentQuestion: null,
+      chatHistory: [],
+      metadata: {},
+      completedAt: null,
+    },
+    include: { lesson: true },
   });
 }
 
@@ -225,10 +257,10 @@ export async function deleteSession(sessionId: string) {
 export async function getSessionsByLesson(lessonId: string) {
   return await prisma.studentSession.findMany({
     where: {
-      lesson_id: lessonId,
+      lessonId: lessonId,
     },
     include: {
-      student: {
+      user: {
         select: {
           id: true,
           name: true,
@@ -237,7 +269,7 @@ export async function getSessionsByLesson(lessonId: string) {
       },
     },
     orderBy: {
-      createdAt: 'desc',
+      startedAt: 'desc',
     },
   });
 }

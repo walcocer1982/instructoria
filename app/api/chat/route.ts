@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (studentSession.student_id !== session.user.id) {
+    if (studentSession.userId !== session.user.id) {
       return NextResponse.json(
         { success: false, error: 'No autorizado' },
         { status: 403 }
