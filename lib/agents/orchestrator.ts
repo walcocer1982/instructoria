@@ -811,7 +811,7 @@ export async function processStudentResponse(
       const { message_type, detected_question, redirect_message } = checkerResponse;
     
       const filteredImages = filterImagesByMoment((lesson.imagenes as any) || [], plan.momentId);
-      const flexibilityBonus = calculateFlexibilityBonus(session);
+      const flexibilityBonus = calculateFlexibilityBonus();
     
       // 4. RUTEAR según tipo de mensaje (Checker clasifica contexto educativo)
       if (message_type === 'off_topic') {
