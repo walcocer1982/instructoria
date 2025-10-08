@@ -231,11 +231,13 @@ function parseMomentId(momentId: string): { baseMoment: string; subIndex: number
 }
 
 function ensureMomentProgress(session: StudentSession, momentId: string) {
-  if (!(session.metadata as any)?.momento_progress) {
-    (session.metadata as any)?.momento_progress = [];
+  const metadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
+
+  if (!(metadata as any).momento_progress) {
+    (metadata as any).momento_progress = [];
   }
 
-  let progress = (session.metadata as any)?.momento_progress.find((entry: any) => entry.momento_id === momentId);
+  let progress = (metadata as any).momento_progress.find((entry: any) => entry.momento_id === momentId);
 
   if (!progress) {
     const { baseMoment, subIndex } = parseMomentId(momentId);
@@ -249,7 +251,7 @@ function ensureMomentProgress(session: StudentSession, momentId: string) {
       parent_momento_id: subIndex !== null ? baseMoment : undefined,
       sub_momento_index: subIndex !== null ? subIndex : undefined,
     };
-    (session.metadata as any)?.momento_progress.push(progress);
+    (metadata as any).momento_progress.push(progress);
   } else {
     progress.max_attempts = progress.max_attempts ?? 3;
     progress.attempts = progress.attempts ?? 0;
@@ -964,21 +966,24 @@ export async function processStudentResponse(
           // PARTIAL o INCORRECT → Verificar límite de intentos v3.5.4
           const MAX_ATTEMPTS = 3; // Mismo para TODOS los momentos
           const currentEvidenceKey = missing_concepts[0]; // Primera evidencia faltante
-    
+
+          // Get metadata object
+          const metadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
+
           // Inicializar tracking de intentos por evidencia si no existe
-          if (!(session.metadata as any)?.evidence_attempts) {
-            (session.metadata as any)?.evidence_attempts = {};
+          if (!(metadata as any).evidence_attempts) {
+            (metadata as any).evidence_attempts = {};
           }
-    
-          if (!(session.metadata as any)?.evidence_attempts[currentEvidenceKey]) {
-            (session.metadata as any)?.evidence_attempts[currentEvidenceKey] = {
+
+          if (!(metadata as any).evidence_attempts[currentEvidenceKey]) {
+            (metadata as any).evidence_attempts[currentEvidenceKey] = {
               attempt_count: 0,
               best_score: 0,
               student_responses: [],
             };
           }
-    
-          const evidenceAttempt = (session.metadata as any)?.evidence_attempts[currentEvidenceKey];
+
+          const evidenceAttempt = (metadata as any).evidence_attempts[currentEvidenceKey];
           evidenceAttempt.attempt_count += 1;
           evidenceAttempt.student_responses.push(studentResponse);
     
