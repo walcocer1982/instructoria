@@ -123,7 +123,6 @@ export async function POST(request: NextRequest) {
           error_details: processingError.message,
           session: recoveredSession,
           can_retry: true,
-          error_count: recoveredSession?.error_count || 0,
         }, { status: 500 });
       }
     }
