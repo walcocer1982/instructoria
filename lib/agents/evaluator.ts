@@ -156,9 +156,10 @@ function normalizeTextForEmbedding(text: string): string {
  */
 function getAdaptiveThresholds(momentId: string): { met: number; partial: number } {
   // THRESHOLD UNIFORME para TODOS los momentos
+  // v3.5.9: Sincronizado con Orchestrator (60)
   return {
-    met: 45,      // 45+ = evidencia cumplida
-    partial: 30   // 30-45 = parcial, <30 = faltante
+    met: 60,      // 60+ = evidencia cumplida (alineado con Orchestrator)
+    partial: 45   // 45-60 = parcial, <45 = faltante
   };
 }
 

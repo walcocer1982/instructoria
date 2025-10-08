@@ -1229,10 +1229,11 @@ export async function processStudentResponse(
     
         if (level === 'correct') {
           // CORRECT → Avanzar al siguiente momento
+          // v3.5.9: CONFIAMOS 100% en el Evaluator (threshold sincronizado = 60)
           console.log(`\n${'═'.repeat(80)}`);
-          console.log(`✅ EVALUATOR DICE: level='correct'`);
-          console.log(`   Threshold Evaluator: >= 45 (todas las evidencias pasaron)`);
-          console.log(`   concepts_identified: ${evaluatorResponse.concepts_identified.length}/${plan.evidences.length}`);
+          console.log(`✅ EVALUATOR DECIDE: level='correct'`);
+          console.log(`   Threshold: >= 60 (TODAS las evidencias pasaron)`);
+          console.log(`   Evidencias completadas: ${evaluatorResponse.concepts_identified.length}/${plan.evidences.length}`);
 
           console.log(`\n📋 EVIDENCIAS SEGÚN EVALUATOR:`);
           evaluatorResponse.evidence_scores.forEach((evScore: any, idx: number) => {
@@ -1242,7 +1243,7 @@ export async function processStudentResponse(
             console.log(`      - Método: ${evScore.method || 'N/A'}`);
           });
 
-          console.log(`\n🚀 DECISIÓN ORCHESTRATOR: Avanzar a siguiente momento`);
+          console.log(`\n🚀 ORCHESTRATOR EJECUTA: Avanzar a siguiente momento (sin re-evaluar)`);
           console.log(`${'═'.repeat(80)}`);
 
           progress.attempts = 0;
@@ -1260,9 +1261,10 @@ export async function processStudentResponse(
           }
     
         } else if (action === 'encourage' || action === 'guide') {
-          // PARTIAL o INCORRECT → Verificar límite de intentos v3.5.5
+          // PARTIAL o INCORRECT → Procesar evidencias individualmente
+          // v3.5.9: Solo entramos aquí si Evaluator dice que falta algo
           const MAX_ATTEMPTS = 3;
-          const SCORE_THRESHOLD = 60; // Evidencia aprobada si score >= 60
+          const SCORE_THRESHOLD = 60; // MISMO que Evaluator (sincronizado)
 
           // Get metadata object
           const metadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
