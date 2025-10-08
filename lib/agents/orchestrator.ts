@@ -755,10 +755,11 @@ export async function processStudentResponse(
       throw new Error('No se pudo obtener el progreso del momento');
     }
 
-      const lastQuestion = session.chatHistory
+      const chatHistory = Array.isArray(session.chatHistory) ? session.chatHistory : [];
+      const lastQuestion = chatHistory
         .slice()
         .reverse()
-        .find(msg => msg.message_type === 'QUESTIONING');
+        .find((msg: any) => msg.message_type === 'QUESTIONING');
     
       const currentQuestion = lastQuestion?.content || plan.guidingQuestion || plan.activity;
     
@@ -837,17 +838,18 @@ export async function processStudentResponse(
         });
     
         // Obtener TODOS los mensajes del momento actual para acumular evidencias
-        const firstQuestioningIndex = session.chatHistory.findIndex(
-          msg => msg.message_type === 'QUESTIONING' && msg.metadata?.momento_id === plan.momentId
+        const sessionChatHistory = Array.isArray(session.chatHistory) ? session.chatHistory : [];
+        const firstQuestioningIndex = sessionChatHistory.findIndex(
+          (msg: any) => msg.message_type === 'QUESTIONING' && msg.metadata?.momento_id === plan.momentId
         );
-    
+
         const currentMomentoMessages = firstQuestioningIndex >= 0
-          ? session.chatHistory.slice(firstQuestioningIndex)
-          : session.chatHistory.slice(-10);
-    
+          ? sessionChatHistory.slice(firstQuestioningIndex)
+          : sessionChatHistory.slice(-10);
+
         // DEBUG: Log del historial enviado al Evaluator (caso NO SÉ)
         console.log('\n🔍 [EVALUATOR DEBUG - NO SÉ] Momento:', plan.momentId);
-        console.log('📊 Total mensajes en sesión:', session.chatHistory.length);
+        console.log('📊 Total mensajes en sesión:', sessionChatHistory.length);
         console.log('📌 Índice primer QUESTIONING:', firstQuestioningIndex);
         console.log('📨 Mensajes enviados al Evaluator:', currentMomentoMessages.length);
     
@@ -911,7 +913,7 @@ export async function processStudentResponse(
           current_activity: plan.activity,
           current_question: currentQuestion, // Para redirect contextual
           question_type: message_type === 'question_brief' ? 'brief' : 'deep',
-          chat_history: session.chatHistory.slice(-3).map(msg => ({
+          chat_history: (Array.isArray(session.chatHistory) ? session.chatHistory : []).slice(-3).map((msg: any) => ({
             role: msg.role as 'user' | 'assistant',
             content: msg.content,
           })),
@@ -946,18 +948,19 @@ export async function processStudentResponse(
     
         // Obtener TODOS los mensajes del momento actual para acumular evidencias
         // Encuentra el índice del primer mensaje QUESTIONING de este momento
-        const firstQuestioningIndex = session.chatHistory.findIndex(
-          msg => msg.message_type === 'QUESTIONING' && msg.metadata?.momento_id === plan.momentId
+        const answerChatHistory = Array.isArray(session.chatHistory) ? session.chatHistory : [];
+        const firstQuestioningIndex = answerChatHistory.findIndex(
+          (msg: any) => msg.message_type === 'QUESTIONING' && msg.metadata?.momento_id === plan.momentId
         );
-    
+
         // Si encontramos el inicio del momento, toma TODOS los mensajes desde ahí
         const currentMomentoMessages = firstQuestioningIndex >= 0
-          ? session.chatHistory.slice(firstQuestioningIndex)
-          : session.chatHistory.slice(-10); // Fallback: últimos 10 mensajes
-    
+          ? answerChatHistory.slice(firstQuestioningIndex)
+          : answerChatHistory.slice(-10); // Fallback: últimos 10 mensajes
+
         // DEBUG: Log del historial enviado al Evaluator
         console.log('\n🔍 [EVALUATOR DEBUG] Momento:', plan.momentId);
-        console.log('📊 Total mensajes en sesión:', session.chatHistory.length);
+        console.log('📊 Total mensajes en sesión:', answerChatHistory.length);
         console.log('📌 Índice primer QUESTIONING:', firstQuestioningIndex);
         console.log('📨 Mensajes enviados al Evaluator:', currentMomentoMessages.length);
         console.log('📝 Contenido enviado:');
