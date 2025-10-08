@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionById, updateSession } from '@/lib/sessions';
+import { getSessionById, updateSession } from '@/lib/sessions-prisma';
 import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
@@ -28,37 +28,45 @@ export async function POST(request: NextRequest) {
     }
 
     // Obtener último mensaje del asistente (última pregunta)
-    const lastAssistantMessage = session.chat_history
-      .filter(m => m.role === 'assistant')
+    const chatHistory = Array.isArray(session.chatHistory) ? session.chatHistory : [];
+    const lastAssistantMessage = chatHistory
+      .filter((m: any) => m.role === 'assistant')
       .pop();
 
     const lastQuestion = lastAssistantMessage?.content || 'Sin pregunta previa';
 
     // Obtener progreso actual
-    const currentProgress = session.momento_progress.find(
-      p => p.momento_id === session.current_momento
+    const metadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
+    const momentoProgress = (metadata as any).momento_progress || [];
+    const currentProgress = momentoProgress.find(
+      (p: any) => p.momento_id === session.currentMomento
     );
 
     // Crear reporte
     const report = {
       id: `report_${crypto.randomUUID()}`,
       timestamp: new Date().toISOString(),
-      momento_id: session.current_momento,
+      momento_id: session.currentMomento,
       student_message: problemDescription,
       context: {
         last_question: lastQuestion,
-        chat_history_length: session.chat_history.length,
-        error_count: session.error_count || 0,
+        chat_history_length: chatHistory.length,
+        error_count: (metadata as any).error_count || 0,
         attempts: currentProgress?.attempts || 0,
       },
       status: 'pending' as const,
     };
 
-    // Agregar reporte a la sesión
-    const student_reports = session.student_reports || [];
-    student_reports.push(report);
+    // Agregar reporte a la sesión (student_reports está en metadata.studentReports en Prisma)
+    const studentReports = Array.isArray(session.studentReports) ? session.studentReports : [];
+    studentReports.push(report);
 
-    await updateSession(sessionId, { student_reports });
+    await updateSession(sessionId, {
+      progress: {
+        ...metadata,
+        studentReports,
+      },
+    });
 
     return NextResponse.json({
       success: true,

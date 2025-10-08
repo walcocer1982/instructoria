@@ -6,8 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { validateToken } from '@/lib/auth';
-import { getSessionById, updateSession } from '@/lib/sessions';
-import { getLessonById } from '@/lib/lessons';
+import { getSessionById, updateSession } from '@/lib/sessions-prisma';
+import { getLessonById } from '@/lib/lessons-prisma';
 // import { runEvaluatorAgent, EvaluatorInput } from '@/lib/agents/evaluator'; // TODO v3.0: Crear evaluación final separada
 
 /**
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que la sesión pertenece al estudiante
-    if (session.student_id !== user.userId) {
+    if (session.userId !== user.userId) {
       return NextResponse.json(
         { success: false, error: 'No autorizado' },
         { status: 403 }
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Obtener lección
-    const lesson = await getLessonById(session.lesson_id);
+    const lesson = await getLessonById(session.lessonId);
     if (!lesson) {
       return NextResponse.json(
         { success: false, error: 'Lección no encontrada' },
@@ -88,17 +88,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Preparar evidencias del estudiante
-    const responses = session.chat_history
-      .filter(msg => msg.role === 'user')
-      .map((userMsg, index) => {
-        const questionMsg = session.chat_history
-          .slice(0, session.chat_history.indexOf(userMsg))
+    const chatHistory = Array.isArray(session.chatHistory) ? session.chatHistory : [];
+    const responses = chatHistory
+      .filter((msg: any) => msg.role === 'user')
+      .map((userMsg: any, index: number) => {
+        const questionMsg = chatHistory
+          .slice(0, chatHistory.indexOf(userMsg))
           .reverse()
-          .find(msg => msg.message_type === 'QUESTIONING');
+          .find((msg: any) => msg.message_type === 'QUESTIONING');
 
-        const evaluationMsg = session.chat_history
-          .slice(session.chat_history.indexOf(userMsg) + 1)
-          .find(msg => msg.message_type === 'EVALUATING' && msg.metadata?.evaluation);
+        const evaluationMsg = chatHistory
+          .slice(chatHistory.indexOf(userMsg) + 1)
+          .find((msg: any) => msg.message_type === 'EVALUATING' && msg.metadata?.evaluation);
 
         // Extraer el nivel de evaluación de forma segura
         let evaluationLevel: 'correct' | 'partial' | 'incorrect' = 'incorrect';

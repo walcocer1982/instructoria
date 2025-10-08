@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionById, updateSession } from '@/lib/sessions';
+import { getSessionById, updateSession } from '@/lib/sessions-prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,9 +26,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Obtener metadata
+    const metadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
+    const momentoProgress = (metadata as any).momento_progress || [];
+
     // Encontrar el índice del momento target
-    const targetIndex = session.momento_progress.findIndex(
-      p => p.momento_id === momentoId
+    const targetIndex = momentoProgress.findIndex(
+      (p: any) => p.momento_id === momentoId
     );
 
     if (targetIndex === -1) {
@@ -39,33 +43,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Resetear el progreso del momento target
-    const targetProgress = session.momento_progress[targetIndex];
+    const targetProgress = momentoProgress[targetIndex];
     targetProgress.attempts = 0;
     targetProgress.hints_used = 0;
     targetProgress.completed_at = undefined;
 
     // Eliminar progreso de momentos posteriores
-    const resetProgress = session.momento_progress.slice(0, targetIndex + 1);
+    const resetProgress = momentoProgress.slice(0, targetIndex + 1);
 
     // Encontrar el último mensaje del asistente antes de este momento
     // para conservar el historial hasta ese punto
+    const chatHistory = Array.isArray(session.chatHistory) ? session.chatHistory : [];
     const targetMomentStart = targetProgress.started_at;
-    const chatHistoryIndex = session.chat_history.findIndex(
-      msg => new Date(msg.timestamp) >= new Date(targetMomentStart)
+    const chatHistoryIndex = chatHistory.findIndex(
+      (msg: any) => new Date(msg.timestamp) >= new Date(targetMomentStart)
     );
 
     const resetChatHistory = chatHistoryIndex >= 0
-      ? session.chat_history.slice(0, chatHistoryIndex)
-      : session.chat_history;
+      ? chatHistory.slice(0, chatHistoryIndex)
+      : chatHistory;
 
     // Resetear evidence_attempts relacionados al momento
-    const resetEvidenceAttempts: typeof session.evidence_attempts = {};
-    if (session.evidence_attempts) {
-      Object.entries(session.evidence_attempts).forEach(([key, value]) => {
+    const evidenceAttempts = (metadata as any).evidence_attempts || {};
+    const resetEvidenceAttempts: any = {};
+    if (evidenceAttempts) {
+      Object.entries(evidenceAttempts).forEach(([key, value]) => {
         // Solo mantener evidencias de momentos anteriores
         // (asumiendo que las keys no tienen el momento, esto puede necesitar ajuste)
         resetEvidenceAttempts[key] = {
-          ...value,
+          ...(value as any),
           attempt_count: 0,
           student_responses: [],
           status: 'pending',
@@ -75,14 +81,17 @@ export async function POST(request: NextRequest) {
 
     // Actualizar sesión
     await updateSession(sessionId, {
-      current_momento: momentoId,
+      current_moment: momentoId,
       current_state: 'INTRODUCING',
-      momento_progress: resetProgress,
       chat_history: resetChatHistory,
-      evidence_attempts: resetEvidenceAttempts,
-      error_count: 0,
-      last_error: undefined,
-      is_recovering: false,
+      progress: {
+        ...metadata,
+        momento_progress: resetProgress,
+        evidence_attempts: resetEvidenceAttempts,
+        error_count: 0,
+        last_error: undefined,
+        is_recovering: false,
+      },
     });
 
     return NextResponse.json({
