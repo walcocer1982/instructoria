@@ -544,7 +544,7 @@ async function transitionToNextMoment(session: StudentSession, lesson: any) {
 
       // Marcar sub-momento actual como completado
       ensureMomentProgress(session, session.currentMomento);
-      const currentProgress = (session.metadata as any)?.momento_progress?.find(p => p.momento_id === session.currentMomento);
+      const currentProgress = (session.metadata as any)?.momento_progress?.find((p: any) => p.momento_id === session.currentMomento);
       if (currentProgress && !currentProgress.completed_at) {
         currentProgress.completed_at = now;
       }
@@ -585,7 +585,7 @@ async function transitionToNextMoment(session: StudentSession, lesson: any) {
 
   // Marcar momento base actual como completado
   ensureMomentProgress(session, baseMoment);
-  const currentProgress = (session.metadata as any)?.momento_progress?.find(p => p.momento_id === baseMoment);
+  const currentProgress = (session.metadata as any)?.momento_progress?.find((p: any) => p.momento_id === baseMoment);
   if (currentProgress && !currentProgress.completed_at) {
     currentProgress.completed_at = now;
   }
