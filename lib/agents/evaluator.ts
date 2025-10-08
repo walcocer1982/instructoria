@@ -538,8 +538,20 @@ export async function runEvaluatorAgentWithEmbeddings(input: EvaluatorInput): Pr
     .join(' ') || '';
   const fullStudentContext = allStudentResponses + ' ' + validatedInput.student_answer;
 
-  const feedbackPrompt = `
-Eres un tutor pedagógico. Genera SOLO feedback de reconocimiento (SIN preguntas).
+  // 8️⃣ GENERAR FEEDBACK + HINTS EN UNA SOLA LLAMADA (v3.6.1 - Optimización)
+  let missingEvidenceFeedback = undefined;
+  let feedbackMessage = '';
+
+  // Determinar si necesitamos hints
+  const needsHints = missing_concepts.length > 0 && (action === 'encourage' || action === 'guide');
+
+  if (needsHints) {
+    // CASO 1: Feedback + Hints en una sola llamada
+    const firstMissingEvidence = missing_concepts[0];
+    const evidenceScore = allScores.find(s => s.evidence === firstMissingEvidence);
+
+    const combinedPrompt = `
+Eres un tutor pedagógico experto. Genera feedback de reconocimiento Y preguntas graduales para una evidencia pendiente.
 
 **Contexto:**
 - Respuestas del estudiante (acumuladas): "${fullStudentContext.substring(0, 500)}"
@@ -549,8 +561,124 @@ Eres un tutor pedagógico. Genera SOLO feedback de reconocimiento (SIN preguntas
 **Evidencias cumplidas (score >80):**
 ${concepts_identified.map(ev => `✅ ${ev}`).join('\n') || 'Ninguna'}
 
-**Evidencias faltantes (score <=80):**
-${missing_concepts.map(ev => `❌ ${ev}`).join('\n') || 'Ninguna'}
+**Evidencia pendiente (score <=80):**
+- Evidencia: "${firstMissingEvidence}"
+- Score actual: ${evidenceScore?.score || 0}/100
+- Razonamiento: ${evidenceScore?.reasoning || 'N/A'}
+
+**Tu tarea tiene 2 partes:**
+
+**PARTE 1: message** (feedback de reconocimiento, 2-3 oraciones):
+
+${action === 'encourage' ? `
+- Reconoce TODOS los elementos específicos que SÍ mencionó en su respuesta completa
+- Si identificó múltiples elementos, menciónalos TODOS (no solo uno)
+- Motiva a continuar
+- NO menciones lo que falta
+- TERMINA CON PUNTO, NO con pregunta
+` : ''}
+
+${action === 'guide' ? `
+- Reconoce el esfuerzo
+- Da una pista suave que ayude a reflexionar
+- Breve, 1-2 oraciones
+` : ''}
+
+**PARTE 2: missing_evidence_feedback** (análisis + 3 preguntas graduales):
+
+**1. what_is_good** (1 oración):
+   - Reconoce QUÉ mencionó correctamente el estudiante
+   - Sé específico, usa sus palabras
+
+**2. what_is_missing** (1 oración):
+   - Indica QUÉ le falta para completar la evidencia
+   - Sin dar la respuesta directa
+
+**3. hint_level_1** - Pista LEVE (1 pregunta):
+   - Solo reorienta, NO da contexto adicional
+   - Hace que el estudiante piense en lo que falta
+
+**4. hint_level_2** - Pista MEDIA (1 pregunta):
+   - Da más contexto o ejemplos sin revelar la respuesta
+   - Menciona categorías o tipos
+
+**5. hint_level_3** - Pista FUERTE (1 pregunta reformulada):
+   - Casi da la respuesta, muy explícita
+   - Reformula la evidencia como pregunta muy simple
+
+**IMPORTANTE:**
+- Todas las preguntas deben ser genéricas (funcionar para cualquier tema)
+- NO uses términos hardcodeados de seguridad si la evidencia es de otro tema
+- Adapta el lenguaje al tema de la evidencia
+- Las preguntas deben ser progresivamente más explícitas
+
+Responde en JSON con "message" y "missing_evidence_feedback" (con los 5 campos internos).
+`;
+
+    const combinedSchema = z.object({
+      message: z.string(),
+      missing_evidence_feedback: z.object({
+        evidence: z.string(),
+        what_is_good: z.string(),
+        what_is_missing: z.string(),
+        hint_level_1: z.string(),
+        hint_level_2: z.string(),
+        hint_level_3: z.string(),
+      }),
+    });
+
+    const combinedJsonSchema = {
+      name: 'combined_feedback_output',
+      schema: zodToJsonSchema(combinedSchema, { target: 'openAi' }),
+      strict: true,
+    };
+
+    try {
+      const combinedResult = await llm.chatStructured(
+        [
+          { role: 'system', content: buildSystemMessage('evaluator') },
+          { role: 'user', content: combinedPrompt },
+        ],
+        combinedJsonSchema,
+        { model: 'gpt-4o-mini', temperature: 0.65 } // Promedio entre 0.7 y 0.6
+      );
+
+      const parsed = combinedSchema.parse(combinedResult);
+      feedbackMessage = parsed.message;
+      missingEvidenceFeedback = {
+        ...parsed.missing_evidence_feedback,
+        evidence: firstMissingEvidence, // Asegurar evidencia correcta
+      };
+
+      console.log('\n📝 [FEEDBACK + HINTS GENERADOS EN 1 LLAMADA - v3.6.1]');
+      console.log(`   Feedback: "${feedbackMessage}"`);
+      console.log(`   Evidencia: "${firstMissingEvidence}"`);
+      console.log(`   ✅ Lo bueno: "${missingEvidenceFeedback.what_is_good}"`);
+      console.log(`   ❌ Falta: "${missingEvidenceFeedback.what_is_missing}"`);
+      console.log(`   💡 Hint 1 (leve): "${missingEvidenceFeedback.hint_level_1}"`);
+      console.log(`   💡 Hint 2 (medio): "${missingEvidenceFeedback.hint_level_2}"`);
+      console.log(`   💡 Hint 3 (fuerte): "${missingEvidenceFeedback.hint_level_3}"`);
+
+    } catch (error) {
+      console.error('Error generando feedback+hints combinados:', error);
+      // Fallback: solo mensaje genérico
+      feedbackMessage = action === 'encourage'
+        ? '¡Buen esfuerzo! Continúa reflexionando.'
+        : 'Sigue intentando, vas por buen camino.';
+    }
+
+  } else {
+    // CASO 2: Solo feedback (sin hints) - praise o actions sin evidencias pendientes
+    const feedbackPrompt = `
+Eres un tutor pedagógico. Genera SOLO feedback de reconocimiento (SIN preguntas).
+
+**Contexto:**
+- Respuestas del estudiante (acumuladas): "${fullStudentContext.substring(0, 500)}"
+- Nivel: ${level}
+- Acción: ${action}
+
+**Evidencias cumplidas (score >80):**
+${concepts_identified.map(ev => `✅ ${ev}`).join('\n') || 'Ninguna'}
 
 **Tu tarea:**
 
@@ -562,10 +690,8 @@ Genera un ELOGIO específico y breve (1-2 oraciones):
 
 ${action === 'encourage' ? `
 Genera RECONOCIMIENTO de lo bueno + motivación breve (2-3 oraciones):
-- Reconoce TODOS los elementos específicos que SÍ mencionó en su respuesta completa
-- Si identificó múltiples elementos, menciónalos TODOS (no solo uno)
+- Reconoce TODOS los elementos específicos que SÍ mencionó
 - Motiva a continuar
-- NO menciones lo que falta
 - TERMINA CON PUNTO, NO con pregunta
 ` : ''}
 
@@ -586,121 +712,27 @@ Responde en JSON:
 }
 `;
 
-  const feedbackSchema = z.object({
-    message: z.string(),
-  });
-
-  const feedbackJsonSchema = {
-    name: 'feedback_output',
-    schema: zodToJsonSchema(feedbackSchema, { target: 'openAi' }),
-    strict: true,
-  };
-
-  const feedbackResult = await llm.chatStructured(
-    [
-      { role: 'system', content: buildSystemMessage('evaluator') },
-      { role: 'user', content: feedbackPrompt },
-    ],
-    feedbackJsonSchema,
-    { model: 'gpt-4o-mini', temperature: 0.7 }
-  );
-
-  const feedback = feedbackSchema.parse(feedbackResult);
-
-  // 8.5️⃣ GENERAR FEEDBACK Y HINTS GRADUALES PARA EVIDENCIA PENDIENTE (v3.6.0)
-  let missingEvidenceFeedback = undefined;
-
-  if (missing_concepts.length > 0 && (action === 'encourage' || action === 'guide')) {
-    const firstMissingEvidence = missing_concepts[0];
-    const evidenceScore = allScores.find(s => s.evidence === firstMissingEvidence);
-
-    const hintPrompt = `
-Eres un tutor pedagógico experto. El estudiante está trabajando en una evidencia específica pero no la ha completado.
-
-**Contexto:**
-- Evidencia esperada: "${firstMissingEvidence}"
-- Respuesta del estudiante: "${fullStudentContext.substring(0, 500)}"
-- Score actual: ${evidenceScore?.score || 0}/100
-- Razonamiento: ${evidenceScore?.reasoning || 'N/A'}
-
-**Tu tarea:**
-
-Genera un análisis pedagógico y 3 niveles de preguntas graduales (sin revelar la respuesta completa).
-
-**1. what_is_good** (1 oración):
-   - Reconoce QUÉ mencionó correctamente el estudiante
-   - Sé específico, usa sus palabras
-   - Ejemplo: "Identificaste que la altura es un peligro"
-
-**2. what_is_missing** (1 oración):
-   - Indica QUÉ le falta para completar la evidencia
-   - Sin dar la respuesta directa
-   - Ejemplo: "Falta explicar POR QUÉ es peligroso y QUÉ consecuencias específicas puede haber"
-
-**3. hint_level_1** - Pista LEVE (1 pregunta):
-   - Solo reorienta, NO da contexto adicional
-   - Hace que el estudiante piense en lo que falta
-   - Ejemplo: "¿Qué consecuencias específicas puede tener trabajar a esa altura?"
-
-**4. hint_level_2** - Pista MEDIA (1 pregunta):
-   - Da más contexto o ejemplos sin revelar la respuesta
-   - Menciona categorías o tipos
-   - Ejemplo: "Cuando alguien cae desde 5 metros, ¿qué tipos de lesiones puede sufrir? Piensa en fracturas, traumatismos..."
-
-**5. hint_level_3** - Pista FUERTE (1 pregunta reformulada):
-   - Casi da la respuesta, muy explícita
-   - Reformula la evidencia como pregunta muy simple
-   - Ejemplo: "Si Juan cae desde 5 metros sin protección, ¿qué lesiones graves (fracturas, traumatismos, etc.) puede sufrir y por qué esto puede ser mortal?"
-
-**IMPORTANTE:**
-- Todas las preguntas deben ser genéricas (funcionar para cualquier tema)
-- NO uses términos hardcodeados de seguridad si la evidencia es de otro tema
-- Adapta el lenguaje al tema de la evidencia
-- Las preguntas deben ser progresivamente más explícitas
-
-Responde en JSON con los 5 campos.
-`;
-
-    const hintSchema = z.object({
-      evidence: z.string(),
-      what_is_good: z.string(),
-      what_is_missing: z.string(),
-      hint_level_1: z.string(),
-      hint_level_2: z.string(),
-      hint_level_3: z.string(),
+    const feedbackSchema = z.object({
+      message: z.string(),
     });
 
-    const hintJsonSchema = {
-      name: 'hint_output',
-      schema: zodToJsonSchema(hintSchema, { target: 'openAi' }),
+    const feedbackJsonSchema = {
+      name: 'feedback_output',
+      schema: zodToJsonSchema(feedbackSchema, { target: 'openAi' }),
       strict: true,
     };
 
-    try {
-      const hintResult = await llm.chatStructured(
-        [
-          { role: 'system', content: buildSystemMessage('evaluator') },
-          { role: 'user', content: hintPrompt },
-        ],
-        hintJsonSchema,
-        { model: 'gpt-4o-mini', temperature: 0.6 }
-      );
+    const feedbackResult = await llm.chatStructured(
+      [
+        { role: 'system', content: buildSystemMessage('evaluator') },
+        { role: 'user', content: feedbackPrompt },
+      ],
+      feedbackJsonSchema,
+      { model: 'gpt-4o-mini', temperature: 0.7 }
+    );
 
-      missingEvidenceFeedback = hintSchema.parse(hintResult);
-      missingEvidenceFeedback.evidence = firstMissingEvidence; // Asegurar que tiene la evidencia correcta
-
-      console.log('\n📝 [HINTS GRADUALES GENERADOS]');
-      console.log(`   Evidencia: "${firstMissingEvidence}"`);
-      console.log(`   ✅ Lo bueno: "${missingEvidenceFeedback.what_is_good}"`);
-      console.log(`   ❌ Falta: "${missingEvidenceFeedback.what_is_missing}"`);
-      console.log(`   💡 Hint 1 (leve): "${missingEvidenceFeedback.hint_level_1}"`);
-      console.log(`   💡 Hint 2 (medio): "${missingEvidenceFeedback.hint_level_2}"`);
-      console.log(`   💡 Hint 3 (fuerte): "${missingEvidenceFeedback.hint_level_3}"`);
-
-    } catch (error) {
-      console.error('Error generando hints:', error);
-      // Continuar sin hints si falla
-    }
+    const feedback = feedbackSchema.parse(feedbackResult);
+    feedbackMessage = feedback.message;
   }
 
   // 9️⃣ RETORNAR OUTPUT COMPLETO
@@ -711,7 +743,7 @@ Responde en JSON con los 5 campos.
     evidence_scores: allScores,
     overall_score,
     action,
-    message: feedback.message,
+    message: feedbackMessage,
     missing_evidence_feedback: missingEvidenceFeedback,
   };
 
