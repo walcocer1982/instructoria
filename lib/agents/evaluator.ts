@@ -77,6 +77,16 @@ export const EvaluatorOutputSchema = z.object({
   ]).describe('Tipo de feedback pedagógico'),
 
   message: z.string().describe('Mensaje de feedback para el estudiante (SIN preguntas - solo reconocimiento/elogio/guía)'),
+
+  // NUEVO v3.6.0: Feedback y pregunta específica por evidencia pendiente
+  missing_evidence_feedback: z.object({
+    evidence: z.string().describe('Evidencia específica que falta o está incompleta'),
+    what_is_good: z.string().describe('Qué mencionó correctamente el estudiante (reconocimiento positivo)'),
+    what_is_missing: z.string().describe('Qué le falta específicamente para completar esta evidencia'),
+    hint_level_1: z.string().describe('Pregunta con pista LEVE - solo reorienta sin dar respuesta'),
+    hint_level_2: z.string().describe('Pregunta con pista MEDIA - da más contexto o ejemplos'),
+    hint_level_3: z.string().describe('Pregunta con pista FUERTE - casi da la respuesta, reformula de forma muy simple'),
+  }).optional().describe('Feedback detallado para la primera evidencia pendiente. Solo generar si hay evidencias faltantes.'),
 });
 
 export type EvaluatorOutput = z.infer<typeof EvaluatorOutputSchema>;
@@ -597,6 +607,102 @@ Responde en JSON:
 
   const feedback = feedbackSchema.parse(feedbackResult);
 
+  // 8.5️⃣ GENERAR FEEDBACK Y HINTS GRADUALES PARA EVIDENCIA PENDIENTE (v3.6.0)
+  let missingEvidenceFeedback = undefined;
+
+  if (missing_concepts.length > 0 && (action === 'encourage' || action === 'guide')) {
+    const firstMissingEvidence = missing_concepts[0];
+    const evidenceScore = allScores.find(s => s.evidence === firstMissingEvidence);
+
+    const hintPrompt = `
+Eres un tutor pedagógico experto. El estudiante está trabajando en una evidencia específica pero no la ha completado.
+
+**Contexto:**
+- Evidencia esperada: "${firstMissingEvidence}"
+- Respuesta del estudiante: "${fullStudentContext.substring(0, 500)}"
+- Score actual: ${evidenceScore?.score || 0}/100
+- Razonamiento: ${evidenceScore?.reasoning || 'N/A'}
+
+**Tu tarea:**
+
+Genera un análisis pedagógico y 3 niveles de preguntas graduales (sin revelar la respuesta completa).
+
+**1. what_is_good** (1 oración):
+   - Reconoce QUÉ mencionó correctamente el estudiante
+   - Sé específico, usa sus palabras
+   - Ejemplo: "Identificaste que la altura es un peligro"
+
+**2. what_is_missing** (1 oración):
+   - Indica QUÉ le falta para completar la evidencia
+   - Sin dar la respuesta directa
+   - Ejemplo: "Falta explicar POR QUÉ es peligroso y QUÉ consecuencias específicas puede haber"
+
+**3. hint_level_1** - Pista LEVE (1 pregunta):
+   - Solo reorienta, NO da contexto adicional
+   - Hace que el estudiante piense en lo que falta
+   - Ejemplo: "¿Qué consecuencias específicas puede tener trabajar a esa altura?"
+
+**4. hint_level_2** - Pista MEDIA (1 pregunta):
+   - Da más contexto o ejemplos sin revelar la respuesta
+   - Menciona categorías o tipos
+   - Ejemplo: "Cuando alguien cae desde 5 metros, ¿qué tipos de lesiones puede sufrir? Piensa en fracturas, traumatismos..."
+
+**5. hint_level_3** - Pista FUERTE (1 pregunta reformulada):
+   - Casi da la respuesta, muy explícita
+   - Reformula la evidencia como pregunta muy simple
+   - Ejemplo: "Si Juan cae desde 5 metros sin protección, ¿qué lesiones graves (fracturas, traumatismos, etc.) puede sufrir y por qué esto puede ser mortal?"
+
+**IMPORTANTE:**
+- Todas las preguntas deben ser genéricas (funcionar para cualquier tema)
+- NO uses términos hardcodeados de seguridad si la evidencia es de otro tema
+- Adapta el lenguaje al tema de la evidencia
+- Las preguntas deben ser progresivamente más explícitas
+
+Responde en JSON con los 5 campos.
+`;
+
+    const hintSchema = z.object({
+      evidence: z.string(),
+      what_is_good: z.string(),
+      what_is_missing: z.string(),
+      hint_level_1: z.string(),
+      hint_level_2: z.string(),
+      hint_level_3: z.string(),
+    });
+
+    const hintJsonSchema = {
+      name: 'hint_output',
+      schema: zodToJsonSchema(hintSchema, { target: 'openAi' }),
+      strict: true,
+    };
+
+    try {
+      const hintResult = await llm.chatStructured(
+        [
+          { role: 'system', content: buildSystemMessage('evaluator') },
+          { role: 'user', content: hintPrompt },
+        ],
+        hintJsonSchema,
+        { model: 'gpt-4o-mini', temperature: 0.6 }
+      );
+
+      missingEvidenceFeedback = hintSchema.parse(hintResult);
+      missingEvidenceFeedback.evidence = firstMissingEvidence; // Asegurar que tiene la evidencia correcta
+
+      console.log('\n📝 [HINTS GRADUALES GENERADOS]');
+      console.log(`   Evidencia: "${firstMissingEvidence}"`);
+      console.log(`   ✅ Lo bueno: "${missingEvidenceFeedback.what_is_good}"`);
+      console.log(`   ❌ Falta: "${missingEvidenceFeedback.what_is_missing}"`);
+      console.log(`   💡 Hint 1 (leve): "${missingEvidenceFeedback.hint_level_1}"`);
+      console.log(`   💡 Hint 2 (medio): "${missingEvidenceFeedback.hint_level_2}"`);
+      console.log(`   💡 Hint 3 (fuerte): "${missingEvidenceFeedback.hint_level_3}"`);
+
+    } catch (error) {
+      console.error('Error generando hints:', error);
+      // Continuar sin hints si falla
+    }
+  }
+
   // 9️⃣ RETORNAR OUTPUT COMPLETO
   const output: EvaluatorOutput = {
     level,
@@ -606,6 +712,7 @@ Responde en JSON:
     overall_score,
     action,
     message: feedback.message,
+    missing_evidence_feedback: missingEvidenceFeedback,
   };
 
   console.log('\n✅ [EVALUATOR OUTPUT]');

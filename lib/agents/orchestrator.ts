@@ -1476,6 +1476,7 @@ export async function processStudentResponse(
     
           } else {
             // ❌ Todavía hay intentos → Seguir preguntando con ayuda gradual
+            // v3.6.0: Usar hints del Evaluator (específicos por evidencia)
             console.log(`   🔄 Generando nueva pregunta con ayuda nivel ${evidenceAttempt.attempt_count}`);
 
             await updateSession(session.id, {
@@ -1486,14 +1487,38 @@ export async function processStudentResponse(
               },
             });
 
-            // NUEVO v3.5.5: Generar pregunta solo para evidencias pendientes
-            const pendingEvidencesList = pendingEvidences.map((ev: any) => ev.evidence);
+            // v3.6.0: Usar hints graduales del Evaluator
+            let nextQuestion = '';
 
-            const nextQuestion = generateNextQuestionFromMissingEvidence(
-              pendingEvidencesList,
-              plan.guidingQuestion,
-              evidenceAttempt.attempt_count // Ayuda gradual según intento de ESTA evidencia
-            );
+            if (evaluatorResponse.missing_evidence_feedback) {
+              const hints = evaluatorResponse.missing_evidence_feedback;
+
+              // Seleccionar hint según número de intento
+              if (evidenceAttempt.attempt_count === 1) {
+                nextQuestion = hints.hint_level_1; // Pista leve
+                console.log(`   💡 Usando hint LEVE (nivel 1)`);
+              } else if (evidenceAttempt.attempt_count === 2) {
+                nextQuestion = hints.hint_level_2; // Pista media
+                console.log(`   💡 Usando hint MEDIO (nivel 2)`);
+              } else {
+                nextQuestion = hints.hint_level_3; // Pista fuerte
+                console.log(`   💡 Usando hint FUERTE (nivel 3)`);
+              }
+
+              console.log(`   ✅ Lo bueno: "${hints.what_is_good}"`);
+              console.log(`   ❌ Falta: "${hints.what_is_missing}"`);
+              console.log(`   ❓ Pregunta: "${nextQuestion}"`);
+
+            } else {
+              // Fallback: Si Evaluator no generó hints, usar método antiguo
+              console.log(`   ⚠️  No hay hints del Evaluator, usando fallback`);
+              const pendingEvidencesList = pendingEvidences.map((ev: any) => ev.evidence);
+              nextQuestion = generateNextQuestionFromMissingEvidence(
+                pendingEvidencesList,
+                plan.guidingQuestion,
+                evidenceAttempt.attempt_count
+              ) || '';
+            }
 
             if (nextQuestion) {
               await addChatMessage(session.id, {
@@ -1502,7 +1527,8 @@ export async function processStudentResponse(
                 message_type: 'QUESTIONING',
                 metadata: {
                   momento_id: plan.momentId,
-                  source: 'orchestrator_followup_question',
+                  source: 'evaluator_graduated_hint',
+                  hint_level: evidenceAttempt.attempt_count,
                 },
               });
             }
