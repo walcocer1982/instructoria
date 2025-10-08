@@ -73,9 +73,10 @@ function generateNextQuestionFromMissingEvidence(
   // Pregunta genérica basada en la evidencia
   return `¿Podrías decirme más sobre: ${firstMissing.toLowerCase()}?${hint}`;
 }
-import { getSessionById, addChatMessage, updateSession, calculateFlexibilityBonus } from '../sessions';
-import type { StudentSession, MomentoProgress } from '../sessions';
-import { getLessonById } from '../lessons';
+import { getSessionById, addChatMessage, updateSession } from '../sessions-prisma';
+// TODO: calculateFlexibilityBonus needs to be migrated or removed
+const calculateFlexibilityBonus = () => 0; // Temporary placeholder
+import { getLessonById } from '../lessons-prisma';
 import { filterImagesByMoment } from '../llm';
 import { replaceConceptPlaceholders } from '../chatPlaceholders';
 import { getNextMoment } from '../chatStateMachine';
@@ -103,10 +104,10 @@ import { buildSystemMessage } from '@/lib/promptConstants';
  */
 async function saveCheckpoint(session: StudentSession): Promise<void> {
   const checkpoint = {
-    state: session.current_state,
-    momento_id: session.current_momento,
+    state: session.currentState,
+    momento_id: session.currentMomento,
     timestamp: new Date().toISOString(),
-    chat_history_length: session.chat_history.length,
+    chat_history_length: session.chatHistory.length,
     momento_progress: JSON.parse(JSON.stringify(session.momento_progress || [])),
     evidence_attempts: session.evidence_attempts ? JSON.parse(JSON.stringify(session.evidence_attempts)) : undefined,
   };
@@ -142,7 +143,7 @@ async function rollbackToCheckpoint(sessionId: string, errorMessage: string, err
   await updateSession(sessionId, {
     current_state: checkpoint.state,
     current_momento: checkpoint.momento_id,
-    chat_history: session.chat_history.slice(0, checkpoint.chat_history_length),
+    chat_history: session.chatHistory.slice(0, checkpoint.chat_history_length),
     momento_progress: checkpoint.momento_progress,
     evidence_attempts: checkpoint.evidence_attempts,
     error_count: (session.error_count || 0) + 1,
@@ -493,7 +494,7 @@ async function sendContextAndQuestion(
  * ACTUALIZADO v2.4.0: Soporta sub-momentos (M2.1, M2.2, etc.)
  */
 async function transitionToNextMoment(session: StudentSession, lesson: any) {
-  const { baseMoment, subIndex } = parseMomentId(session.current_momento);
+  const { baseMoment, subIndex } = parseMomentId(session.currentMomento);
   const now = new Date().toISOString();
 
   // Obtener plan del momento base actual
@@ -513,8 +514,8 @@ async function transitionToNextMoment(session: StudentSession, lesson: any) {
       }
 
       // Marcar sub-momento actual como completado
-      ensureMomentProgress(session, session.current_momento);
-      const currentProgress = session.momento_progress?.find(p => p.momento_id === session.current_momento);
+      ensureMomentProgress(session, session.currentMomento);
+      const currentProgress = session.momento_progress?.find(p => p.momento_id === session.currentMomento);
       if (currentProgress && !currentProgress.completed_at) {
         currentProgress.completed_at = now;
       }
@@ -639,7 +640,7 @@ export async function initializeSession(sessionId: string): Promise<void> {
   const session = await getSessionById(sessionId);
   if (!session) throw new Error('Sesion no encontrada');
 
-  const lesson = await getLessonById(session.lesson_id);
+  const lesson = await getLessonById(session.lessonId);
   if (!lesson) throw new Error('Leccion no encontrada');
 
   const validation = validateLessonPlanStructure(lesson);
@@ -647,10 +648,10 @@ export async function initializeSession(sessionId: string): Promise<void> {
     console.warn('[initializeSession] Lesson plan issues:', validation.issues);
   }
 
-  const plan = getMomentPlan(lesson, session.current_momento);
+  const plan = getMomentPlan(lesson, session.currentMomento);
 
   // M0: Dos mensajes separados
-  if (session.current_momento === 'M0') {
+  if (session.currentMomento === 'M0') {
     // 1. Mensaje de bienvenida vía LLM
     await generateWelcomeMessageViaLLM(session, lesson);
 
@@ -685,11 +686,11 @@ export async function processStudentResponse(
   let session = await getSessionById(sessionId);
   if (!session) throw new Error('Sesion no encontrada');
 
-  if (session.current_state !== 'WAITING_RESPONSE') {
+  if (session.currentState !== 'WAITING_RESPONSE') {
     throw new Error('No se esperaba una respuesta en este momento');
   }
 
-  const lesson = await getLessonById(session.lesson_id);
+  const lesson = await getLessonById(session.lessonId);
   if (!lesson) throw new Error('Leccion no encontrada');
 
   // 💾 NUEVO v4.0: Guardar checkpoint ANTES de procesar
@@ -703,14 +704,14 @@ export async function processStudentResponse(
       message_type: 'RESPONSE',
     });
 
-    const plan = getMomentPlan(lesson, session.current_momento);
+    const plan = getMomentPlan(lesson, session.currentMomento);
     const progress = ensureMomentProgress(session, plan.momentId);
 
     if (!progress) {
       throw new Error('No se pudo obtener el progreso del momento');
     }
 
-      const lastQuestion = session.chat_history
+      const lastQuestion = session.chatHistory
         .slice()
         .reverse()
         .find(msg => msg.message_type === 'QUESTIONING');
@@ -783,17 +784,17 @@ export async function processStudentResponse(
         await updateSession(session.id, { momento_progress: session.momento_progress });
     
         // Obtener TODOS los mensajes del momento actual para acumular evidencias
-        const firstQuestioningIndex = session.chat_history.findIndex(
+        const firstQuestioningIndex = session.chatHistory.findIndex(
           msg => msg.message_type === 'QUESTIONING' && msg.metadata?.momento_id === plan.momentId
         );
     
         const currentMomentoMessages = firstQuestioningIndex >= 0
-          ? session.chat_history.slice(firstQuestioningIndex)
-          : session.chat_history.slice(-10);
+          ? session.chatHistory.slice(firstQuestioningIndex)
+          : session.chatHistory.slice(-10);
     
         // DEBUG: Log del historial enviado al Evaluator (caso NO SÉ)
         console.log('\n🔍 [EVALUATOR DEBUG - NO SÉ] Momento:', plan.momentId);
-        console.log('📊 Total mensajes en sesión:', session.chat_history.length);
+        console.log('📊 Total mensajes en sesión:', session.chatHistory.length);
         console.log('📌 Índice primer QUESTIONING:', firstQuestioningIndex);
         console.log('📨 Mensajes enviados al Evaluator:', currentMomentoMessages.length);
     
@@ -857,7 +858,7 @@ export async function processStudentResponse(
           current_activity: plan.activity,
           current_question: currentQuestion, // Para redirect contextual
           question_type: message_type === 'question_brief' ? 'brief' : 'deep',
-          chat_history: session.chat_history.slice(-3).map(msg => ({
+          chat_history: session.chatHistory.slice(-3).map(msg => ({
             role: msg.role as 'user' | 'assistant',
             content: msg.content,
           })),
@@ -887,18 +888,18 @@ export async function processStudentResponse(
     
         // Obtener TODOS los mensajes del momento actual para acumular evidencias
         // Encuentra el índice del primer mensaje QUESTIONING de este momento
-        const firstQuestioningIndex = session.chat_history.findIndex(
+        const firstQuestioningIndex = session.chatHistory.findIndex(
           msg => msg.message_type === 'QUESTIONING' && msg.metadata?.momento_id === plan.momentId
         );
     
         // Si encontramos el inicio del momento, toma TODOS los mensajes desde ahí
         const currentMomentoMessages = firstQuestioningIndex >= 0
-          ? session.chat_history.slice(firstQuestioningIndex)
-          : session.chat_history.slice(-10); // Fallback: últimos 10 mensajes
+          ? session.chatHistory.slice(firstQuestioningIndex)
+          : session.chatHistory.slice(-10); // Fallback: últimos 10 mensajes
     
         // DEBUG: Log del historial enviado al Evaluator
         console.log('\n🔍 [EVALUATOR DEBUG] Momento:', plan.momentId);
-        console.log('📊 Total mensajes en sesión:', session.chat_history.length);
+        console.log('📊 Total mensajes en sesión:', session.chatHistory.length);
         console.log('📌 Índice primer QUESTIONING:', firstQuestioningIndex);
         console.log('📨 Mensajes enviados al Evaluator:', currentMomentoMessages.length);
         console.log('📝 Contenido enviado:');
@@ -1119,8 +1120,8 @@ export async function handleChatMessage(
   const session = await getSessionById(sessionId);
   if (!session) throw new Error('Sesion no encontrada');
 
-  if (session.current_state !== 'WAITING_RESPONSE') {
-    throw new Error(`La sesion no esta esperando una respuesta (estado actual: ${session.current_state})`);
+  if (session.currentState !== 'WAITING_RESPONSE') {
+    throw new Error(`La sesion no esta esperando una respuesta (estado actual: ${session.currentState})`);
   }
 
   await processStudentResponse(sessionId, userMessage);
