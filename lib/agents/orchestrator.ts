@@ -1019,9 +1019,9 @@ export async function processStudentResponse(
           }
     
         } else if (action === 'encourage' || action === 'guide') {
-          // PARTIAL o INCORRECT → Verificar límite de intentos v3.5.4
-          const MAX_ATTEMPTS = 3; // Mismo para TODOS los momentos
-          const currentEvidenceKey = missing_concepts[0]; // Primera evidencia faltante
+          // PARTIAL o INCORRECT → Verificar límite de intentos v3.5.5
+          const MAX_ATTEMPTS = 3;
+          const SCORE_THRESHOLD = 60; // Evidencia aprobada si score >= 60
 
           // Get metadata object
           const metadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
@@ -1031,35 +1031,58 @@ export async function processStudentResponse(
             (metadata as any).evidence_attempts = {};
           }
 
-          if (!(metadata as any).evidence_attempts[currentEvidenceKey]) {
-            (metadata as any).evidence_attempts[currentEvidenceKey] = {
-              attempt_count: 0,
-              best_score: 0,
-              student_responses: [],
-            };
-          }
+          // NUEVO v3.5.5: Actualizar scores de TODAS las evidencias
+          console.log(`\n🔄 [PROCESANDO EVIDENCIAS] Total: ${evaluatorResponse.evidence_scores.length}`);
 
-          const evidenceAttempt = (metadata as any).evidence_attempts[currentEvidenceKey];
-          evidenceAttempt.attempt_count += 1;
-          evidenceAttempt.student_responses.push(studentResponse);
-    
-          // Actualizar mejor score (del evaluatorResponse.evidence_scores)
-          const currentScore = evaluatorResponse.evidence_scores?.find(
-            s => s.evidence === currentEvidenceKey
-          )?.score || 0;
-          evidenceAttempt.best_score = Math.max(evidenceAttempt.best_score, currentScore);
-    
-          console.log(`\n🔄 [LÍMITE DE INTENTOS] Evidencia: "${currentEvidenceKey}"`);
-          console.log(`   Intento: ${evidenceAttempt.attempt_count}/${MAX_ATTEMPTS}`);
-          console.log(`   Mejor score: ${evidenceAttempt.best_score}/100`);
-    
-          if (evidenceAttempt.attempt_count >= MAX_ATTEMPTS) {
-            // ✅ LÍMITE ALCANZADO → Aceptar mejor respuesta y pasar a siguiente evidencia
-            console.log(`   ✅ Límite alcanzado - Aceptando mejor respuesta y avanzando`);
-    
-            evidenceAttempt.status = 'accepted_partial';
-            evidenceAttempt.final_score = evidenceAttempt.best_score;
-    
+          evaluatorResponse.evidence_scores.forEach((evScore: any) => {
+            const evidenceKey = evScore.evidence;
+
+            if (!(metadata as any).evidence_attempts[evidenceKey]) {
+              (metadata as any).evidence_attempts[evidenceKey] = {
+                attempt_count: 0,
+                best_score: 0,
+                student_responses: [],
+                status: 'pending'
+              };
+            }
+
+            const evidenceAttempt = (metadata as any).evidence_attempts[evidenceKey];
+
+            // Solo incrementar attempt_count si esta evidencia está pendiente
+            if (evidenceAttempt.status !== 'accepted' && evidenceAttempt.status !== 'accepted_partial') {
+              evidenceAttempt.attempt_count += 1;
+              if (!evidenceAttempt.student_responses.includes(studentResponse)) {
+                evidenceAttempt.student_responses.push(studentResponse);
+              }
+            }
+
+            // Actualizar mejor score
+            evidenceAttempt.best_score = Math.max(evidenceAttempt.best_score, evScore.score);
+
+            // Auto-aceptar si pasa threshold
+            if (evScore.score >= SCORE_THRESHOLD && evidenceAttempt.status !== 'accepted') {
+              evidenceAttempt.status = 'accepted';
+              evidenceAttempt.final_score = evScore.score;
+              console.log(`   ✅ [${evScore.score}] "${evidenceKey}" - APROBADA`);
+            } else if (evidenceAttempt.status !== 'accepted') {
+              console.log(`   ⏳ [${evScore.score}] "${evidenceKey}" - Intento ${evidenceAttempt.attempt_count}/${MAX_ATTEMPTS}`);
+            }
+          });
+
+          // Identificar evidencias pendientes (no aprobadas y no aceptadas parcialmente)
+          const pendingEvidences = evaluatorResponse.evidence_scores.filter((evScore: any) => {
+            const evidenceAttempt = (metadata as any).evidence_attempts[evScore.evidence];
+            return evidenceAttempt.status !== 'accepted' && evidenceAttempt.status !== 'accepted_partial';
+          });
+
+          console.log(`\n📊 Estado: ${evaluatorResponse.evidence_scores.length - pendingEvidences.length}/${evaluatorResponse.evidence_scores.length} evidencias completadas`);
+
+          // Si NO hay pendientes → Avanzar momento
+          if (pendingEvidences.length === 0) {
+            console.log(`   ✅ TODAS LAS EVIDENCIAS COMPLETADAS → Avanzando momento`);
+
+            progress.attempts = 0;
+            progress.completed_at = new Date().toISOString();
             await updateSession(session.id, {
               progress: {
                 ...sessionMetadata,
@@ -1067,14 +1090,52 @@ export async function processStudentResponse(
                 momento_progress: (sessionMetadata as any).momento_progress,
               },
             });
+
+            const refreshedSession = await getSessionById(sessionId);
+            if (refreshedSession) {
+              await transitionToNextMoment(refreshedSession, lesson);
+            }
+            return; // IMPORTANTE: Salir aquí
+          }
+
+          // Si HAY pendientes → Procesar límites de intentos
+          console.log(`\n🔍 Evidencias pendientes: ${pendingEvidences.length}`);
+
+          // Tomar la primera evidencia pendiente
+          const currentEvScore = pendingEvidences[0];
+          const currentEvidenceKey = currentEvScore.evidence;
+          const evidenceAttempt = (metadata as any).evidence_attempts[currentEvidenceKey];
+
+          console.log(`\n🎯 Evidencia actual: "${currentEvidenceKey}"`);
+          console.log(`   Intento: ${evidenceAttempt.attempt_count}/${MAX_ATTEMPTS}`);
+          console.log(`   Mejor score: ${evidenceAttempt.best_score}/100`);
     
-            // Remover evidencia actual de missing_concepts
-            const remainingConcepts = missing_concepts.slice(1);
-    
-            if (remainingConcepts.length > 0) {
-              // Hay más evidencias → Pasar a la siguiente
-              console.log(`   ➡️  Pasando a siguiente evidencia: "${remainingConcepts[0]}"`);
-    
+          if (evidenceAttempt.attempt_count >= MAX_ATTEMPTS) {
+            // ✅ LÍMITE ALCANZADO → Aceptar mejor respuesta y pasar a siguiente evidencia
+            console.log(`   ✅ Límite alcanzado - Aceptando respuesta parcial`);
+
+            evidenceAttempt.status = 'accepted_partial';
+            evidenceAttempt.final_score = evidenceAttempt.best_score;
+
+            await updateSession(session.id, {
+              progress: {
+                ...sessionMetadata,
+                evidence_attempts: (sessionMetadata as any).evidence_attempts,
+                momento_progress: (sessionMetadata as any).momento_progress,
+              },
+            });
+
+            // NUEVO v3.5.5: Recalcular evidencias pendientes después de aceptar
+            const updatedPendingEvidences = evaluatorResponse.evidence_scores.filter((evScore: any) => {
+              const ea = (metadata as any).evidence_attempts[evScore.evidence];
+              return ea.status !== 'accepted' && ea.status !== 'accepted_partial';
+            });
+
+            if (updatedPendingEvidences.length > 0) {
+              // Hay más evidencias pendientes → Preguntar por siguiente
+              const nextEvidence = updatedPendingEvidences[0].evidence;
+              console.log(`   ➡️  Pasando a siguiente evidencia: "${nextEvidence}"`);
+
               await addChatMessage(session.id, {
                 role: 'assistant',
                 content: 'Entiendo. Continuemos con el siguiente punto.',
@@ -1084,13 +1145,13 @@ export async function processStudentResponse(
                   source: 'evidence_limit_reached',
                 },
               });
-    
+
               const nextQuestion = generateNextQuestionFromMissingEvidence(
-                remainingConcepts,
+                [nextEvidence],
                 plan.guidingQuestion,
                 1 // Reset intentos para nueva evidencia
               );
-    
+
               if (nextQuestion) {
                 await addChatMessage(session.id, {
                   role: 'assistant',
@@ -1102,15 +1163,15 @@ export async function processStudentResponse(
                   },
                 });
               }
-    
+
               await updateSession(session.id, {
                 current_state: 'WAITING_RESPONSE',
               });
-    
+
             } else {
-              // No hay más evidencias → Transicionar a siguiente momento
-              console.log(`   ✅ Todas las evidencias procesadas - Transicionando a siguiente momento`);
-    
+              // TODAS las evidencias completadas → Avanzar momento
+              console.log(`   ✅ TODAS las evidencias procesadas → Avanzando momento`);
+
               await addChatMessage(session.id, {
                 role: 'assistant',
                 content: 'Muy bien, has trabajado en los puntos principales. Pasemos a la siguiente etapa.',
@@ -1120,7 +1181,7 @@ export async function processStudentResponse(
                   source: 'all_evidences_processed',
                 },
               });
-    
+
               progress.attempts = 0;
               progress.completed_at = new Date().toISOString();
               await updateSession(session.id, {
@@ -1129,7 +1190,7 @@ export async function processStudentResponse(
                   momento_progress: (sessionMetadata as any).momento_progress,
                 },
               });
-    
+
               const refreshedSession = await getSessionById(sessionId);
               if (refreshedSession) {
                 await transitionToNextMoment(refreshedSession, lesson);
@@ -1139,7 +1200,7 @@ export async function processStudentResponse(
           } else {
             // ❌ Todavía hay intentos → Seguir preguntando con ayuda gradual
             console.log(`   🔄 Generando nueva pregunta con ayuda nivel ${evidenceAttempt.attempt_count}`);
-    
+
             await updateSession(session.id, {
               progress: {
                 ...sessionMetadata,
@@ -1147,13 +1208,16 @@ export async function processStudentResponse(
                 momento_progress: (sessionMetadata as any).momento_progress,
               },
             });
-    
+
+            // NUEVO v3.5.5: Generar pregunta solo para evidencias pendientes
+            const pendingEvidencesList = pendingEvidences.map((ev: any) => ev.evidence);
+
             const nextQuestion = generateNextQuestionFromMissingEvidence(
-              missing_concepts,
+              pendingEvidencesList,
               plan.guidingQuestion,
               evidenceAttempt.attempt_count // Ayuda gradual según intento de ESTA evidencia
             );
-    
+
             if (nextQuestion) {
               await addChatMessage(session.id, {
                 role: 'assistant',
@@ -1165,7 +1229,7 @@ export async function processStudentResponse(
                 },
               });
             }
-    
+
             await updateSession(session.id, {
               current_state: 'WAITING_RESPONSE',
             });
