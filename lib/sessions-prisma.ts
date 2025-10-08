@@ -99,6 +99,7 @@ export async function updateSession(
     chat_history?: any;
     progress?: any;
     completed?: boolean;
+    completed_at?: string | null;
     score?: number | null;
   }
 ) {
@@ -122,6 +123,9 @@ export async function updateSession(
   }
   if (updates.completed !== undefined) {
     prismaUpdates.completedAt = updates.completed ? new Date() : null;
+  }
+  if (updates.completed_at !== undefined) {
+    prismaUpdates.completedAt = updates.completed_at ? new Date(updates.completed_at) : null;
   }
 
   return await prisma.studentSession.update({
