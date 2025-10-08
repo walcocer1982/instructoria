@@ -429,7 +429,7 @@ async function generateExplanation(
     ? `\n**Hay una imagen disponible**: ${imageDescription}\nPuedes hacer referencia a ella en tu explicación si es relevante.`
     : '';
 
-  const prompt = `Eres un tutor experto en seguridad laboral. El docente te pide que EXPLIQUES un concepto al estudiante.
+  const prompt = `Eres un tutor experto. El docente te pide que EXPLIQUES un concepto al estudiante.
 
 **Actividad del docente**: ${actividad}
 **Evidencias que el estudiante debe lograr**: ${evidencias.join(', ')}${imageContext}
@@ -440,7 +440,7 @@ Genera DOS elementos:
 1. **explanation**: Una explicación CLARA y DIDÁCTICA que:
    - Enseña el concepto de forma directa (tú eres el tutor)
    - Cubre TODAS las evidencias esperadas
-   - Usa ejemplos concretos del contexto laboral
+   - Usa ejemplos concretos y relevantes al tema
    - Es accesible (3-5 oraciones máximo)
    - Si hay imagen, puedes hacer referencia a ella
 
@@ -449,11 +449,11 @@ Genera DOS elementos:
    - Pide que aplique el concepto aprendido
    - Puede hacer referencia a la imagen si existe
 
-EJEMPLOS:
+EJEMPLO (adapta a cualquier tema):
 
-Actividad: "Explica la diferencia entre peligro y riesgo"
-✅ EXPLANATION: "En el ámbito laboral, un **peligro** es cualquier fuente o situación que puede causar daño, como una máquina sin protección o un piso resbaladizo. Por otro lado, el **riesgo** es la probabilidad de que ese peligro realmente cause daño. Por ejemplo, un cable eléctrico expuesto es un peligro, pero el riesgo depende de factores como si está a la vista, si hay señalización, y si los trabajadores están capacitados. La diferencia clave es: el peligro EXISTE, el riesgo se EVALÚA."
-✅ QUESTION: "Ahora que conoces la diferencia, ¿puedes darme un ejemplo de un peligro y su riesgo asociado en tu área de trabajo?"
+Actividad: "Explica la diferencia entre X y Y"
+✅ EXPLANATION: "El concepto X se refiere a... mientras que Y significa... Por ejemplo, [ejemplo concreto del tema]. La diferencia clave es: [distinción principal]."
+✅ QUESTION: "Ahora que conoces la diferencia, ¿puedes darme un ejemplo de X y Y en el contexto que estamos estudiando?"
 
 Genera el JSON:`;
 
