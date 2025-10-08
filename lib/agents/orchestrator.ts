@@ -1229,6 +1229,22 @@ export async function processStudentResponse(
     
         if (level === 'correct') {
           // CORRECT → Avanzar al siguiente momento
+          console.log(`\n${'═'.repeat(80)}`);
+          console.log(`✅ EVALUATOR DICE: level='correct'`);
+          console.log(`   Threshold Evaluator: >= 45 (todas las evidencias pasaron)`);
+          console.log(`   concepts_identified: ${evaluatorResponse.concepts_identified.length}/${plan.evidences.length}`);
+
+          console.log(`\n📋 EVIDENCIAS SEGÚN EVALUATOR:`);
+          evaluatorResponse.evidence_scores.forEach((evScore: any, idx: number) => {
+            console.log(`   ${idx + 1}. "${evScore.evidence}"`);
+            console.log(`      - Score: ${evScore.score}/100`);
+            console.log(`      - Status: ${evScore.status}`);
+            console.log(`      - Método: ${evScore.method || 'N/A'}`);
+          });
+
+          console.log(`\n🚀 DECISIÓN ORCHESTRATOR: Avanzar a siguiente momento`);
+          console.log(`${'═'.repeat(80)}`);
+
           progress.attempts = 0;
           progress.completed_at = new Date().toISOString();
           await updateSession(session.id, {
@@ -1237,7 +1253,7 @@ export async function processStudentResponse(
               momento_progress: (sessionMetadata as any).momento_progress,
             },
           });
-    
+
           const refreshedSession = await getSessionById(sessionId);
           if (refreshedSession) {
             await transitionToNextMoment(refreshedSession, lesson);
@@ -1257,10 +1273,19 @@ export async function processStudentResponse(
           }
 
           // NUEVO v3.5.5: Actualizar scores de TODAS las evidencias
-          console.log(`\n🔄 [PROCESANDO EVIDENCIAS] Total: ${evaluatorResponse.evidence_scores.length}`);
+          console.log(`\n${'═'.repeat(80)}`);
+          console.log(`🔄 [PROCESANDO EVIDENCIAS] Total: ${evaluatorResponse.evidence_scores.length}`);
+          console.log(`   Respuesta del estudiante: "${studentResponse}"`);
+          console.log(`   Threshold Orchestrator: >= ${SCORE_THRESHOLD} (evidencia aceptada)`);
+          console.log(`${'═'.repeat(80)}`);
 
-          evaluatorResponse.evidence_scores.forEach((evScore: any) => {
+          evaluatorResponse.evidence_scores.forEach((evScore: any, idx: number) => {
             const evidenceKey = evScore.evidence;
+
+            console.log(`\n📋 EVIDENCIA #${idx + 1}: "${evidenceKey}"`);
+            console.log(`   Score Evaluator: ${evScore.score}/100`);
+            console.log(`   Status Evaluator: ${evScore.status} (${evScore.method || 'N/A'})`);
+            console.log(`   Razonamiento: "${evScore.reasoning}"`);
 
             if (!(metadata as any).evidence_attempts[evidenceKey]) {
               (metadata as any).evidence_attempts[evidenceKey] = {
@@ -1272,6 +1297,8 @@ export async function processStudentResponse(
             }
 
             const evidenceAttempt = (metadata as any).evidence_attempts[evidenceKey];
+            const previousStatus = evidenceAttempt.status;
+            const previousBestScore = evidenceAttempt.best_score;
 
             // Solo incrementar attempt_count si esta evidencia está pendiente
             if (evidenceAttempt.status !== 'accepted' && evidenceAttempt.status !== 'accepted_partial') {
@@ -1284,13 +1311,23 @@ export async function processStudentResponse(
             // Actualizar mejor score
             evidenceAttempt.best_score = Math.max(evidenceAttempt.best_score, evScore.score);
 
+            console.log(`   Orchestrator tracking:`);
+            console.log(`      - Status previo: ${previousStatus}`);
+            console.log(`      - Mejor score previo: ${previousBestScore}`);
+            console.log(`      - Mejor score actual: ${evidenceAttempt.best_score}`);
+            console.log(`      - Intentos: ${evidenceAttempt.attempt_count}/${MAX_ATTEMPTS}`);
+
             // Auto-aceptar si pasa threshold
             if (evScore.score >= SCORE_THRESHOLD && evidenceAttempt.status !== 'accepted') {
               evidenceAttempt.status = 'accepted';
               evidenceAttempt.final_score = evScore.score;
-              console.log(`   ✅ [${evScore.score}] "${evidenceKey}" - APROBADA`);
-            } else if (evidenceAttempt.status !== 'accepted') {
-              console.log(`   ⏳ [${evScore.score}] "${evidenceKey}" - Intento ${evidenceAttempt.attempt_count}/${MAX_ATTEMPTS}`);
+              console.log(`   ✅ DECISIÓN: ACEPTADA (${evScore.score} >= ${SCORE_THRESHOLD})`);
+            } else if (evidenceAttempt.status === 'accepted') {
+              console.log(`   ✅ YA ESTABA ACEPTADA (score: ${evidenceAttempt.final_score})`);
+            } else if (evidenceAttempt.status === 'accepted_partial') {
+              console.log(`   ⚠️  YA ESTABA ACEPTADA PARCIALMENTE (score: ${evidenceAttempt.final_score})`);
+            } else {
+              console.log(`   ⏳ DECISIÓN: PENDIENTE (${evScore.score} < ${SCORE_THRESHOLD})`);
             }
           });
 
@@ -1300,7 +1337,20 @@ export async function processStudentResponse(
             return evidenceAttempt.status !== 'accepted' && evidenceAttempt.status !== 'accepted_partial';
           });
 
-          console.log(`\n📊 Estado: ${evaluatorResponse.evidence_scores.length - pendingEvidences.length}/${evaluatorResponse.evidence_scores.length} evidencias completadas`);
+          console.log(`\n${'═'.repeat(80)}`);
+          console.log(`📊 RESUMEN FINAL:`);
+          console.log(`   Total evidencias: ${evaluatorResponse.evidence_scores.length}`);
+          console.log(`   ✅ Aceptadas: ${evaluatorResponse.evidence_scores.length - pendingEvidences.length}`);
+          console.log(`   ⏳ Pendientes: ${pendingEvidences.length}`);
+
+          if (pendingEvidences.length > 0) {
+            console.log(`\n   Evidencias pendientes:`);
+            pendingEvidences.forEach((ev: any, idx: number) => {
+              const attempt = (metadata as any).evidence_attempts[ev.evidence];
+              console.log(`      ${idx + 1}. "${ev.evidence}" (score: ${ev.score}, intento: ${attempt.attempt_count}/3)`);
+            });
+          }
+          console.log(`${'═'.repeat(80)}`);
 
           // Si NO hay pendientes → Avanzar momento
           if (pendingEvidences.length === 0) {
