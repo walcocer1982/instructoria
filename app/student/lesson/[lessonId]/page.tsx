@@ -42,27 +42,15 @@ interface Lesson {
 
 interface Session {
   id: string;
-  student_id: string;
-  lesson_id: string;
-  current_state: string;
-  current_momento: string;
-  momento_progress: Array<{
-    momento_id: string;
-    started_at: string;
-    completed_at?: string;
-    attempts: number;
-    hints_used: number;
-  }>;
-  chat_history: any[];
-  evaluations: any[];
-  evidence_attempts?: Record<string, {
-    attempt_count: number;
-    best_score: number;
-    student_responses: string[];
-    status?: string;
-    final_score?: number;
-  }>;
-  error_count?: number;
+  userId: string;
+  lessonId: string;
+  currentState: string;
+  currentMomento: string;
+  chatHistory: any[];
+  metadata?: any; // Contains momento_progress, evaluations, etc.
+  startedAt: string;
+  lastActivity: string;
+  completedAt?: string | null;
 }
 
 export default function StudentLessonPage() {
@@ -244,15 +232,15 @@ export default function StudentLessonPage() {
       .map(([evidence]) => evidence);
   };
 
-  // Obtener imagen actual del momento desde chat_history
+  // Obtener imagen actual del momento desde chatHistory
   // Las imágenes se adjuntan a los mensajes cuando el Orchestrator las envía
   const getCurrentImage = () => {
-    if (!session?.chat_history) return undefined;
+    if (!session?.chatHistory) return undefined;
 
     // Buscar en los mensajes del chat (de más reciente a más antiguo)
     // La imagen debe venir del último mensaje 'assistant' que tenga imágenes
-    for (let i = session.chat_history.length - 1; i >= 0; i--) {
-      const msg = session.chat_history[i];
+    for (let i = session.chatHistory.length - 1; i >= 0; i--) {
+      const msg = session.chatHistory[i];
       if (msg.role === 'assistant' && msg.images && msg.images.length > 0) {
         return msg.images[0]; // Retornar primera imagen del mensaje
       }
@@ -313,8 +301,8 @@ export default function StudentLessonPage() {
 
           <MomentProgress
             momentos={lesson.momentos}
-            currentMomento={session.current_momento}
-            momentoProgress={session.momento_progress}
+            currentMomento={session.currentMomento}
+            momentoProgress={session.metadata?.momento_progress || []}
           />
         </div>
 
@@ -323,10 +311,10 @@ export default function StudentLessonPage() {
           {/* Mini Header del Momento */}
           <div className="shrink-0 bg-background border-b px-6 py-4">
             <h2 className="text-2xl font-bold text-foreground">
-              {lesson.momentos.find(m => m.id === session.current_momento)?.nombre || 'Lección'}
+              {lesson.momentos.find(m => m.id === session.currentMomento)?.nombre || 'Lección'}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Momento {session.current_momento} · Estado: {session.current_state.replace(/_/g, ' ')}
+              Momento {session.currentMomento} · Estado: {session.currentState.replace(/_/g, ' ')}
             </p>
           </div>
 
@@ -355,7 +343,7 @@ export default function StudentLessonPage() {
 
           {/* Chat Messages */}
           <ScrollArea className="flex-1 min-h-0 p-6">
-          {session.chat_history.length === 0 ? (
+          {session.chatHistory.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
               <div className="text-6xl mb-4">💬</div>
               <h3 className="text-lg font-semibold mb-2">Bienvenido a la Lección</h3>
@@ -373,7 +361,7 @@ export default function StudentLessonPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {session.chat_history.map((msg, index) => (
+              {session.chatHistory.map((msg, index) => (
                 <div
                   key={index}
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -403,11 +391,11 @@ export default function StudentLessonPage() {
         {/* Input Area - Altura fija */}
         <div className="shrink-0 border-t bg-background p-4">
           <div className="space-y-3">
-            {session.current_state === 'COMPLETED' ? (
+            {session.currentState === 'COMPLETED' ? (
               <div className="bg-secondary/10 text-secondary p-4 rounded-lg text-center">
                 🎉 ¡Felicitaciones! Has completado toda la lección.
               </div>
-            ) : session.current_state === 'WAITING_RESPONSE' ? (
+            ) : session.currentState === 'WAITING_RESPONSE' ? (
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -434,7 +422,7 @@ export default function StudentLessonPage() {
             )}
 
             {/* Reportar Problema - Siempre visible */}
-            {session.current_state !== 'COMPLETED' && (
+            {session.currentState !== 'COMPLETED' && (
               <div className="flex justify-center">
                 <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
                   <DialogTrigger asChild>
@@ -464,9 +452,9 @@ export default function StudentLessonPage() {
                       </div>
                       <div className="bg-muted p-3 rounded text-xs text-muted-foreground">
                         <p><strong>Contexto que se enviará:</strong></p>
-                        <p>• Momento actual: {session.current_momento}</p>
-                        <p>• Estado: {session.current_state}</p>
-                        <p>• Intentos: {session.momento_progress.find(p => p.momento_id === session.current_momento)?.attempts || 0}</p>
+                        <p>• Momento actual: {session.currentMomento}</p>
+                        <p>• Estado: {session.currentState}</p>
+                        <p>• Intentos: {session.metadata?.momento_progress || [].find(p => p.momento_id === session.currentMomento)?.attempts || 0}</p>
                       </div>
                     </div>
                     <DialogFooter>
