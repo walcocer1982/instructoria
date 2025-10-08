@@ -3,9 +3,7 @@
  * Sistema SOPHI - Fase 2
  */
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from './prisma';
 
 /**
  * Obtiene todas las sesiones de un estudiante

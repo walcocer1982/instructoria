@@ -3,9 +3,7 @@
  * Sistema SOPHI - Fase 2
  */
 
-import { PrismaClient, Lesson as PrismaLesson } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from './prisma';
 
 /**
  * Lee todas las lecciones
