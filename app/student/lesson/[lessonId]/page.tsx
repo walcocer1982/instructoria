@@ -325,7 +325,7 @@ export default function StudentLessonPage() {
                 <div className="text-destructive">⚠️</div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-destructive">{error}</p>
-                  {session.error_count && session.error_count >= 2 && (
+                  {session.metadata?.error_count && session.metadata.error_count >= 2 && (
                     <p className="text-xs text-muted-foreground mt-1">
                       Varios intentos fallidos. Si el problema persiste, contacta al profesor.
                     </p>
