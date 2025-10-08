@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/auth';
-import { getSessionById } from '@/lib/sessions';
+import { getSessionById } from '@/lib/sessions-prisma';
 import { initializeSession, processStudentResponse } from '@/lib/agents/orchestrator';
 
 /**

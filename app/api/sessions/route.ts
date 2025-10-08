@@ -8,18 +8,14 @@ import { z } from 'zod';
 import {
   createSession,
   getSessionById,
-  getActiveSession,
-  getStudentSessions,
+  findActiveSession,
+  getSessionsByStudent,
   updateSession,
   addChatMessage,
-  advanceToNextMomento,
-  addMomentoEvaluation,
-  addFinalEvaluation,
+  updateMomentProgress,
   completeSession,
-  ChatMessage,
-  MomentoEvaluation,
-  FinalEvaluation,
-} from '@/lib/sessions';
+  restartSession,
+} from '@/lib/sessions-prisma';
 import { auth } from '@/auth';
 
 /**
@@ -138,20 +134,16 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      let studentSession = await getActiveSession(studentId, lessonId);
+      let studentSession = await findActiveSession(studentId, lessonId);
 
       // Si no existe, crear nueva sesión
       if (!studentSession) {
-        // Profesor puede especificar nivel y apoyo adicional
-        const nivel = searchParams.get('nivel') as 'principiante' | 'intermedio' | 'avanzado' | null;
-        const necesitaApoyo = searchParams.get('necesita_apoyo') === 'true';
-
-        studentSession = await createSession(
-          studentId,
-          lessonId,
-          nivel || 'principiante', // Default: principiante
-          necesitaApoyo
-        );
+        studentSession = await createSession({
+          student_id: studentId,
+          lesson_id: lessonId,
+          current_moment: 'M0',
+          current_state: 'INTRODUCING',
+        });
       }
 
       return NextResponse.json({ success: true, session: studentSession });
@@ -166,7 +158,7 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      const sessions = await getStudentSessions(studentId);
+      const sessions = await getSessionsByStudent(studentId);
       return NextResponse.json({ success: true, sessions });
     }
 
@@ -305,11 +297,14 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        updatedSession = await advanceToNextMomento(session_id, momentoValidation.data.next_momento_id);
+        updatedSession = await updateSession(session_id, {
+          current_moment: momentoValidation.data.next_momento_id,
+          current_state: 'INTRODUCING',
+        });
         break;
 
       case 'add_evaluation':
-        // Agregar evaluación
+        // Agregar evaluación (guardar en progress)
         const EvaluationSchema = z.object({
           momento_id: z.string(),
           criterios_met: z.array(z.string()),
@@ -325,12 +320,16 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const evaluation: MomentoEvaluation = {
-          ...evalValidation.data,
-          evaluated_at: new Date().toISOString(),
-        };
-
-        updatedSession = await addMomentoEvaluation(session_id, evaluation);
+        updatedSession = await updateMomentProgress(
+          session_id,
+          evalValidation.data.momento_id,
+          {
+            criterios_met: evalValidation.data.criterios_met,
+            feedback: evalValidation.data.feedback,
+            score: evalValidation.data.score,
+            evaluated_at: new Date().toISOString(),
+          }
+        );
         break;
 
       case 'complete_session':
@@ -339,7 +338,7 @@ export async function POST(request: NextRequest) {
         break;
 
       case 'update_profile':
-        // Actualizar perfil del estudiante (solo profesor)
+        // Actualizar perfil del estudiante (guardado en progress)
         if (user.role !== 'TEACHER') {
           return NextResponse.json(
             { success: false, error: 'Solo profesores pueden actualizar el perfil' },
@@ -360,11 +359,15 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const currentProfile = studentSession.student_profile || { nivel_inicial: 'principiante', necesita_mas_apoyo: false };
+        // Guardar perfil en progress JSON
+        const currentProgress = typeof studentSession.progress === 'object' && studentSession.progress !== null
+          ? studentSession.progress
+          : {};
+
         updatedSession = await updateSession(session_id, {
-          student_profile: {
-            nivel_inicial: profileValidation.data.nivel_inicial || currentProfile.nivel_inicial,
-            necesita_mas_apoyo: profileValidation.data.necesita_mas_apoyo ?? currentProfile.necesita_mas_apoyo,
+          progress: {
+            ...currentProgress,
+            student_profile: profileValidation.data,
           },
         });
         break;
