@@ -454,7 +454,7 @@ export default function StudentLessonPage() {
                         <p><strong>Contexto que se enviará:</strong></p>
                         <p>• Momento actual: {session.currentMomento}</p>
                         <p>• Estado: {session.currentState}</p>
-                        <p>• Intentos: {session.metadata?.momento_progress || [].find(p => p.momento_id === session.currentMomento)?.attempts || 0}</p>
+                        <p>• Intentos: {(session.metadata?.momento_progress || []).find((p: any) => p.momento_id === session.currentMomento)?.attempts || 0}</p>
                       </div>
                     </div>
                     <DialogFooter>
