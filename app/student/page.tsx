@@ -75,14 +75,16 @@ export default function EstudiantePage() {
   };
 
   const getSessionForLesson = (lessonId: string) => {
-    return sessions.find(s => s.lesson_id === lessonId && !s.completed_at);
+    return sessions.find(s => s.lessonId === lessonId && !s.completedAt);
   };
 
   const getLessonProgress = (lessonId: string) => {
     const session = getSessionForLesson(lessonId);
     if (!session) return 0;
 
-    const completedMomentos = session.momento_progress.filter(p => p.completed_at).length;
+    const metadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
+    const momentoProgress = (metadata as any).momento_progress || [];
+    const completedMomentos = momentoProgress.filter((p: any) => p.completed_at).length;
     const totalMomentos = 6; // M0-M5
     return Math.round((completedMomentos / totalMomentos) * 100);
   };
@@ -219,7 +221,7 @@ export default function EstudiantePage() {
                       }} />
                     </div>
                     <p style={{ fontSize: '0.75rem', color: '#a0aec0', marginTop: '0.25rem' }}>
-                      Momento actual: {session?.current_momento}
+                      Momento actual: {session?.currentMomento}
                     </p>
                   </div>
                 )}
