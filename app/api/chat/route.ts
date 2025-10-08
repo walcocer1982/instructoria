@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 
       console.log('[API /api/chat] ✅ Sesión actualizada');
       console.log('[API /api/chat] Estado final:', updatedSession?.currentState);
-      console.log('[API /api/chat] Mensajes en chat:', updatedSession?.chatHistory?.length || 0);
+      console.log('[API /api/chat] Mensajes en chat:', Array.isArray(updatedSession?.chatHistory) ? updatedSession.chatHistory.length : 0);
 
       return NextResponse.json({
         success: true,
