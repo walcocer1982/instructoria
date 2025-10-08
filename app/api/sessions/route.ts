@@ -53,45 +53,40 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Importar funciones necesarias
-      const { getAllUsers } = await import('@/lib/auth');
-      const { getAllLessons } = await import('@/lib/lessons');
-      const fs = await import('fs/promises');
-      const path = await import('path');
-
-      const sessionsDir = path.join(process.cwd(), 'data', 'sessions');
+      // Importar Prisma Client
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
 
       try {
-        const files = await fs.readdir(sessionsDir);
-        const sessionFiles = files.filter(f => f.endsWith('.json'));
-
-        const sessions = await Promise.all(
-          sessionFiles.map(async (file) => {
-            const content = await fs.readFile(path.join(sessionsDir, file), 'utf-8');
-            return JSON.parse(content);
-          })
-        );
-
-        // Cargar usuarios y lecciones
-        const users = await getAllUsers();
-        const lessons = await getAllLessons();
-
-        // Crear mapas para lookup rápido
-        const userMap = new Map(users.map(u => [u.id, u]));
-        const lessonMap = new Map(lessons.map(l => [l.id, l]));
-
-        // Enriquecer sesiones con datos de usuario y lección
-        const enrichedSessions = sessions.map(session => {
-          const user = userMap.get(session.userId);
-          const lesson = lessonMap.get(session.lessonId);
-
-          return {
-            ...session,
-            student_name: user?.name || 'Desconocido',
-            student_email: user?.email || session.userId,
-            lesson_title: lesson?.titulo || session.lessonId,
-          };
+        // Obtener todas las sesiones de Prisma
+        const sessions = await prisma.studentSession.findMany({
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            lesson: {
+              select: {
+                id: true,
+                titulo: true,
+              },
+            },
+          },
+          orderBy: {
+            startedAt: 'desc',
+          },
         });
+
+        // Las sesiones ya vienen con user y lesson incluidos
+        const enrichedSessions = sessions.map(session => ({
+          ...session,
+          student_name: session.user?.name || 'Desconocido',
+          student_email: session.user?.email || session.userId,
+          lesson_title: session.lesson?.titulo || session.lessonId,
+        }));
 
         return NextResponse.json({ success: true, sessions: enrichedSessions });
       } catch (err: any) {
