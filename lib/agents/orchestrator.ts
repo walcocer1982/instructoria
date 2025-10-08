@@ -761,7 +761,7 @@ export async function processStudentResponse(
         .reverse()
         .find((msg: any) => msg.message_type === 'QUESTIONING');
     
-      const currentQuestion = lastQuestion?.content || plan.guidingQuestion || plan.activity;
+      const currentQuestion = (lastQuestion as any)?.content || plan.guidingQuestion || plan.activity;
     
       // 2. MODERATION API v3.5.0 - Filtro de contenido severo (gratis, rápido)
       const moderationCheck = await checkModeration(studentResponse);
