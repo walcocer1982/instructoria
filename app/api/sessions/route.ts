@@ -82,14 +82,14 @@ export async function GET(request: NextRequest) {
 
         // Enriquecer sesiones con datos de usuario y lección
         const enrichedSessions = sessions.map(session => {
-          const user = userMap.get(session.student_id);
-          const lesson = lessonMap.get(session.lesson_id);
+          const user = userMap.get(session.userId);
+          const lesson = lessonMap.get(session.lessonId);
 
           return {
             ...session,
-            student_name: user?.nombre || 'Desconocido',
-            student_email: user?.email || session.student_id,
-            lesson_title: lesson?.titulo || session.lesson_id,
+            student_name: user?.name || 'Desconocido',
+            student_email: user?.email || session.userId,
+            lesson_title: lesson?.titulo || session.lessonId,
           };
         });
 
@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Verificar acceso: estudiante solo puede ver sus sesiones, profesor puede ver todas
-      if (user.role === 'STUDENT' && studentSession.student_id !== user.id) {
+      if (user.role === 'STUDENT' && studentSession.userId !== user.id) {
         return NextResponse.json(
           { success: false, error: 'No autorizado' },
           { status: 403 }
@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar acceso
-    if (user.role === 'STUDENT' && studentSession.student_id !== user.id) {
+    if (user.role === 'STUDENT' && studentSession.userId !== user.id) {
       return NextResponse.json(
         { success: false, error: 'No autorizado' },
         { status: 403 }
@@ -359,9 +359,9 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Guardar perfil en progress JSON
-        const currentProgress = typeof studentSession.progress === 'object' && studentSession.progress !== null
-          ? studentSession.progress
+        // Guardar perfil en metadata JSON
+        const currentProgress = typeof studentSession.metadata === 'object' && studentSession.metadata !== null
+          ? studentSession.metadata
           : {};
 
         updatedSession = await updateSession(session_id, {
