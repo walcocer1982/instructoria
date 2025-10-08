@@ -99,12 +99,12 @@ export async function POST(request: NextRequest) {
 
         const evaluationMsg = chatHistory
           .slice(chatHistory.indexOf(userMsg) + 1)
-          .find((msg: any) => msg.message_type === 'EVALUATING' && msg.metadata?.evaluation);
+          .find((msg: any) => msg.message_type === 'EVALUATING' && (msg as any).metadata?.evaluation);
 
         // Extraer el nivel de evaluación de forma segura
         let evaluationLevel: 'correct' | 'partial' | 'incorrect' = 'incorrect';
-        if (evaluationMsg?.metadata?.evaluation) {
-          const evalMetadata = evaluationMsg.metadata.evaluation;
+        if (evaluationMsg && (evaluationMsg as any).metadata?.evaluation) {
+          const evalMetadata = (evaluationMsg as any).metadata.evaluation;
           if (typeof evalMetadata === 'object' && 'level' in evalMetadata) {
             evaluationLevel = (evalMetadata as any).level;
           } else if (typeof evalMetadata === 'string') {
@@ -123,10 +123,12 @@ export async function POST(request: NextRequest) {
     const partialAnswers = responses.filter(r => r.evaluation === 'partial').length;
     const incorrectAnswers = responses.filter(r => r.evaluation === 'incorrect').length;
 
-    const hintsUsed = session.momento_progress.reduce((total, mp) => total + (mp.hints_used || 0), 0);
+    const metadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
+    const momentoProgress = (metadata as any).momento_progress || [];
+    const hintsUsed = momentoProgress.reduce((total: number, mp: any) => total + (mp.hints_used || 0), 0);
 
-    const timeSpentMinutes = session.started_at && session.updated_at
-      ? Math.round((new Date(session.updated_at).getTime() - new Date(session.started_at).getTime()) / 60000)
+    const timeSpentMinutes = session.startedAt && session.lastActivity
+      ? Math.round((new Date(session.lastActivity).getTime() - new Date(session.startedAt).getTime()) / 60000)
       : undefined;
 
     // TODO v3.0: Implementar evaluación final separada
