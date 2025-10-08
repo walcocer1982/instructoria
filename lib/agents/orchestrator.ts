@@ -346,38 +346,45 @@ async function generateWelcomeMessageViaLLM(
 }
 
 /**
- * v3.5.6: Detecta si la actividad requiere NARRATIVA o PREGUNTA DIRECTA
+ * v3.5.7: Detecta si la actividad requiere NARRATIVA, EXPLICACIÓN o PREGUNTA
  * Usa LLM para interpretar la intención del docente
  */
-async function detectActivityType(actividad: string): Promise<'narrative' | 'direct_question'> {
+async function detectActivityType(actividad: string): Promise<'narrative' | 'explanation' | 'question'> {
   const llm = getLLMClient();
 
   const ActivityTypeSchema = z.object({
-    type: z.enum(['narrative', 'direct_question']).describe('Tipo de actividad detectado'),
+    type: z.enum(['narrative', 'explanation', 'question']).describe('Tipo de actividad detectado'),
     reasoning: z.string().describe('Breve explicación de por qué se eligió ese tipo'),
   });
 
-  const prompt = `Eres un experto en pedagogía. Analiza esta actividad del docente y determina si requiere que el SISTEMA genere una NARRATIVA o que haga una PREGUNTA DIRECTA al estudiante.
+  const prompt = `Eres un experto en pedagogía. Analiza esta actividad del docente y determina qué debe hacer el SISTEMA.
 
 **Actividad del docente**: "${actividad}"
 
 **TIPOS DE ACTIVIDAD:**
 
-1. **"narrative"** - El SISTEMA debe CONTAR/PRESENTAR una historia, situación o caso:
-   - Actividad empieza con verbos como: "Cuenta...", "Narra...", "Presenta...", "Describe una situación...", "Muestra un caso..."
-   - El docente quiere que el sistema CREE un escenario motivador
+1. **"narrative"** - El SISTEMA debe CONTAR una historia, situación o caso práctico:
+   - Verbos: "Cuenta...", "Narra...", "Presenta una situación...", "Describe un caso..."
+   - El sistema CREA un escenario motivador con personajes y situación
    - Ejemplo: "Cuenta una caso peligroso real que pasa en el trabajo"
+   → Sistema cuenta: "Imagina a Juan en el almacén, subido a 5 metros sin arnés..."
 
-2. **"direct_question"** - El SISTEMA debe hacer una PREGUNTA DIRECTA al estudiante (sin contar historia):
-   - Actividad empieza con verbos como: "Explica...", "Define...", "Compara...", "Identifica...", "Analiza...", "Menciona..."
-   - El docente quiere que el estudiante RESPONDA con su conocimiento
-   - Ejemplo: "Explica la diferencia entre peligro y riesgo en el trabajo"
+2. **"explanation"** - El SISTEMA debe EXPLICAR/ENSEÑAR conceptos al estudiante:
+   - Verbos: "Explica...", "Define...", "Enseña...", "Presenta el concepto de..."
+   - El sistema actúa como TUTOR que enseña contenido teórico
+   - Ejemplo: "Explica la diferencia entre peligro y riesgo"
+   → Sistema explica: "Un peligro es una fuente potencial de daño, mientras que el riesgo es la probabilidad de que ese daño ocurra..."
 
-**INSTRUCCIONES:**
-- Lee cuidadosamente la actividad
-- Identifica el verbo principal (primer verbo imperativo)
-- Determina si ese verbo pide que el sistema CUENTE algo (narrative) o que el estudiante EXPLIQUE algo (direct_question)
-- Genera el JSON con "type" y "reasoning"
+3. **"question"** - El SISTEMA debe hacer una PREGUNTA para que el ESTUDIANTE responda:
+   - Verbos dirigidos al estudiante: "Identifica...", "Analiza...", "Menciona...", "Compara tú..."
+   - El sistema PREGUNTA para evaluar conocimiento del estudiante
+   - Ejemplo: "Identifica los elementos del IPERC"
+   → Sistema pregunta: "¿Cuáles son los elementos principales del IPERC?"
+
+**CLAVE:**
+- Si el verbo pide que el SISTEMA ENSEÑE → "explanation"
+- Si el verbo pide que el SISTEMA CUENTE UNA HISTORIA → "narrative"
+- Si el verbo pide que el ESTUDIANTE RESPONDA/ANALICE → "question"
 
 Responde en JSON:`;
 
@@ -403,8 +410,73 @@ Responde en JSON:`;
 }
 
 /**
- * v3.5.6: Genera SOLO pregunta directa (sin narrativa)
- * Para actividades como "Explica...", "Define...", "Compara..."
+ * v3.5.7: Genera EXPLICACIÓN educativa del concepto
+ * Para actividades como "Explica...", "Define...", "Enseña..."
+ */
+async function generateExplanation(
+  actividad: string,
+  evidencias: string[],
+  imageDescription: string | undefined
+): Promise<{ explanation: string; question: string }> {
+  const llm = getLLMClient();
+
+  const ExplanationSchema = z.object({
+    explanation: z.string().describe('Explicación clara y didáctica del concepto (3-5 oraciones)'),
+    question: z.string().describe('Pregunta de verificación al final para confirmar comprensión'),
+  });
+
+  const imageContext = imageDescription
+    ? `\n**Hay una imagen disponible**: ${imageDescription}\nPuedes hacer referencia a ella en tu explicación si es relevante.`
+    : '';
+
+  const prompt = `Eres un tutor experto en seguridad laboral. El docente te pide que EXPLIQUES un concepto al estudiante.
+
+**Actividad del docente**: ${actividad}
+**Evidencias que el estudiante debe lograr**: ${evidencias.join(', ')}${imageContext}
+
+TAREA:
+Genera DOS elementos:
+
+1. **explanation**: Una explicación CLARA y DIDÁCTICA que:
+   - Enseña el concepto de forma directa (tú eres el tutor)
+   - Cubre TODAS las evidencias esperadas
+   - Usa ejemplos concretos del contexto laboral
+   - Es accesible (3-5 oraciones máximo)
+   - Si hay imagen, puedes hacer referencia a ella
+
+2. **question**: Una pregunta de VERIFICACIÓN al final que:
+   - Confirma que el estudiante entendió la explicación
+   - Pide que aplique el concepto aprendido
+   - Puede hacer referencia a la imagen si existe
+
+EJEMPLOS:
+
+Actividad: "Explica la diferencia entre peligro y riesgo"
+✅ EXPLANATION: "En el ámbito laboral, un **peligro** es cualquier fuente o situación que puede causar daño, como una máquina sin protección o un piso resbaladizo. Por otro lado, el **riesgo** es la probabilidad de que ese peligro realmente cause daño. Por ejemplo, un cable eléctrico expuesto es un peligro, pero el riesgo depende de factores como si está a la vista, si hay señalización, y si los trabajadores están capacitados. La diferencia clave es: el peligro EXISTE, el riesgo se EVALÚA."
+✅ QUESTION: "Ahora que conoces la diferencia, ¿puedes darme un ejemplo de un peligro y su riesgo asociado en tu área de trabajo?"
+
+Genera el JSON:`;
+
+  const jsonSchema = {
+    name: 'explanation_output',
+    strict: true,
+    schema: zodToJsonSchema(ExplanationSchema, {
+      target: 'openAi',
+      $refStrategy: 'none'
+    })
+  };
+
+  const response = await llm.chatStructured<z.infer<typeof ExplanationSchema>>(
+    [{ role: 'user', content: prompt }],
+    jsonSchema,
+    { model: 'gpt-4o-mini', temperature: 0.6 } // Temperatura media para explicaciones claras pero variadas
+  );
+
+  return ExplanationSchema.parse(response);
+}
+
+/**
+ * v3.5.7: Genera SOLO pregunta directa (para actividades tipo "Identifica...", "Menciona...")
  */
 async function generateDirectQuestion(
   actividad: string,
@@ -426,20 +498,20 @@ async function generateDirectQuestion(
 TAREA:
 Genera UNA pregunta directa que:
 - Se basa en la actividad del docente
-- Pide al estudiante que responda (NO cuentes una historia)
+- Pide al estudiante que responda (NO cuentes una historia, NO expliques tú)
 - Amarra TODAS las evidencias esperadas
 - Es clara y específica
 - Motiva reflexión crítica
 
 EJEMPLOS:
 
-Actividad: "Explica la diferencia entre peligro y riesgo"
-Evidencias: ["Define peligro", "Define riesgo", "Identifica diferencias"]
-✅ PREGUNTA: "¿Cuál es la diferencia entre peligro y riesgo en el contexto laboral? Define cada concepto y explica cómo se diferencian."
-
 Actividad: "Identifica los elementos del IPERC"
 Evidencias: ["Menciona 3 elementos", "Explica para qué sirve"]
 ✅ PREGUNTA: "¿Cuáles son los tres elementos principales del IPERC y para qué sirve este proceso?"
+
+Actividad: "Menciona las medidas de seguridad necesarias"
+Evidencias: ["Lista 3 medidas", "Justifica cada una"]
+✅ PREGUNTA: "¿Qué medidas de seguridad son necesarias en esta situación y por qué es importante cada una?"
 
 Genera el JSON con la pregunta:`;
 
@@ -562,13 +634,14 @@ async function sendContextAndQuestion(
   let contexto = '';
   let question = '';
 
-  // v3.5.6: Detectar tipo de actividad basado en verbos (con LLM)
+  // v3.5.7: Detectar tipo de actividad basado en verbos (con LLM)
   const activityType = await detectActivityType(plan.activity);
 
   console.log(`\n📝 [ACTIVIDAD] "${plan.activity}"`);
-  console.log(`   Tipo detectado: ${activityType === 'narrative' ? '📖 NARRATIVA' : '❓ PREGUNTA DIRECTA'}`);
+  const typeIcon = activityType === 'narrative' ? '📖 NARRATIVA' : activityType === 'explanation' ? '🎓 EXPLICACIÓN' : '❓ PREGUNTA';
+  console.log(`   Tipo detectado: ${typeIcon}`);
 
-  // v3.5.6: Generar contenido según tipo de actividad
+  // v3.5.7: Generar contenido según tipo de actividad
   if (!plan.contexto) {
     if (activityType === 'narrative' && plan.imageDescription) {
       // NARRATIVA: Generar historia vívida con contexto
@@ -581,15 +654,28 @@ async function sendContextAndQuestion(
       );
       contexto = generated.contexto;
       question = generated.pregunta;
-    } else if (activityType === 'direct_question') {
-      // PREGUNTA DIRECTA: Solo pregunta, sin narrativa
+
+    } else if (activityType === 'explanation') {
+      // EXPLICACIÓN: Sistema ENSEÑA el concepto
+      console.log(`   → Generando explicación educativa con LLM...`);
+      const generated = await generateExplanation(
+        plan.activity,
+        plan.evidences,
+        plan.imageDescription
+      );
+      contexto = generated.explanation; // La explicación va como "contexto"
+      question = generated.question; // Pregunta de verificación
+
+    } else if (activityType === 'question') {
+      // PREGUNTA: Sistema pregunta al estudiante
       console.log(`   → Generando pregunta directa con LLM...`);
       question = await generateDirectQuestion(
         plan.activity,
         plan.evidences,
         plan.originalGuidingQuestion || plan.guidingQuestion
       );
-      contexto = ''; // Sin narrativa
+      contexto = ''; // Sin narrativa ni explicación
+
     } else {
       // Fallback: usar pregunta guía simple
       contexto = '';
