@@ -202,18 +202,20 @@ async function resetErrorCount(sessionId: string): Promise<void> {
 function validateLessonPlanStructure(lesson: any) {
   const issues: string[] = [];
 
-  if (!lesson.momentos || lesson.momentos.length !== 6) {
-    const total = lesson.momentos ? lesson.momentos.length : 0;
-    issues.push(`Debe tener exactamente 6 momentos (tiene ${total})`);
+  const momentos = Array.isArray(lesson.momentos) ? lesson.momentos : [];
+  const criterios = Array.isArray(lesson.criterios_evaluacion) ? lesson.criterios_evaluacion : [];
+
+  if (!momentos || momentos.length !== 6) {
+    issues.push(`Debe tener exactamente 6 momentos (tiene ${momentos.length})`);
   }
 
-  (lesson.momentos || []).forEach((moment: any, index: number) => {
+  momentos.forEach((moment: any, index: number) => {
     if (!moment?.actividad_detallada) {
       issues.push(`Momento ${index + 1} usa formato sin actividad_detallada (modo legado)`);
     }
   });
 
-  if (!lesson.criterios_evaluacion || lesson.criterios_evaluacion.length === 0) {
+  if (!criterios || criterios.length === 0) {
     issues.push('No tiene criterios de evaluacion definidos');
   }
 
@@ -321,7 +323,7 @@ async function generateWelcomeMessageViaLLM(
   session: StudentSession,
   lesson: any
 ) {
-  const criterios = lesson.criterios_evaluacion || [];
+  const criterios = Array.isArray(lesson.criterios_evaluacion) ? lesson.criterios_evaluacion : [];
   const criteriosText = criterios.length > 0
     ? `\n\n**¿Qué vamos a evaluar?**\n${criterios.map((c: string, i: number) => `${i + 1}. ${c}`).join('\n')}`
     : '';
@@ -467,13 +469,15 @@ async function sendContextAndQuestion(
 
   // Obtener imagen del momento
   // Prioridad: moment.imagen_url (Planner v3.0) > lesson.imagenes[] filtrado por momento_id (legacy)
-  const currentMomento = lesson.momentos?.find((m: any) => m.id === plan.momentId);
+  const momentos = Array.isArray(lesson.momentos) ? lesson.momentos : [];
+  const currentMomento = momentos.find((m: any) => m.id === plan.momentId);
   let imageUrl = currentMomento?.imagen_url;
   let imageDescripcion = plan.imageDescription || plan.contexto || 'Imagen del escenario';
 
   // Fallback: buscar en lesson.imagenes[] (compatibilidad con lecciones viejas)
-  if (!imageUrl && lesson.imagenes && Array.isArray(lesson.imagenes)) {
-    const momentImage = lesson.imagenes.find((img: any) => img.momento_id === plan.momentId);
+  const imagenes = Array.isArray(lesson.imagenes) ? lesson.imagenes : [];
+  if (!imageUrl && imagenes.length > 0) {
+    const momentImage = imagenes.find((img: any) => img.momento_id === plan.momentId);
     if (momentImage) {
       imageUrl = momentImage.url;
       imageDescripcion = momentImage.descripcion || imageDescripcion;
@@ -581,7 +585,8 @@ async function transitionToNextMoment(session: StudentSession, lesson: any) {
 
   // No hay más sub-momentos, avanzar al siguiente momento base
   const nextMomentId = getNextMoment(baseMoment);
-  const nextMoment = nextMomentId ? lesson.momentos.find((m: any) => m.id === nextMomentId) : null;
+  const lessonMomentos = Array.isArray(lesson.momentos) ? lesson.momentos : [];
+  const nextMoment = nextMomentId ? lessonMomentos.find((m: any) => m.id === nextMomentId) : null;
 
   if (!nextMoment) {
     await runFinalEvaluation(session, lesson);
@@ -805,7 +810,7 @@ export async function processStudentResponse(
     
       const { message_type, detected_question, redirect_message } = checkerResponse;
     
-      const filteredImages = filterImagesByMoment(lesson.imagenes || [], plan.momentId);
+      const filteredImages = filterImagesByMoment((lesson.imagenes as any) || [], plan.momentId);
       const flexibilityBonus = calculateFlexibilityBonus(session);
     
       // 4. RUTEAR según tipo de mensaje (Checker clasifica contexto educativo)
