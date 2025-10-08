@@ -15,14 +15,11 @@ interface Lesson {
 
 interface Session {
   id: string;
-  lesson_id: string;
-  current_momento: string;
-  completed_at?: string;
-  updated_at: string;
-  momento_progress: Array<{
-    momento_id: string;
-    completed_at?: string;
-  }>;
+  lessonId: string;
+  currentMomento: string;
+  completedAt?: Date | null;
+  lastActivity: Date;
+  metadata?: any;
 }
 
 export default function EstudiantePage() {
