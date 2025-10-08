@@ -174,7 +174,7 @@ async function rollbackToCheckpoint(sessionId: string, errorMessage: string, err
     },
   });
 
-  console.log(`✅ [ROLLBACK] Estado restaurado. Error count: ${(session.error_count || 0) + 1}`);
+  console.log(`✅ [ROLLBACK] Estado restaurado. Error count: ${((metadata as any).error_count || 0) + 1}`);
 }
 
 /**
