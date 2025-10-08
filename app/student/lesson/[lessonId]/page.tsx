@@ -223,12 +223,12 @@ export default function StudentLessonPage() {
     }
   };
 
-  // Obtener criterios cumplidos desde evidence_attempts
+  // Obtener criterios cumplidos desde evidence_attempts (en metadata)
   const getCriteriosCumplidos = (): string[] => {
-    if (!session?.evidence_attempts) return [];
+    if (!session?.metadata?.evidence_attempts) return [];
 
-    return Object.entries(session.evidence_attempts)
-      .filter(([_, attempt]) => attempt.status === 'completed' || attempt.best_score >= 45)
+    return Object.entries(session.metadata.evidence_attempts)
+      .filter(([_, attempt]: [string, any]) => attempt.status === 'completed' || attempt.best_score >= 45)
       .map(([evidence]) => evidence);
   };
 
