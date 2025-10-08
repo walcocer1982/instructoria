@@ -14,8 +14,8 @@ import {
   updateLesson,
   deleteLesson,
   togglePublishLesson,
-} from '@/lib/lessons';
-import { validateToken } from '@/lib/auth';
+} from '@/lib/lessons-prisma';
+import { auth } from '@/auth';
 
 // Schema para crear lección
 const CreateLessonSchema = z.object({
@@ -104,26 +104,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Validar autenticación
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    const authSession = await auth();
 
-    if (!token) {
+    if (!authSession?.user) {
       return NextResponse.json({
         success: false,
         error: 'No autenticado',
       }, { status: 401 });
     }
 
-    const session = await validateToken(token);
-
-    if (!session) {
-      return NextResponse.json({
-        success: false,
-        error: 'Sesión inválida',
-      }, { status: 401 });
-    }
-
     // Solo profesores pueden crear lecciones
-    if (session.rol !== 'profesor') {
+    if (authSession.user.role !== 'TEACHER') {
       return NextResponse.json({
         success: false,
         error: 'No tienes permisos para crear lecciones',
@@ -136,8 +127,12 @@ export async function POST(request: NextRequest) {
 
     // Crear lección
     const lesson = await createLesson({
-      ...data,
-      profesor_id: session.userId,
+      titulo: data.titulo,
+      objetivo: data.objetivo,
+      duracion_estimada: data.duracion_min,
+      criterios_evaluacion: data.criterios_evaluacion,
+      imagenes: data.imagenes,
+      createdById: authSession.user.id,
     });
 
     return NextResponse.json({
@@ -174,18 +169,9 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Validar autenticación
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    const authSession = await auth();
 
-    if (!token) {
-      return NextResponse.json({
-        success: false,
-        error: 'No autenticado',
-      }, { status: 401 });
-    }
-
-    const session = await validateToken(token);
-
-    if (!session || session.rol !== 'profesor') {
+    if (!authSession?.user || authSession.user.role !== 'TEACHER') {
       return NextResponse.json({
         success: false,
         error: 'No autorizado',
@@ -212,7 +198,7 @@ export async function PUT(request: NextRequest) {
       }, { status: 404 });
     }
 
-    if (lesson.profesor_id !== session.userId) {
+    if (lesson.createdById !== authSession.user.id) {
       return NextResponse.json({
         success: false,
         error: 'No puedes editar esta lección',
@@ -246,18 +232,9 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     // Validar autenticación
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    const authSession = await auth();
 
-    if (!token) {
-      return NextResponse.json({
-        success: false,
-        error: 'No autenticado',
-      }, { status: 401 });
-    }
-
-    const session = await validateToken(token);
-
-    if (!session || session.rol !== 'profesor') {
+    if (!authSession?.user || authSession.user.role !== 'TEACHER') {
       return NextResponse.json({
         success: false,
         error: 'No autorizado',
@@ -284,7 +261,7 @@ export async function DELETE(request: NextRequest) {
       }, { status: 404 });
     }
 
-    if (lesson.profesor_id !== session.userId) {
+    if (lesson.createdById !== authSession.user.id) {
       return NextResponse.json({
         success: false,
         error: 'No puedes eliminar esta lección',
