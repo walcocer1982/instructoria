@@ -181,9 +181,17 @@ async function rollbackToCheckpoint(sessionId: string, errorMessage: string, err
  * Resetea el contador de errores cuando el estudiante logra avanzar correctamente
  */
 async function resetErrorCount(sessionId: string): Promise<void> {
+  const session = await getSessionById(sessionId);
+  if (!session) return;
+
+  const metadata = session.metadata && typeof session.metadata === 'object' ? session.metadata : {};
+
   await updateSession(sessionId, {
-    error_count: 0,
-    is_recovering: false,
+    progress: {
+      ...metadata,
+      error_count: 0,
+      is_recovering: false,
+    },
   });
 }
 
