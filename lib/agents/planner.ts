@@ -208,7 +208,8 @@ export function getMomentPlan(lesson: Lesson, momentId: string): LessonMomentPla
 }
 
 export function getAllMomentPlans(lesson: Lesson): LessonMomentPlan[] {
-  return lesson.momentos.map((moment: any) => loadMoment(lesson, moment.id));
+  const momentos = Array.isArray(lesson.momentos) ? lesson.momentos : [];
+  return momentos.map((moment: any) => loadMoment(lesson, moment.id));
 }
 
 export function createMomentState(momentId: string, maxAttempts?: number): MomentState {
