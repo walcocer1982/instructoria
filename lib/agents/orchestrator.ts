@@ -74,6 +74,13 @@ function generateNextQuestionFromMissingEvidence(
   return `¿Podrías decirme más sobre: ${firstMissing.toLowerCase()}?${hint}`;
 }
 import { getSessionById, addChatMessage, updateSession } from '../sessions-prisma';
+import type { StudentSession as PrismaStudentSession, Lesson } from '@prisma/client';
+
+// Type for session with lesson included
+type StudentSession = PrismaStudentSession & {
+  lesson: Lesson;
+};
+
 // TODO: calculateFlexibilityBonus needs to be migrated or removed
 const calculateFlexibilityBonus = () => 0; // Temporary placeholder
 import { getLessonById } from '../lessons-prisma';
