@@ -969,7 +969,7 @@ export async function processStudentResponse(
         console.log('📌 Índice primer QUESTIONING:', firstQuestioningIndex);
         console.log('📨 Mensajes enviados al Evaluator:', currentMomentoMessages.length);
         console.log('📝 Contenido enviado:');
-        currentMomentoMessages.forEach((msg, idx) => {
+        currentMomentoMessages.forEach((msg: any, idx: number) => {
           console.log(`  ${idx}: [${msg.role}] ${msg.message_type || 'user'}: "${msg.content.substring(0, 80)}..."`);
         });
     
