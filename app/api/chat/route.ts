@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { validateToken } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getSessionById } from '@/lib/sessions';
 import { initializeSession, processStudentResponse } from '@/lib/agents/orchestrator';
 
@@ -15,27 +15,18 @@ import { initializeSession, processStudentResponse } from '@/lib/agents/orchestr
  */
 export async function POST(request: NextRequest) {
   try {
-    // Validar autenticación
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    // Validar autenticación con NextAuth
+    const session = await auth();
+
+    if (!session?.user) {
       return NextResponse.json(
         { success: false, error: 'No autorizado' },
         { status: 401 }
       );
     }
 
-    const token = authHeader.substring(7);
-    const user = await validateToken(token);
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Token inválido o expirado' },
-        { status: 401 }
-      );
-    }
-
     // Solo estudiantes pueden usar el chat
-    if (user.rol !== 'estudiante') {
+    if (session.user.role !== 'STUDENT') {
       return NextResponse.json(
         { success: false, error: 'Solo estudiantes pueden usar el chat' },
         { status: 403 }
@@ -62,15 +53,15 @@ export async function POST(request: NextRequest) {
     const { action, session_id, message } = validation.data;
 
     // Verificar que la sesión pertenece al estudiante
-    const session = await getSessionById(session_id);
-    if (!session) {
+    const studentSession = await getSessionById(session_id);
+    if (!studentSession) {
       return NextResponse.json(
         { success: false, error: 'Sesión no encontrada' },
         { status: 404 }
       );
     }
 
-    if (session.student_id !== user.userId) {
+    if (studentSession.student_id !== session.user.id) {
       return NextResponse.json(
         { success: false, error: 'No autorizado' },
         { status: 403 }

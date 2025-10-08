@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -65,6 +66,7 @@ interface Session {
 }
 
 export default function StudentLessonPage() {
+  const { data: authSession, status } = useSession();
   const router = useRouter();
   const params = useParams();
   const lessonId = params.lessonId as string;
@@ -72,7 +74,6 @@ export default function StudentLessonPage() {
   const [loading, setLoading] = useState(true);
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<any>(null);
   const [error, setError] = useState('');
   const [inputMessage, setInputMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -82,29 +83,21 @@ export default function StudentLessonPage() {
   const [submittingReport, setSubmittingReport] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    const userStr = localStorage.getItem('user');
+    if (status === 'loading') return;
 
-    if (!token || !userStr) {
+    if (status === 'unauthenticated') {
       router.push('/login');
       return;
     }
 
-    const userData = JSON.parse(userStr);
-    if (userData.rol !== 'estudiante') {
-      router.push('/teacher');
-      return;
+    if (authSession?.user) {
+      loadLessonAndSession(authSession.user.id);
     }
+  }, [lessonId, authSession, status, router]);
 
-    setUser(userData);
-    loadLessonAndSession(userData.id, token);
-  }, [lessonId]);
-
-  const loadLessonAndSession = async (studentId: string, token: string) => {
+  const loadLessonAndSession = async (studentId: string) => {
     try {
-      const lessonResponse = await fetch(`/api/lessons?id=${lessonId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const lessonResponse = await fetch(`/api/lessons?id=${lessonId}`);
       const lessonResult = await lessonResponse.json();
 
       if (!lessonResult.success || !lessonResult.lesson) {
@@ -115,9 +108,7 @@ export default function StudentLessonPage() {
 
       setLesson(lessonResult.lesson);
 
-      const sessionResponse = await fetch(`/api/sessions?student_id=${studentId}&lesson_id=${lessonId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const sessionResponse = await fetch(`/api/sessions?student_id=${studentId}&lesson_id=${lessonId}`);
       const sessionResult = await sessionResponse.json();
 
       if (sessionResult.success) {
@@ -137,13 +128,10 @@ export default function StudentLessonPage() {
     setError('');
 
     try {
-      const token = localStorage.getItem('auth_token');
-
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           action: 'initialize',
@@ -172,13 +160,10 @@ export default function StudentLessonPage() {
     setError('');
 
     try {
-      const token = localStorage.getItem('auth_token');
-
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           action: 'send_message',
@@ -223,13 +208,10 @@ export default function StudentLessonPage() {
     setSubmittingReport(true);
 
     try {
-      const token = localStorage.getItem('auth_token');
-
       const response = await fetch('/api/sessions/report', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           sessionId: session.id,
@@ -313,7 +295,7 @@ export default function StudentLessonPage() {
             <div className="text-xs text-muted-foreground">Sistema Pedagógico Híbrido Inteligente</div>
           </div>
           <div className="text-sm text-gray-600 flex items-center gap-2">
-            <span>👤 {user?.nombre || 'Estudiante'}</span>
+            <span>👤 {authSession?.user?.name || 'Estudiante'}</span>
           </div>
         </div>
       </div>

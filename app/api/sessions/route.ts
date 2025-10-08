@@ -20,7 +20,7 @@ import {
   MomentoEvaluation,
   FinalEvaluation,
 } from '@/lib/sessions';
-import { validateToken } from '@/lib/auth';
+import { auth } from '@/auth';
 
 /**
  * GET /api/sessions
@@ -30,24 +30,17 @@ import { validateToken } from '@/lib/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Validar autenticación
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    // Validar autenticación con NextAuth
+    const authSession = await auth();
+
+    if (!authSession?.user) {
       return NextResponse.json(
         { success: false, error: 'No autorizado' },
         { status: 401 }
       );
     }
 
-    const token = authHeader.substring(7);
-    const user = await validateToken(token);
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Token inválido o expirado' },
-        { status: 401 }
-      );
-    }
+    const user = authSession.user;
 
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('id') || searchParams.get('session_id');
@@ -57,7 +50,7 @@ export async function GET(request: NextRequest) {
 
     // NUEVO: Listar todas las sesiones (solo profesor)
     if (action === 'list_all') {
-      if (user.rol !== 'profesor') {
+      if (user.role !== 'TEACHER') {
         return NextResponse.json(
           { success: false, error: 'Solo profesores pueden listar todas las sesiones' },
           { status: 403 }
@@ -116,8 +109,8 @@ export async function GET(request: NextRequest) {
 
     // Obtener por ID
     if (sessionId) {
-      const session = await getSessionById(sessionId);
-      if (!session) {
+      const studentSession = await getSessionById(sessionId);
+      if (!studentSession) {
         return NextResponse.json(
           { success: false, error: 'Sesión no encontrada' },
           { status: 404 }
@@ -125,35 +118,35 @@ export async function GET(request: NextRequest) {
       }
 
       // Verificar acceso: estudiante solo puede ver sus sesiones, profesor puede ver todas
-      if (user.rol === 'estudiante' && session.student_id !== user.userId) {
+      if (user.role === 'STUDENT' && studentSession.student_id !== user.id) {
         return NextResponse.json(
           { success: false, error: 'No autorizado' },
           { status: 403 }
         );
       }
 
-      return NextResponse.json({ success: true, session });
+      return NextResponse.json({ success: true, session: studentSession });
     }
 
     // Obtener sesión activa (o crear)
     if (studentId && lessonId) {
       // Verificar acceso
-      if (user.rol === 'estudiante' && studentId !== user.userId) {
+      if (user.role === 'STUDENT' && studentId !== user.id) {
         return NextResponse.json(
           { success: false, error: 'No autorizado' },
           { status: 403 }
         );
       }
 
-      let session = await getActiveSession(studentId, lessonId);
+      let studentSession = await getActiveSession(studentId, lessonId);
 
       // Si no existe, crear nueva sesión
-      if (!session) {
+      if (!studentSession) {
         // Profesor puede especificar nivel y apoyo adicional
         const nivel = searchParams.get('nivel') as 'principiante' | 'intermedio' | 'avanzado' | null;
         const necesitaApoyo = searchParams.get('necesita_apoyo') === 'true';
 
-        session = await createSession(
+        studentSession = await createSession(
           studentId,
           lessonId,
           nivel || 'principiante', // Default: principiante
@@ -161,12 +154,12 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      return NextResponse.json({ success: true, session });
+      return NextResponse.json({ success: true, session: studentSession });
     }
 
     // Obtener todas las sesiones del estudiante
     if (studentId) {
-      if (user.rol === 'estudiante' && studentId !== user.userId) {
+      if (user.role === 'STUDENT' && studentId !== user.id) {
         return NextResponse.json(
           { success: false, error: 'No autorizado' },
           { status: 403 }
@@ -212,24 +205,17 @@ const UpdateSessionSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    // Validar autenticación
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    // Validar autenticación con NextAuth
+    const authSession = await auth();
+
+    if (!authSession?.user) {
       return NextResponse.json(
         { success: false, error: 'No autorizado' },
         { status: 401 }
       );
     }
 
-    const token = authHeader.substring(7);
-    const user = await validateToken(token);
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Token inválido o expirado' },
-        { status: 401 }
-      );
-    }
+    const user = authSession.user;
 
     const body = await request.json();
     const validation = UpdateSessionSchema.safeParse(body);
@@ -244,8 +230,8 @@ export async function POST(request: NextRequest) {
     const { session_id, action, data } = validation.data;
 
     // Verificar que la sesión existe
-    const session = await getSessionById(session_id);
-    if (!session) {
+    const studentSession = await getSessionById(session_id);
+    if (!studentSession) {
       return NextResponse.json(
         { success: false, error: 'Sesión no encontrada' },
         { status: 404 }
@@ -253,7 +239,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar acceso
-    if (user.rol === 'estudiante' && session.student_id !== user.userId) {
+    if (user.role === 'STUDENT' && studentSession.student_id !== user.id) {
       return NextResponse.json(
         { success: false, error: 'No autorizado' },
         { status: 403 }
@@ -354,7 +340,7 @@ export async function POST(request: NextRequest) {
 
       case 'update_profile':
         // Actualizar perfil del estudiante (solo profesor)
-        if (user.rol !== 'profesor') {
+        if (user.role !== 'TEACHER') {
           return NextResponse.json(
             { success: false, error: 'Solo profesores pueden actualizar el perfil' },
             { status: 403 }
@@ -374,7 +360,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const currentProfile = session.student_profile || { nivel_inicial: 'principiante', necesita_mas_apoyo: false };
+        const currentProfile = studentSession.student_profile || { nivel_inicial: 'principiante', necesita_mas_apoyo: false };
         updatedSession = await updateSession(session_id, {
           student_profile: {
             nivel_inicial: profileValidation.data.nivel_inicial || currentProfile.nivel_inicial,

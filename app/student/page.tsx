@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 interface Lesson {
@@ -25,42 +26,30 @@ interface Session {
 }
 
 export default function EstudiantePage() {
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Verificar autenticación
-    const token = localStorage.getItem('auth_token');
-    const userStr = localStorage.getItem('user');
+    if (status === 'loading') return;
 
-    if (!token || !userStr) {
+    if (status === 'unauthenticated') {
       router.push('/login');
       return;
     }
 
-    const userData = JSON.parse(userStr);
-
-    if (userData.rol !== 'estudiante') {
-      router.push('/teacher');
-      return;
+    if (session?.user) {
+      loadData(session.user.id);
     }
+  }, [session, status, router]);
 
-    setUser(userData);
-    loadData(userData.id, token);
-  }, [router]);
-
-  const loadData = async (studentId: string, token: string) => {
+  const loadData = async (userId: string) => {
     try {
       // Cargar lecciones publicadas
-      const lessonsResponse = await fetch('/api/lessons?published=true', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const lessonsResponse = await fetch('/api/lessons?published=true');
       const lessonsResult = await lessonsResponse.json();
 
       if (lessonsResult.success) {
@@ -68,11 +57,7 @@ export default function EstudiantePage() {
       }
 
       // Cargar sesiones del estudiante
-      const sessionsResponse = await fetch(`/api/sessions?student_id=${studentId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const sessionsResponse = await fetch(`/api/sessions?student_id=${userId}`);
       const sessionsResult = await sessionsResponse.json();
 
       if (sessionsResult.success) {
@@ -85,10 +70,8 @@ export default function EstudiantePage() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user');
-    router.push('/login');
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: '/login' });
   };
 
   const getSessionForLesson = (lessonId: string) => {
@@ -108,12 +91,16 @@ export default function EstudiantePage() {
     router.push(`/student/lesson/${lessonId}`);
   };
 
-  if (loading) {
+  if (status === 'loading' || loading) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
         <p>Cargando...</p>
       </div>
     );
+  }
+
+  if (!session?.user) {
+    return null;
   }
 
   return (
@@ -130,7 +117,7 @@ export default function EstudiantePage() {
           <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#1a202c', marginBottom: '0.25rem' }}>
             Mis Lecciones
           </h1>
-          <p style={{ color: '#718096' }}>Hola, {user?.nombre}! 👋</p>
+          <p style={{ color: '#718096' }}>Hola, {session.user.name}! 👋</p>
         </div>
         <button
           onClick={handleLogout}
