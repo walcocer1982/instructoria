@@ -129,16 +129,24 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      console.log('[API /api/sessions] Buscando sesión activa...');
+      console.log('[API /api/sessions] studentId:', studentId);
+      console.log('[API /api/sessions] lessonId:', lessonId);
+
       let studentSession = await findActiveSession(studentId, lessonId);
 
       // Si no existe, crear nueva sesión
       if (!studentSession) {
+        console.log('[API /api/sessions] No existe sesión activa, creando nueva...');
         studentSession = await createSession({
           student_id: studentId,
           lesson_id: lessonId,
           current_moment: 'M0',
           current_state: 'INTRODUCING',
         });
+        console.log('[API /api/sessions] ✅ Sesión creada. ID:', studentSession.id);
+      } else {
+        console.log('[API /api/sessions] ✅ Sesión existente encontrada. ID:', studentSession.id);
       }
 
       return NextResponse.json({ success: true, session: studentSession });

@@ -53,8 +53,19 @@ export async function POST(request: NextRequest) {
     const { action, session_id, message } = validation.data;
 
     // Verificar que la sesión pertenece al estudiante
+    console.log('[API /api/chat] Buscando sesión:', session_id);
+    console.log('[API /api/chat] Usuario autenticado:', session.user.id);
+
     const studentSession = await getSessionById(session_id);
+
+    console.log('[API /api/chat] Sesión encontrada:', studentSession ? 'SÍ' : 'NO');
+    if (studentSession) {
+      console.log('[API /api/chat] Sesión userId:', studentSession.userId);
+      console.log('[API /api/chat] Sesión lessonId:', studentSession.lessonId);
+    }
+
     if (!studentSession) {
+      console.error('[API /api/chat] ❌ Sesión no encontrada. ID buscado:', session_id);
       return NextResponse.json(
         { success: false, error: 'Sesión no encontrada' },
         { status: 404 }
