@@ -1,0 +1,403 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// USUARIOS Y AUTENTICACIÓN
+// ========================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  emailVerified DateTime?
+  image         String?
+  googleId      String?   @unique
+  avatar        String?
+
+  // Carrera del estudiante (opcional)
+  careerEnrollmentId String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relaciones
+  careerEnrollment  CareerEnrollment? @relation(fields: [careerEnrollmentId], references: [id])
+  courseEnrollments CourseEnrollment[]
+  learningSessions  LearningSession[]
+  accounts          Account[]
+  sessions          Session[]
+
+  @@index([email])
+  @@index([googleId])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ========================================
+// CARRERAS
+// ========================================
+
+model Career {
+  id            String    @id @default(cuid())
+  name          String    // "Seguridad y Salud Ocupacional"
+  description   String?   @db.Text
+  slug          String    @unique // "sso"
+  icon          String?
+  color         String?
+
+  // Duración y metadata
+  durationMonths Int?
+  level          String?  // "Técnico", "Profesional"
+
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relaciones
+  courses       Course[]
+  enrollments   CareerEnrollment[]
+
+  @@index([slug])
+}
+
+model CareerEnrollment {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  careerId        String
+
+  enrolledAt      DateTime  @default(now())
+  expectedEndDate DateTime?
+  completedAt     DateTime?
+
+  progress        Float     @default(0) // 0-100%
+
+  users           User[]
+  career          Career    @relation(fields: [careerId], references: [id])
+
+  @@index([userId])
+  @@index([careerId])
+}
+
+// ========================================
+// INSTRUCTORES IA
+// ========================================
+
+model AIInstructor {
+  id              String    @id @default(cuid())
+  name            String    // "Prof. Claude - Instructor de SSO"
+  specialty       String    // "Seguridad y Salud Ocupacional"
+  bio             String?   @db.Text
+  avatar          String?
+
+  // Configuración del modelo IA
+  modelId         String    @default("claude-sonnet-4-5-20250929")
+  systemPromptBase String   @db.Text
+  temperature     Float     @default(0.7)
+  maxTokens       Int       @default(2048)
+
+  // Expertise
+  expertiseAreas  Json?
+  tone            String?
+
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+
+  // Relaciones
+  topics          Topic[]
+}
+
+// ========================================
+// CURSOS
+// ========================================
+
+enum CourseType {
+  TRANSVERSAL
+  CAREER
+}
+
+model Course {
+  id            String      @id @default(cuid())
+  title         String
+  description   String?     @db.Text
+  slug          String      @unique
+
+  type          CourseType  @default(CAREER)
+
+  // Si es CAREER, debe tener careerId
+  careerId      String?
+
+  // Metadata
+  thumbnail     String?
+  order         Int         @default(0)
+
+  isPublished   Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relaciones
+  career        Career?     @relation(fields: [careerId], references: [id])
+  topics        Topic[]
+  enrollments   CourseEnrollment[]
+
+  @@index([type])
+  @@index([careerId])
+  @@index([slug])
+}
+
+// ========================================
+// TEMAS (IPERC es un TEMA)
+// ========================================
+
+model Topic {
+  id                String    @id @default(cuid())
+  title             String
+  description       String?   @db.Text
+  slug              String    @unique
+
+  courseId          String
+  instructorId      String
+
+  // Metadata
+  thumbnail         String?
+  order             Int       @default(0)
+  estimatedMinutes  Int?
+  difficulty        String?
+
+  // CONTENIDO DEL TEMA (JSON con clases/momentos/actividades)
+  contentJson       Json
+
+  // IMÁGENES EDUCATIVAS (desde MCP Server)
+  images            Json?     // Array de ImageMetadata desde MCP
+  imagesLoadedAt    DateTime? // Última vez que se cargaron desde MCP
+
+  // Prerequisitos
+  prerequisiteTopicIds Json?
+
+  isPublished       Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relaciones
+  course            Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  instructor        AIInstructor @relation(fields: [instructorId], references: [id])
+  enrollments       TopicEnrollment[]
+
+  @@index([courseId])
+  @@index([slug])
+}
+
+// ========================================
+// ENROLLMENTS
+// ========================================
+
+model CourseEnrollment {
+  id            String    @id @default(cuid())
+  userId        String
+  courseId      String
+
+  enrolledAt    DateTime  @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+
+  progress      Float     @default(0)
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course        Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  topicEnrollments TopicEnrollment[]
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+}
+
+model TopicEnrollment {
+  id                  String    @id @default(cuid())
+  userId              String
+  topicId             String
+  courseEnrollmentId  String
+
+  enrolledAt          DateTime  @default(now())
+  startedAt           DateTime?
+  completedAt         DateTime?
+
+  progress            Float     @default(0)
+
+  // Calificación
+  grade               Float?
+  passed              Boolean   @default(false)
+
+  courseEnrollment    CourseEnrollment @relation(fields: [courseEnrollmentId], references: [id], onDelete: Cascade)
+  topic               Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  sessions            LearningSession[]
+  activities          ActivityProgress[]
+
+  @@unique([userId, topicId])
+  @@index([userId])
+  @@index([topicId])
+}
+
+// ========================================
+// SESIONES DE APRENDIZAJE (MEMORIA)
+// ========================================
+
+model LearningSession {
+  id                  String    @id @default(cuid())
+  topicEnrollmentId   String
+  userId              String
+
+  startedAt           DateTime  @default(now())
+  endedAt             DateTime?
+  lastActivityAt      DateTime  @default(now())
+
+  // Ubicación actual en el tema
+  currentClassId      String?
+  currentMomentId     String?
+  currentActivityId   String?
+
+  // Resumen generado por IA
+  summaryText         String?   @db.Text
+  lastSummaryAt       DateTime?
+
+  topicEnrollment     TopicEnrollment @relation(fields: [topicEnrollmentId], references: [id], onDelete: Cascade)
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages            Message[]
+  incidents           SecurityIncident[]
+
+  @@index([topicEnrollmentId])
+  @@index([userId])
+}
+
+model Message {
+  id              String    @id @default(cuid())
+  sessionId       String
+
+  role            String    // "user" | "assistant" | "system"
+  content         String    @db.Text
+  timestamp       DateTime  @default(now())
+
+  // Contexto
+  classId         String?
+  momentId        String?
+  activityId      String?
+
+  // Tokens (analytics)
+  inputTokens     Int?
+  outputTokens    Int?
+
+  session         LearningSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, timestamp])
+}
+
+// ========================================
+// PROGRESO DE ACTIVIDADES
+// ========================================
+
+enum ActivityStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  NEEDS_REVIEW
+}
+
+model ActivityProgress {
+  id                  String    @id @default(cuid())
+  topicEnrollmentId   String
+
+  // IDs del contentJson del tema
+  classId             String
+  momentId            String
+  activityId          String
+
+  status              ActivityStatus @default(NOT_STARTED)
+
+  startedAt           DateTime?
+  completedAt         DateTime?
+
+  // Evidencias (incluye conversación y análisis)
+  evidenceData        Json?
+
+  // Verificación
+  verifiedBy          String?
+  passedCriteria      Boolean   @default(false)
+  aiFeedback          String?   @db.Text
+
+  attempts            Int       @default(0)
+
+  topicEnrollment     TopicEnrollment @relation(fields: [topicEnrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([topicEnrollmentId, activityId])
+  @@index([topicEnrollmentId])
+  @@index([status])
+}
+
+// ========================================
+// SEGURIDAD
+// ========================================
+
+model SecurityIncident {
+  id            String    @id @default(cuid())
+  sessionId     String
+  userId        String?
+
+  incidentType  String
+  details       Json
+  severity      String
+
+  timestamp     DateTime  @default(now())
+  resolved      Boolean   @default(false)
+  resolvedAt    DateTime?
+  resolvedBy    String?
+  notes         String?   @db.Text
+
+  session       LearningSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([incidentType])
+}
