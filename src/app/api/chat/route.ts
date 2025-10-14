@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { processStudentMessage } from '@/services/chat'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const { sessionId, message } = await request.json()

@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { parseTopicContent } from '@/lib/type-helpers'
 import { TopicContent } from '@/types/topic-content'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const { userId, topicId } = await request.json()
