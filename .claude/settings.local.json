@@ -57,7 +57,8 @@
       "Bash(git remote remove:*)",
       "Bash(node -e \"console.log(require(''crypto'').randomBytes(32).toString(''base64''))\")",
       "Bash(git fetch:*)",
-      "Bash(node fix-vercel-routes.js)"
+      "Bash(node fix-vercel-routes.js)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

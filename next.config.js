@@ -14,6 +14,13 @@ const nextConfig = {
         pathname: '/educational-images/**'
       }
     ]
+  },
+  // Skip collecting page data during build for API routes
+  typescript: {
+    ignoreBuildErrors: false
+  },
+  eslint: {
+    ignoreDuringBuilds: false
   }
 }
 
