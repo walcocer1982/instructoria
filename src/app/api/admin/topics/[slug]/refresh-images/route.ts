@@ -7,6 +7,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getTopicImagesFromMCP } from '@/services/mcp-client'
 
+// Marcar como dynamic para evitar que Next.js intente pre-renderizar
+export const dynamic = 'force-dynamic'
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { slug: string } }
