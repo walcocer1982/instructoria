@@ -40,19 +40,22 @@ export interface Activity {
   id: string
   type: ActivityType
 
+  // NUEVO: Complejidad para ajustar maxTokens dinámicamente
+  complexity?: 'simple' | 'moderate' | 'complex'
+
   // Fase de enseñanza
   teaching: TeachingPhase
 
   // Fase de verificación
   verification: VerificationPhase
 
-  // Evidencia del estudiante
-  student_evidence: StudentEvidence
+  // Evidencia del estudiante (OPCIONAL - para compatibilidad)
+  student_evidence?: StudentEvidence
 
-  // Manejo de preguntas
+  // Manejo de preguntas (DEPRECADO - la app lo maneja automáticamente)
   student_questions?: StudentQuestionsConfig
 
-  // Guardrails
+  // Guardrails (DEPRECADO - moderateContent lo maneja)
   guardrails?: GuardrailsConfig
 
   // Metadata
@@ -78,8 +81,17 @@ export type ActivityType =
 
 export interface TeachingPhase {
   agent_instruction: string
-  key_concepts: string[]
-  examples: string[]
+
+  // NUEVO: Extensión objetivo para el mensaje del instructor
+  target_length?: string  // Ej: "150-300 palabras"
+
+  // NUEVO: Contexto adicional para generar ejemplos
+  context?: string  // Ej: "Sector: construcción. País: Perú"
+
+  // OPCIONAL: El IA puede generar sus propios conceptos y ejemplos
+  key_concepts?: string[]
+  examples?: string[]
+
   image?: {
     url: string
     description: string
@@ -91,17 +103,21 @@ export interface TeachingPhase {
 // ========================================
 
 export interface VerificationPhase {
-  method: "conversational" | "quiz" | "document_review"
+  method?: "conversational" | "quiz" | "document_review"
 
-  initial_question: string
+  // SIMPLIFICADO: Solo la pregunta de verificación
+  initial_question?: string  // Para compatibilidad
+  question?: string          // Nuevo nombre más simple
 
-  success_criteria: {
+  // DEPRECADO: La app analiza automáticamente con analyzeStudentResponse
+  success_criteria?: {
     must_include: string[]
     understanding_level: UnderstandingLevel
     min_completeness: number // 0-100%
   }
 
-  reprompt_strategy: RepromptStrategy
+  // DEPRECADO: La app maneja las repreguntas automáticamente
+  reprompt_strategy?: RepromptStrategy
 
   follow_up_questions?: FollowUpQuestion[]
 }

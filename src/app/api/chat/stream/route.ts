@@ -146,11 +146,25 @@ export async function POST(request: NextRequest) {
 
         console.log(`[STREAM] Construir prompt: ${Date.now() - t3}ms`)
 
-        // 4. STREAMING de Claude
+        // 4. Calcular maxTokens según complejidad de la actividad
+        // Añadimos margen de seguridad (~20%) para que pueda completar frases
+        const COMPLEXITY_TOKENS = {
+          simple: 600,     // Target: 150-300 palabras (~300-400 tokens) + margen
+          moderate: 850,   // Target: 300-450 palabras (~450-600 tokens) + margen
+          complex: 1100    // Target: 450-600 palabras (~650-800 tokens) + margen
+        }
+
+        const maxTokens = currentActivity.complexity
+          ? COMPLEXITY_TOKENS[currentActivity.complexity]
+          : (topic.instructor.maxTokens || 850)  // Default: moderate
+
+        console.log(`[STREAM] Using maxTokens: ${maxTokens} (complexity: ${currentActivity.complexity || 'default'}) - Target: ${currentActivity.teaching?.target_length || 'N/A'}`)
+
+        // 5. STREAMING de Claude
         const t4 = Date.now()
         const claudeStream = await anthropic.messages.stream({
           model: topic.instructor.modelId || DEFAULT_MODEL,
-          max_tokens: topic.instructor.maxTokens || 1024,
+          max_tokens: maxTokens,
           temperature: topic.instructor.temperature || 0.6,
           system: [
             ...staticBlocks,

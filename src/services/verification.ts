@@ -30,13 +30,21 @@ export async function analyzeStudentResponse(
   studentMessage: string,
   conversationHistory: Message[]
 ): Promise<VerificationResult> {
+  // Valores por defecto si no existen success_criteria (JSON simplificado)
+  const minCompleteness = activity.verification.success_criteria?.min_completeness || 70
+  const requiredLevel = activity.verification.success_criteria?.understanding_level || 'applied'
+  const mustInclude = activity.verification.success_criteria?.must_include || []
+
   const analysisPrompt = `Analiza si la respuesta del estudiante cumple los criterios de éxito de esta actividad.
 
-CRITERIOS REQUERIDOS:
-${activity.verification.success_criteria.must_include.map((c, i) => `${i}. ${c}`).join('\n')}
+PREGUNTA DE VERIFICACIÓN:
+${activity.verification.question || activity.verification.initial_question}
 
-Nivel de comprensión requerido: ${activity.verification.success_criteria.understanding_level}
-Completitud mínima: ${activity.verification.success_criteria.min_completeness}%
+${mustInclude.length > 0 ? `CRITERIOS REQUERIDOS:
+${mustInclude.map((c, i) => `${i}. ${c}`).join('\n')}` : ''}
+
+Nivel de comprensión requerido: ${requiredLevel}
+Completitud mínima: ${minCompleteness}%
 
 RESPUESTA DEL ESTUDIANTE:
 "${studentMessage}"
@@ -45,7 +53,7 @@ HISTORIAL PREVIO (últimos 3 mensajes):
 ${conversationHistory.slice(-3).map(m => `${m.role}: ${m.content}`).join('\n')}
 
 REGLAS:
-- ready_to_advance es true solo si completeness_percentage >= ${activity.verification.success_criteria.min_completeness}
+- ready_to_advance es true solo si completeness_percentage >= ${minCompleteness}
 - Si solo memorizó pero el nivel requerido es "applied", ready_to_advance debe ser false
 
 IMPORTANTE: Responde ÚNICAMENTE con el objeto JSON, sin texto adicional, sin markdown, sin explicaciones.
@@ -72,9 +80,10 @@ Formato de respuesta:
   } catch (error) {
     console.error('Error en verificación:', error)
     // Valor por defecto conservador
+    const mustInclude = activity.verification.success_criteria?.must_include || []
     return {
       criteria_met: [],
-      criteria_missing: activity.verification.success_criteria.must_include.map((_, i) => i),
+      criteria_missing: mustInclude.map((_, i) => i),
       completeness_percentage: 0,
       understanding_level: 'memorized',
       needs_reprompt: true,
