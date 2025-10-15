@@ -487,9 +487,9 @@ export default function LearnPage() {
                   value={input}
                   onChange={(e) => {
                     setInput(e.target.value)
-                    // Auto-expandir
+                    // Auto-expandir hasta 4 líneas (~120px), luego scroll
                     e.target.style.height = 'auto'
-                    e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px'
+                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
                   }}
                   onKeyDown={handleKeyPress}
                   onPaste={(e) => {
@@ -497,18 +497,19 @@ export default function LearnPage() {
                     console.log('[Security] Intento de pegar bloqueado - usa tus propias palabras o el micrófono')
                   }}
                   placeholder="Escribe o usa el micrófono..."
-                  className="w-full px-4 py-3 pr-20 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-instructor-500 resize-none text-sm"
+                  className="w-full px-4 py-3 pr-24 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-instructor-500 resize-none text-sm"
                   style={{
                     minHeight: '52px',
-                    maxHeight: '200px',
-                    overflow: 'auto'
+                    maxHeight: '120px',
+                    overflowY: 'auto',
+                    scrollbarWidth: 'thin'
                   }}
                   rows={1}
                   disabled={loading}
                 />
 
-                {/* Íconos flotantes dentro del textarea */}
-                <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                {/* Íconos flotantes FUERA del área de scroll */}
+                <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-white">
                   {/* Botón de micrófono */}
                   <button
                     onClick={toggleVoiceRecognition}
