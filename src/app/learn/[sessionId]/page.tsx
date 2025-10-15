@@ -472,73 +472,77 @@ export default function LearnPage() {
 
           {/* Input Area */}
           <div className="border-t bg-white p-4">
-            <div className="max-w-4xl mx-auto space-y-3">
-              {/* Textarea auto-expansible */}
-              <textarea
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value)
-                  // Auto-expandir
-                  e.target.style.height = 'auto'
-                  e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px'
-                }}
-                onKeyDown={handleKeyPress}
-                onPaste={(e) => {
-                  e.preventDefault()
-                  console.log('[Security] Intento de pegar bloqueado - usa tus propias palabras o el micrófono')
-                }}
-                placeholder="Escribe o usa el micrófono..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-instructor-500 resize-none text-sm"
-                style={{
-                  minHeight: '52px',
-                  maxHeight: '200px',
-                  overflow: 'auto'
-                }}
-                rows={1}
-                disabled={loading}
-              />
-
-              {/* Indicador de grabación */}
+            <div className="max-w-4xl mx-auto">
+              {/* Indicador de grabación sobre el textarea */}
               {isRecording && (
-                <div className="flex items-center gap-2 text-red-600 text-sm animate-pulse">
+                <div className="mb-2 flex items-center gap-2 text-red-600 text-sm">
                   <span className="w-2 h-2 bg-red-600 rounded-full animate-ping"></span>
                   <span className="font-medium">Grabando... Habla ahora</span>
                 </div>
               )}
 
-              {/* Botones: Dictado y Enviar */}
-              <div className="flex gap-3 justify-end">
-                <Button
-                  onClick={toggleVoiceRecognition}
+              {/* Contenedor con posición relativa para íconos flotantes */}
+              <div className="relative">
+                <textarea
+                  value={input}
+                  onChange={(e) => {
+                    setInput(e.target.value)
+                    // Auto-expandir
+                    e.target.style.height = 'auto'
+                    e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px'
+                  }}
+                  onKeyDown={handleKeyPress}
+                  onPaste={(e) => {
+                    e.preventDefault()
+                    console.log('[Security] Intento de pegar bloqueado - usa tus propias palabras o el micrófono')
+                  }}
+                  placeholder="Escribe o usa el micrófono..."
+                  className="w-full px-4 py-3 pr-20 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-instructor-500 resize-none text-sm"
+                  style={{
+                    minHeight: '52px',
+                    maxHeight: '200px',
+                    overflow: 'auto'
+                  }}
+                  rows={1}
                   disabled={loading}
-                  variant="outline"
-                  className={`flex items-center gap-2 ${
-                    isRecording
-                      ? 'bg-red-50 border-red-300 text-red-600 hover:bg-red-100'
-                      : 'hover:bg-gray-50'
-                  }`}
-                  title={isRecording ? 'Detener grabación' : 'Iniciar dictado por voz'}
-                >
-                  {isRecording ? (
-                    <>
-                      <MicOff className="h-4 w-4" />
-                      <span className="text-sm">Detener</span>
-                    </>
-                  ) : (
-                    <>
-                      <Mic className="h-4 w-4" />
-                      <span className="text-sm">Dictado</span>
-                    </>
-                  )}
-                </Button>
-                <Button
-                  onClick={sendMessage}
-                  disabled={loading || !input.trim()}
-                  className="bg-instructor-600 hover:bg-instructor-700 flex items-center gap-2"
-                >
-                  <Send className="h-4 w-4" />
-                  <span className="text-sm">Enviar</span>
-                </Button>
+                />
+
+                {/* Íconos flotantes dentro del textarea */}
+                <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                  {/* Botón de micrófono */}
+                  <button
+                    onClick={toggleVoiceRecognition}
+                    disabled={loading}
+                    className={`p-2 rounded-full transition-colors ${
+                      isRecording
+                        ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                        : 'hover:bg-gray-100 text-gray-600'
+                    }`}
+                    title={isRecording ? 'Detener grabación' : 'Iniciar dictado por voz'}
+                    type="button"
+                  >
+                    {isRecording ? (
+                      <MicOff className="h-5 w-5" />
+                    ) : (
+                      <Mic className="h-5 w-5" />
+                    )}
+                  </button>
+
+                  {/* Botón de enviar */}
+                  <button
+                    onClick={sendMessage}
+                    disabled={loading || !input.trim()}
+                    className={`p-2 rounded-full transition-all ${
+                      input.trim() && !loading
+                        ? 'bg-instructor-600 text-white hover:bg-instructor-700'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                    title="Enviar mensaje"
+                    type="button"
+                  >
+                    <Send className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
