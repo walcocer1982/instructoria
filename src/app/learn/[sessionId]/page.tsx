@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Send } from 'lucide-react'
+import { Send, Mic, MicOff } from 'lucide-react'
 import { ImagePanel } from '@/components/ImagePanel'
 import { ImageModal } from '@/components/ImageModal'
 import { useImageGallery } from '@/hooks/useImageGallery'
@@ -55,8 +55,10 @@ export default function LearnPage() {
   const [loading, setLoading] = useState(false)
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null)
   const [showProgressModal, setShowProgressModal] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const recognitionRef = useRef<any>(null)
 
   // Hook para manejar galería de imágenes
   const {
@@ -267,6 +269,73 @@ export default function LearnPage() {
     }
   }
 
+  // Inicializar Web Speech API
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition()
+        recognitionRef.current.continuous = true
+        recognitionRef.current.interimResults = true
+        recognitionRef.current.lang = 'es-PE' // Español de Perú
+
+        recognitionRef.current.onresult = (event: any) => {
+          let interimTranscript = ''
+          let finalTranscript = ''
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript + ' '
+            } else {
+              interimTranscript += transcript
+            }
+          }
+
+          // Actualizar input con la transcripción
+          if (finalTranscript) {
+            setInput((prev) => prev + finalTranscript)
+          }
+        }
+
+        recognitionRef.current.onerror = (event: any) => {
+          console.error('[Voice] Error:', event.error)
+          setIsRecording(false)
+
+          if (event.error === 'not-allowed') {
+            alert('⚠️ Permiso de micrófono denegado. Por favor, permite el acceso al micrófono en tu navegador.')
+          }
+        }
+
+        recognitionRef.current.onend = () => {
+          setIsRecording(false)
+        }
+      }
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop()
+      }
+    }
+  }, [])
+
+  const toggleVoiceRecognition = () => {
+    if (!recognitionRef.current) {
+      alert('⚠️ Tu navegador no soporta reconocimiento de voz. Usa Chrome, Edge o Safari.')
+      return
+    }
+
+    if (isRecording) {
+      recognitionRef.current.stop()
+      setIsRecording(false)
+    } else {
+      recognitionRef.current.start()
+      setIsRecording(true)
+    }
+  }
+
   if (!sessionInfo) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -322,8 +391,20 @@ export default function LearnPage() {
                       className={`px-4 py-3 rounded-2xl ${
                         msg.role === 'user'
                           ? 'bg-student-500 text-white'
-                          : 'bg-instructor-50 text-gray-900 border border-instructor-200'
+                          : 'bg-instructor-50 text-gray-900 border border-instructor-200 select-none'
                       }`}
+                      onCopy={(e) => {
+                        if (msg.role === 'assistant') {
+                          e.preventDefault()
+                          console.log('[Security] Intento de copiar mensaje del instructor bloqueado')
+                        }
+                      }}
+                      onCut={(e) => {
+                        if (msg.role === 'assistant') {
+                          e.preventDefault()
+                          console.log('[Security] Intento de cortar mensaje del instructor bloqueado')
+                        }
+                      }}
                     >
                       {msg.role === 'assistant' ? (
                         <MessageWithImageRefs
@@ -391,23 +472,45 @@ export default function LearnPage() {
 
           {/* Input Area */}
           <div className="border-t bg-white p-4">
-            <div className="max-w-4xl mx-auto flex gap-3">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="Escribe tu respuesta o pregunta..."
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-instructor-500 resize-none text-sm"
-                rows={2}
-                disabled={loading}
-              />
-              <Button
-                onClick={sendMessage}
-                disabled={loading || !input.trim()}
-                className="bg-instructor-600 hover:bg-instructor-700 h-auto px-6"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+            <div className="max-w-4xl mx-auto">
+              <div className="flex gap-3 items-end">
+                <div className="flex-1">
+                  <textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    onPaste={(e) => {
+                      e.preventDefault()
+                      console.log('[Security] Intento de pegar bloqueado - usa tus propias palabras o el micrófono')
+                    }}
+                    placeholder="Escribe o usa el micrófono..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-instructor-500 resize-none text-sm"
+                    rows={2}
+                    disabled={loading}
+                  />
+                  {isRecording && (
+                    <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                      <span className="animate-pulse">🔴</span> Grabando... Habla ahora
+                    </p>
+                  )}
+                </div>
+                <Button
+                  onClick={toggleVoiceRecognition}
+                  disabled={loading}
+                  variant="outline"
+                  className={`h-auto px-4 py-3 ${isRecording ? 'bg-red-50 border-red-300 text-red-600' : ''}`}
+                  title={isRecording ? 'Detener grabación' : 'Iniciar dictado por voz'}
+                >
+                  {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                </Button>
+                <Button
+                  onClick={sendMessage}
+                  disabled={loading || !input.trim()}
+                  className="bg-instructor-600 hover:bg-instructor-700 h-auto px-6 py-3"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

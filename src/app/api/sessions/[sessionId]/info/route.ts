@@ -65,11 +65,40 @@ export async function GET(
 
     // Extraer todas las actividades de todos los momentos
     const activities: any[] = []
-    if (contentJson.topic?.moments && Array.isArray(contentJson.topic.moments)) {
+
+    // Soportar ambas estructuras: con classes y sin classes
+    if (contentJson.topic?.classes && Array.isArray(contentJson.topic.classes)) {
+      // Estructura con clases
+      contentJson.topic.classes.forEach((clase: any, classIndex: number) => {
+        if (clase.moments && Array.isArray(clase.moments)) {
+          clase.moments.forEach((moment: any, momentIndex: number) => {
+            if (moment.activities && Array.isArray(moment.activities)) {
+              moment.activities.forEach((activity: any, activityIndex: number) => {
+                const activityTitle = activity.title || activity.instruction || moment.title || `Actividad ${activityIndex + 1}`
+                const activityId = activity.id || `class-${classIndex}-moment-${momentIndex}-activity-${activityIndex}`
+
+                // Obtener el estado real desde la base de datos
+                const status = activityStatusMap.get(activityId) || 'pending'
+
+                activities.push({
+                  id: activityId,
+                  title: activityTitle,
+                  description: activity.description || '',
+                  type: activity.type || 'unknown',
+                  classTitle: clase.title || `Clase ${classIndex + 1}`,
+                  momentTitle: moment.title || `Momento ${momentIndex + 1}`,
+                  status,
+                })
+              })
+            }
+          })
+        }
+      })
+    } else if (contentJson.topic?.moments && Array.isArray(contentJson.topic.moments)) {
+      // Estructura sin clases (directamente momentos)
       contentJson.topic.moments.forEach((moment: any, momentIndex: number) => {
         if (moment.activities && Array.isArray(moment.activities)) {
           moment.activities.forEach((activity: any, activityIndex: number) => {
-            // Usar el título del momento si la actividad no tiene título
             const activityTitle = activity.title || activity.instruction || moment.title || `Actividad ${activityIndex + 1}`
             const activityId = activity.id || `moment-${momentIndex}-activity-${activityIndex}`
 
