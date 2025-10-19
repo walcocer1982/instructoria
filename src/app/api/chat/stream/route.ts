@@ -121,6 +121,11 @@ export async function POST(request: NextRequest) {
 
         // 3. Construir prompt
         const t3 = Date.now()
+
+        // Detectar si es la última actividad del tema (reusar content ya parseado arriba)
+        const nextActivity = findNextActivity(content, currentMoment.id, currentActivity.id)
+        const isLastActivity = nextActivity === null
+
         const { staticBlocks, dynamicPrompt } = buildSystemPrompt({
           topic,
           session,
@@ -128,7 +133,8 @@ export async function POST(request: NextRequest) {
           currentActivity,
           conversationHistory: session.messages.reverse(),
           completedActivities: session.topicEnrollment.activities.map(a => a.activityId),
-          images: topicImages
+          images: topicImages,
+          isLastActivity
         })
 
         let finalDynamicPrompt = dynamicPrompt
@@ -307,7 +313,10 @@ async function saveToDatabase(
 ) {
   const t5 = Date.now()
 
-  // Guardar mensajes
+  // Guardar mensajes secuencialmente para garantizar orden correcto por timestamp
+  const userTimestamp = new Date()
+  const assistantTimestamp = new Date(userTimestamp.getTime() + 1) // +1ms garantiza orden
+
   await prisma.message.createMany({
     data: [
       {
@@ -317,6 +326,7 @@ async function saveToDatabase(
         activityId: currentActivity.id,
         momentId: currentMoment.id,
         classId: session.currentClassId,
+        timestamp: userTimestamp
       },
       {
         sessionId,
@@ -327,6 +337,7 @@ async function saveToDatabase(
         classId: session.currentClassId,
         inputTokens,
         outputTokens,
+        timestamp: assistantTimestamp
       }
     ]
   })

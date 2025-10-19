@@ -22,6 +22,7 @@ interface PromptContext {
   conversationHistory: Message[]
   completedActivities: string[]
   images?: TopicImage[]
+  isLastActivity?: boolean
 }
 
 /**
@@ -32,7 +33,7 @@ export function buildSystemPrompt(context: PromptContext): {
   staticBlocks: Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }>
   dynamicPrompt: string
 } {
-  const { topic, session, currentMoment, currentActivity, conversationHistory, completedActivities, images } = context
+  const { topic, session, currentMoment, currentActivity, conversationHistory, completedActivities, images, isLastActivity } = context
   const content = parseTopicContent(topic.contentJson)
   const instructor = topic.instructor
 
@@ -209,6 +210,20 @@ CUANDO EL ESTUDIANTE ESTÉ LISTO:
 
 Cuando el estudiante demuestre comprensión suficiente, di algo como:
 "¡Excelente trabajo! Has completado esta actividad ✅. ¿Listo para continuar?"
+
+${isLastActivity ? `
+---
+
+🏁 INSTRUCCIÓN ESPECIAL - ÚLTIMA ACTIVIDAD DEL TEMA:
+
+Esta es la ÚLTIMA actividad del tema "${topic.title}".
+
+Cuando el estudiante la complete exitosamente:
+1. Felicítalo por completar TODO el tema
+2. Resume brevemente los puntos clave aprendidos (2-3 bullet points)
+3. Anímalo a aplicar lo aprendido
+4. Indica que el sistema lo llevará al siguiente tema del curso
+` : ''}
 `
 
   // BLOQUE DINÁMICO: Conversación y progreso (NO cacheable)

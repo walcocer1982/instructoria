@@ -243,6 +243,14 @@ npm run db:studio
 
 ## 📋 CHANGELOG
 
+### v1.1.1 (2025-10-19)
+- **Fix:** Mensaje de finalización cuando estudiante completa último tema
+  - Instructor ahora felicita y resume puntos clave al completar tema completo
+  - Agregada instrucción especial para última actividad del tema
+- **Fix:** Orden de mensajes al recargar página
+  - Timestamps explícitos (+1ms) garantizan orden correcto user→assistant
+  - Corregida condición de carrera en createMany
+
 ### v1.1.0 (2025-10-19)
 - **Feature:** Nuevo tema "Inspecciones de Seguridad" (60 min, 5 momentos)
   - Clasificación de actos y condiciones subestándares
