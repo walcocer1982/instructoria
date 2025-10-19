@@ -37,3 +37,6 @@ prisma/migrations/
 
 # Development scripts
 scripts/
+
+# Flatrepo
+flatrepo_*
