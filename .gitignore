@@ -40,3 +40,10 @@ scripts/
 
 # Flatrepo
 flatrepo_*
+
+# Temporary content files
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!components.json

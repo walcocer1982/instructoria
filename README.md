@@ -243,6 +243,15 @@ npm run db:studio
 
 ## 📋 CHANGELOG
 
+### v1.1.0 (2025-10-19)
+- **Feature:** Nuevo tema "Inspecciones de Seguridad" (60 min, 5 momentos)
+  - Clasificación de actos y condiciones subestándares
+  - Tipos de inspecciones según normativa peruana (DS 005-2012-TR)
+  - Registro profesional de hallazgos
+  - Clasificación CRÍTICO/MAYOR/MENOR con tiempos de levantamiento
+  - Inspección simulada completa (caso práctico de área de soldadura)
+- **Docs:** Archivo CLAUDE.md con guía completa de arquitectura y desarrollo
+
 ### v1.0.0 (2025-10-19)
 - **Inicial:** Sistema completo de instructores IA conversacionales
 - **Feature:** Moderación de contenido con guardrails de seguridad

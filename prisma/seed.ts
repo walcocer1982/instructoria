@@ -694,7 +694,197 @@ async function main() {
 
   console.log('✅ Tema IPERC creado con imágenes')
 
-  // 5. Crear usuario de prueba
+  // 5. Crear Tema Inspecciones de Seguridad
+  const inspeccionesContent: TopicContent = {
+    topic: {
+      id: 'topic_inspecciones_001',
+      title: 'Inspecciones de Seguridad',
+      learning_objective: 'El estudiante comprenderá la metodología completa de inspecciones de seguridad, desde la planificación hasta el seguimiento de hallazgos, aplicando la clasificación de actos y condiciones subestándares según normativa peruana',
+      expected_learning: 'Al finalizar este tema, el estudiante será capaz de planificar, ejecutar y documentar inspecciones de seguridad, clasificando hallazgos por nivel de riesgo y proponiendo acciones correctivas con tiempos de levantamiento apropiados',
+      key_points: [
+        'Diferencia entre actos y condiciones subestándares',
+        'Tipos de inspecciones y frecuencias según riesgo',
+        'Registro profesional de hallazgos',
+        'Clasificación CRÍTICO/MAYOR/MENOR y tiempos de levantamiento',
+        'Acciones correctivas y seguimiento hasta el cierre'
+      ],
+      moments: [
+        // MOMENTO 1: Actos y Condiciones Subestándares
+        {
+          id: 'moment_001',
+          title: 'Actos y Condiciones Subestándares',
+          order: 1,
+          description: 'Fundamentos: distinción entre comportamientos y estados físicos inseguros',
+          activities: [
+            {
+              id: 'activity_001',
+              type: 'explanation',
+              complexity: 'simple',
+              teaching: {
+                agent_instruction: 'Explica de forma concisa la diferencia fundamental entre ACTO SUBESTÁNDAR (comportamiento inseguro del trabajador, como no usar EPP o tomar atajos) y CONDICIÓN SUBESTÁNDAR (estado físico inseguro del ambiente/equipo, como piso resbaladizo o máquina sin guarda). Enfatiza que esta distinción es crucial porque los controles son diferentes: actos requieren capacitación/supervisión, condiciones requieren mantenimiento/ingeniería. Luego presenta 6 situaciones variadas para que el estudiante clasifique.',
+                target_length: '150-250 palabras',
+                context: 'Normativa: Ley 29783, DS 005-2012-TR. País: Perú'
+              },
+              verification: {
+                question: 'Clasifica estas 6 situaciones como ACTO o CONDICIÓN subestándar. Para cada una, escribe solo "A" o "C" y explica en una línea por qué:\n\n1. Trabajador usando celular mientras maneja montacargas\n2. Piso con derrame de aceite no limpiado desde hace días\n3. Operario entra a espacio confinado sin permiso de trabajo\n4. Extintor con manómetro en zona roja (sin presión)\n5. Soldador trabajando sin careta facial\n6. Salida de emergencia bloqueada con cajas apiladas'
+              },
+              metadata: {
+                estimated_minutes: 10,
+                difficulty: 'easy',
+                max_reprompts: 3
+              }
+            }
+          ]
+        },
+        // MOMENTO 2: Tipos de Inspecciones
+        {
+          id: 'moment_002',
+          title: 'Tipos de Inspecciones',
+          order: 2,
+          description: 'Conocer los diferentes tipos y cuándo aplicar cada uno',
+          activities: [
+            {
+              id: 'activity_002',
+              type: 'explanation',
+              complexity: 'simple',
+              teaching: {
+                agent_instruction: 'Explica brevemente los tipos de inspecciones: PLANEADAS (programadas con checklist, mensuales/semanales), INOPINADAS (sorpresa sin aviso previo para verificar cumplimiento real), y ESPECÍFICAS (pre-uso de equipos críticos, post-incidente). Menciona las frecuencias según DS 005-2012-TR: diarias (supervisores), semanales (jefes), mensuales (Comité SST). Luego presenta 3 situaciones prácticas para que el estudiante decida qué tipo aplicar.',
+                target_length: '150-250 palabras',
+                context: 'Normativa: DS 005-2012-TR, Ley 29783. País: Perú'
+              },
+              verification: {
+                question: 'Para estas 3 situaciones, indica: a) Tipo de inspección, b) Frecuencia, c) Quién debe hacerla, d) Por qué:\n\nSITUACIÓN 1: Tienes 5 montacargas que se usan diariamente en tu almacén.\n\nSITUACIÓN 2: Ocurrió un resbalón en el área de producción y necesitas investigar.\n\nSITUACIÓN 3: Notas que cuando avisas las inspecciones con anticipación, todo está "perfecto", pero normalmente hay desorden.'
+              },
+              metadata: {
+                estimated_minutes: 10,
+                difficulty: 'easy',
+                max_reprompts: 3
+              }
+            }
+          ]
+        },
+        // MOMENTO 3: Registro de Hallazgos
+        {
+          id: 'moment_003',
+          title: 'Planificación y Registro de Hallazgos',
+          order: 3,
+          description: 'Documentar hallazgos de forma profesional y objetiva',
+          activities: [
+            {
+              id: 'activity_003',
+              type: 'exercise',
+              complexity: 'moderate',
+              teaching: {
+                agent_instruction: 'Enseña el formato estándar de registro de hallazgos: Fecha, Área, Tipo (Acto/Condición), Descripción OBJETIVA (hechos observables, no juicios), Riesgo potencial (qué puede pasar). Enfatiza la importancia de ser OBJETIVO: ❌"Está inseguro" vs ✅"Cable eléctrico temporal sin protección cruza pasillo a 15cm del piso". Luego presenta un hallazgo encontrado para que el estudiante lo redacte formalmente.',
+                target_length: '200-300 palabras',
+                context: 'Formato según buenas prácticas de SSO en Perú'
+              },
+              verification: {
+                question: 'Encontraste este hallazgo en un taller mecánico:\n\n"Un trabajador está usando el esmeril angular para cortar metal. No usa careta facial ni lentes de seguridad, solo tapones auditivos."\n\nRedacta el HALLAZGO #001 con este formato:\n\nHALLAZGO #001\nFecha: 15/01/2025\nÁrea: Taller Mecánico\nTipo: [¿Acto o Condición?]\nDescripción: [Descripción objetiva de lo observado]\nRiesgo potencial: [Qué puede ocurrir si no se corrige]'
+              },
+              metadata: {
+                estimated_minutes: 12,
+                difficulty: 'medium',
+                max_reprompts: 3
+              }
+            }
+          ]
+        },
+        // MOMENTO 4: Clasificación de Riesgos
+        {
+          id: 'moment_004',
+          title: 'Evaluación del Nivel de Riesgo',
+          order: 4,
+          description: 'Clasificar hallazgos y asignar tiempos de levantamiento',
+          activities: [
+            {
+              id: 'activity_004',
+              type: 'exercise',
+              complexity: 'moderate',
+              teaching: {
+                agent_instruction: 'Explica la clasificación de hallazgos: CRÍTICO (riesgo inminente grave/fatal, parada inmediata, 0-24h), MAYOR (riesgo alto de lesión grave, acción urgente, 1-7 días), MENOR (desviación de estándar, riesgo bajo, 8-30 días). Enfatiza la pregunta clave: "¿Qué es lo PEOR que puede pasar?". Presenta 6 hallazgos diversos para que clasifique, asigne tiempo y justifique basándose en severidad potencial.',
+                target_length: '250-350 palabras',
+                context: 'Clasificación según buenas prácticas internacionales adaptadas a Perú'
+              },
+              verification: {
+                question: 'Clasifica estos 6 hallazgos como CRÍTICO, MAYOR o MENOR. Para cada uno indica: Clasificación (C/M/m), Tiempo de levantamiento, y Justificación (¿qué es lo peor que puede pasar?):\n\n1. Andamio a 5m de altura: arnés enganchado pero línea de vida floja y mal anclada\n\n2. Tablero eléctrico principal con tapa abierta, conexiones energizadas expuestas, en zona de tránsito frecuente\n\n3. Señalización de ruta de evacuación en pasillo descolorida y casi ilegible\n\n4. Detector de gases vencido hace 3 meses, se sigue usando para autorizar entrada a espacios confinados\n\n5. Bidones de químicos sin etiquetas identificando contenido (operarios "saben de memoria")\n\n6. Sillas de oficina con respaldo roto o ruedas trabadas'
+              },
+              metadata: {
+                estimated_minutes: 13,
+                difficulty: 'medium',
+                max_reprompts: 3
+              }
+            }
+          ]
+        },
+        // MOMENTO 5: Inspección Simulada Completa
+        {
+          id: 'moment_005',
+          title: 'Inspección Simulada Completa',
+          order: 5,
+          description: 'Aplicar todo el proceso de principio a fin',
+          activities: [
+            {
+              id: 'activity_005',
+              type: 'project',
+              complexity: 'complex',
+              teaching: {
+                agent_instruction: 'Guía al estudiante en una inspección simulada completa del ÁREA DE SOLDADURA. Recuérdale el proceso: 1) Identificar hallazgos (actos/condiciones), 2) Registrar formalmente, 3) Clasificar por riesgo, 4) Proponer acciones correctivas usando jerarquía de controles, 5) Identificar cuál requiere acción INMEDIATA. Presenta el escenario con 5 hallazgos observables y pide que aplique todo lo aprendido.',
+                target_length: '300-400 palabras',
+                context: 'Caso práctico: Área de soldadura de empresa metalmecánica peruana'
+              },
+              verification: {
+                question: 'CASO INTEGRADOR:\n\nEres supervisor de seguridad. Inspecciones el ÁREA DE SOLDADURA (10:00 AM, 15/01/2025).\n\nObservas:\nA) Soldador Juan trabajando sin careta, solo con lentes oscuros comunes\nB) 2 cilindros de gas (oxígeno + acetileno) de pie SIN cadena de sujeción\nC) Piso: electrodos usados y cables enrollados mezclados\nD) Extintor PQS 12kg: última inspección mensual fue octubre 2024 (hace 3 meses)\nE) Soldador Pedro usa celular con una mano mientras sujeta pieza con la otra (no está soldando)\n\nTAREA:\n\n1. Identifica los 5 hallazgos (A-E): ¿Acto o Condición?\n\n2. Clasifica los 3 MÁS CRÍTICOS: C/M/m + tiempo de levantamiento\n\n3. Para EL MÁS CRÍTICO: Redacta hallazgo formal + propón acción correctiva + asigna responsable\n\n4. ¿Cuál requiere ACCIÓN INMEDIATA en ese momento? ¿Por qué?'
+              },
+              metadata: {
+                estimated_minutes: 15,
+                difficulty: 'hard',
+                max_reprompts: 3
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+
+  console.log('📸 Obteniendo imágenes de inspecciones desde MCP Server...')
+  const inspeccionesImages: any[] = [] // Se cargarán después en el MCP Server
+
+  if (inspeccionesImages.length > 0) {
+    console.log(`✅ Se cargaron ${inspeccionesImages.length} imágenes desde MCP`)
+  } else {
+    console.log('⚠️  No se encontraron imágenes en MCP (se cargarán posteriormente)')
+  }
+
+  const inspeccionesTopic = await prisma.topic.upsert({
+    where: { slug: 'inspecciones-seguridad' },
+    update: {
+      contentJson: inspeccionesContent as any,
+      estimatedMinutes: 60, // 10+10+12+13+15
+      images: inspeccionesImages as any,
+      imagesLoadedAt: inspeccionesImages.length > 0 ? new Date() : null
+    },
+    create: {
+      title: 'Inspecciones de Seguridad',
+      slug: 'inspecciones-seguridad',
+      description: 'Aprende a planificar, ejecutar y documentar inspecciones de seguridad, clasificando hallazgos y estableciendo acciones correctivas según normativa peruana',
+      courseId: fundamentosCourse.id,
+      instructorId: ssoInstructor.id,
+      order: 2,
+      estimatedMinutes: 60,
+      difficulty: 'Intermedio',
+      contentJson: inspeccionesContent as any,
+      prerequisiteTopicIds: [ipercTopic.id] as any, // Requiere completar IPERC primero
+      images: inspeccionesImages as any,
+      imagesLoadedAt: inspeccionesImages.length > 0 ? new Date() : null,
+      isPublished: true
+    }
+  })
+
+  console.log('✅ Tema Inspecciones de Seguridad creado')
+
+  // 6. Crear usuario de prueba
   const testUser = await prisma.user.upsert({
     where: { email: 'estudiante@test.com' },
     update: {},
@@ -712,7 +902,9 @@ async function main() {
   console.log(`- Carrera: ${ssoCareer.name}`)
   console.log(`- Instructor: ${ssoInstructor.name}`)
   console.log(`- Curso: ${fundamentosCourse.title}`)
-  console.log(`- Tema: ${ipercTopic.title}`)
+  console.log(`- Temas:`)
+  console.log(`  1. ${ipercTopic.title} (${ipercTopic.estimatedMinutes} min)`)
+  console.log(`  2. ${inspeccionesTopic.title} (${inspeccionesTopic.estimatedMinutes} min)`)
   console.log(`- Usuario: ${testUser.email}`)
 }
 
