@@ -723,7 +723,8 @@ async function main() {
               teaching: {
                 agent_instruction: 'Explica de forma concisa la diferencia fundamental entre ACTO SUBESTÁNDAR (comportamiento inseguro del trabajador, como no usar EPP o tomar atajos) y CONDICIÓN SUBESTÁNDAR (estado físico inseguro del ambiente/equipo, como piso resbaladizo o máquina sin guarda). Enfatiza que esta distinción es crucial porque los controles son diferentes: actos requieren capacitación/supervisión, condiciones requieren mantenimiento/ingeniería. Luego presenta 6 situaciones variadas para que el estudiante clasifique.',
                 target_length: '150-250 palabras',
-                context: 'Normativa: Ley 29783, DS 005-2012-TR. País: Perú'
+                context: 'Normativa: Ley 29783, DS 005-2012-TR. País: Perú',
+                suggested_image_ids: ['insp-actos-condiciones']
               },
               verification: {
                 question: 'Clasifica estas 6 situaciones como ACTO o CONDICIÓN subestándar. Para cada una, escribe solo "A" o "C" y explica en una línea por qué:\n\n1. Trabajador usando celular mientras maneja montacargas\n2. Piso con derrame de aceite no limpiado desde hace días\n3. Operario entra a espacio confinado sin permiso de trabajo\n4. Extintor con manómetro en zona roja (sin presión)\n5. Soldador trabajando sin careta facial\n6. Salida de emergencia bloqueada con cajas apiladas'
@@ -777,7 +778,8 @@ async function main() {
               teaching: {
                 agent_instruction: 'Enseña el formato estándar de registro de hallazgos: Fecha, Área, Tipo (Acto/Condición), Descripción OBJETIVA (hechos observables, no juicios), Riesgo potencial (qué puede pasar). Enfatiza la importancia de ser OBJETIVO: ❌"Está inseguro" vs ✅"Cable eléctrico temporal sin protección cruza pasillo a 15cm del piso". Luego presenta un hallazgo encontrado para que el estudiante lo redacte formalmente.',
                 target_length: '200-300 palabras',
-                context: 'Formato según buenas prácticas de SSO en Perú'
+                context: 'Formato según buenas prácticas de SSO en Perú',
+                suggested_image_ids: ['insp-almacen-hallazgos']
               },
               verification: {
                 question: 'Encontraste este hallazgo en un taller mecánico:\n\n"Un trabajador está usando el esmeril angular para cortar metal. No usa careta facial ni lentes de seguridad, solo tapones auditivos."\n\nRedacta el HALLAZGO #001 con este formato:\n\nHALLAZGO #001\nFecha: 15/01/2025\nÁrea: Taller Mecánico\nTipo: [¿Acto o Condición?]\nDescripción: [Descripción objetiva de lo observado]\nRiesgo potencial: [Qué puede ocurrir si no se corrige]'
@@ -804,7 +806,8 @@ async function main() {
               teaching: {
                 agent_instruction: 'Explica la clasificación de hallazgos: CRÍTICO (riesgo inminente grave/fatal, parada inmediata, 0-24h), MAYOR (riesgo alto de lesión grave, acción urgente, 1-7 días), MENOR (desviación de estándar, riesgo bajo, 8-30 días). Enfatiza la pregunta clave: "¿Qué es lo PEOR que puede pasar?". Presenta 6 hallazgos diversos para que clasifique, asigne tiempo y justifique basándose en severidad potencial.',
                 target_length: '250-350 palabras',
-                context: 'Clasificación según buenas prácticas internacionales adaptadas a Perú'
+                context: 'Clasificación según buenas prácticas internacionales adaptadas a Perú',
+                suggested_image_ids: ['insp-almacen-hallazgos']
               },
               verification: {
                 question: 'Clasifica estos 6 hallazgos como CRÍTICO, MAYOR o MENOR. Para cada uno indica: Clasificación (C/M/m), Tiempo de levantamiento, y Justificación (¿qué es lo peor que puede pasar?):\n\n1. Andamio a 5m de altura: arnés enganchado pero línea de vida floja y mal anclada\n\n2. Tablero eléctrico principal con tapa abierta, conexiones energizadas expuestas, en zona de tránsito frecuente\n\n3. Señalización de ruta de evacuación en pasillo descolorida y casi ilegible\n\n4. Detector de gases vencido hace 3 meses, se sigue usando para autorizar entrada a espacios confinados\n\n5. Bidones de químicos sin etiquetas identificando contenido (operarios "saben de memoria")\n\n6. Sillas de oficina con respaldo roto o ruedas trabadas'
@@ -831,7 +834,8 @@ async function main() {
               teaching: {
                 agent_instruction: 'Guía al estudiante en una inspección simulada completa del ÁREA DE SOLDADURA. Recuérdale el proceso: 1) Identificar hallazgos (actos/condiciones), 2) Registrar formalmente, 3) Clasificar por riesgo, 4) Proponer acciones correctivas usando jerarquía de controles, 5) Identificar cuál requiere acción INMEDIATA. Presenta el escenario con 5 hallazgos observables y pide que aplique todo lo aprendido.',
                 target_length: '300-400 palabras',
-                context: 'Caso práctico: Área de soldadura de empresa metalmecánica peruana'
+                context: 'Caso práctico: Área de soldadura de empresa metalmecánica peruana',
+                suggested_image_ids: ['insp-taller-soldadura-integrador']
               },
               verification: {
                 question: 'CASO INTEGRADOR:\n\nEres supervisor de seguridad. Inspecciones el ÁREA DE SOLDADURA (10:00 AM, 15/01/2025).\n\nObservas:\nA) Soldador Juan trabajando sin careta, solo con lentes oscuros comunes\nB) 2 cilindros de gas (oxígeno + acetileno) de pie SIN cadena de sujeción\nC) Piso: electrodos usados y cables enrollados mezclados\nD) Extintor PQS 12kg: última inspección mensual fue octubre 2024 (hace 3 meses)\nE) Soldador Pedro usa celular con una mano mientras sujeta pieza con la otra (no está soldando)\n\nTAREA:\n\n1. Identifica los 5 hallazgos (A-E): ¿Acto o Condición?\n\n2. Clasifica los 3 MÁS CRÍTICOS: C/M/m + tiempo de levantamiento\n\n3. Para EL MÁS CRÍTICO: Redacta hallazgo formal + propón acción correctiva + asigna responsable\n\n4. ¿Cuál requiere ACCIÓN INMEDIATA en ese momento? ¿Por qué?'
@@ -849,7 +853,7 @@ async function main() {
   }
 
   console.log('📸 Obteniendo imágenes de inspecciones desde MCP Server...')
-  const inspeccionesImages: any[] = [] // Se cargarán después en el MCP Server
+  const inspeccionesImages = await getTopicImagesFromMCP('inspecciones')
 
   if (inspeccionesImages.length > 0) {
     console.log(`✅ Se cargaron ${inspeccionesImages.length} imágenes desde MCP`)

@@ -118,11 +118,34 @@ TONO: ${instructor.tone || 'Profesional, empático y motivador'}
 `
 
   // BLOQUE ESTÁTICO 2: Instrucciones de actividad (CACHEABLE)
+  // Detectar imágenes sugeridas disponibles
+  const suggestedImageIds = currentActivity.teaching.suggested_image_ids || []
+  const availableSuggestedImages = suggestedImageIds
+    .map(id => images?.find(img => img.id === id))
+    .filter((img): img is NonNullable<typeof img> => img !== undefined)
+
+  // Logging interno (no visible al estudiante)
+  if (suggestedImageIds.length > 0 && availableSuggestedImages.length === 0) {
+    console.warn(`[PROMPT] ⚠️ Imágenes sugeridas no disponibles para actividad ${currentActivity.id}: ${suggestedImageIds.join(', ')}`)
+  }
+
   const staticBlock2 = `
 ACTIVIDAD ACTUAL:
 
 FASE 1 - ENSEÑANZA:
 ${currentActivity.teaching.agent_instruction}
+
+${availableSuggestedImages.length > 0 ? `
+📌 IMÁGENES RECOMENDADAS PARA ESTA ACTIVIDAD:
+${availableSuggestedImages.map(img => `
+- "${img.title}" (ID: ${img.id})
+  ${img.description}
+  Úsala: ${img.when_to_show}
+  Para mencionarla: [VER IMAGEN: ${img.title}]
+`).join('\n')}
+
+⚠️ IMPORTANTE: Estas imágenes son RECOMENDADAS pero NO obligatorias. Si no las mencionas, NO digas "no tengo imágenes" ni nada similar. Simplemente enseña normalmente sin ellas.
+` : ''}
 
 ${currentActivity.teaching.target_length ? `
 📏 EXTENSIÓN OBLIGATORIA: ${currentActivity.teaching.target_length}

@@ -88,6 +88,10 @@ export interface TeachingPhase {
   // NUEVO: Contexto adicional para generar ejemplos
   context?: string  // Ej: "Sector: construcción. País: Perú"
 
+  // NUEVO: Imágenes sugeridas para esta actividad (IDs de imágenes del MCP Server)
+  // Si no están disponibles, el instructor continúa sin mencionarlas
+  suggested_image_ids?: string[]  // Ej: ['insp-actos-condiciones']
+
   // OPCIONAL: El IA puede generar sus propios conceptos y ejemplos
   key_concepts?: string[]
   examples?: string[]

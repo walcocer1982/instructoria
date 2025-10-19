@@ -243,6 +243,16 @@ npm run db:studio
 
 ## 📋 CHANGELOG
 
+### v1.2.0 (2025-10-19)
+- **Feature:** Sistema de imágenes sugeridas con fallback transparente
+  - Actividades pueden especificar imágenes recomendadas vía `suggested_image_ids`
+  - Si imágenes no disponibles, sistema continúa sin que estudiante perciba problema
+  - Logging interno para developers cuando imágenes sugeridas faltan
+  - Implementado en tema Inspecciones: 3 imágenes educativas con descripciones detalladas
+- **Mejora:** Descripciones de imágenes más detalladas con hallazgos específicos
+  - Almacén: 8 hallazgos listados (ACTO/CONDICIÓN)
+  - Taller de soldadura: 5 hallazgos con clasificación CRÍTICO/MAYOR/MENOR
+
 ### v1.1.1 (2025-10-19)
 - **Fix:** Mensaje de finalización cuando estudiante completa último tema
   - Instructor ahora felicita y resume puntos clave al completar tema completo
