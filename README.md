@@ -241,6 +241,17 @@ npm run db:studio
 - [ ] Sistema de evaluación automática
 - [ ] Exportar progreso a PDF
 
+## 📋 CHANGELOG
+
+### v1.0.0 (2025-10-19)
+- **Inicial:** Sistema completo de instructores IA conversacionales
+- **Feature:** Moderación de contenido con guardrails de seguridad
+- **Feature:** Verificación automática de comprensión del estudiante
+- **Feature:** Sistema de memoria y tracking de progreso por actividad
+- **Feature:** Integración con MCP Server para imágenes educativas
+- **Feature:** Tema completo de IPERC (SSO) con instructor especializado
+- **Feature:** Deployment en Vercel con PostgreSQL (Neon)
+
 ## 🤝 Contribuir
 
 ¡Las contribuciones son bienvenidas! Por favor:
