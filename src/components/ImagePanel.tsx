@@ -36,18 +36,6 @@ export function ImagePanel({ images, onImageClick, isOpen, onClose, currentImage
 
   const filteredImages = imagesToDisplay
 
-  const priorityColors = {
-    critical: 'bg-red-100 text-red-800 border-red-300',
-    practical: 'bg-blue-100 text-blue-800 border-blue-300',
-    optional: 'bg-gray-100 text-gray-800 border-gray-300'
-  }
-
-  const priorityLabels = {
-    critical: 'Críticas',
-    practical: 'Prácticas',
-    optional: 'Opcionales'
-  }
-
   return (
     <>
       {/* Overlay for mobile */}
@@ -112,44 +100,6 @@ export function ImagePanel({ images, onImageClick, isOpen, onClose, currentImage
             </div>
           </div>
 
-          {/* Filtros - Solo mostrar cuando se ven todas las imágenes */}
-          {showAllImages && (
-          <div className="p-4 border-b border-gray-200">
-            <label className="text-xs font-semibold text-gray-600 uppercase mb-2 block">
-              Filtrar por prioridad
-            </label>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedPriority('all')}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-                  selectedPriority === 'all'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Todas ({images.length})
-              </button>
-              {(['critical', 'practical', 'optional'] as const).map(priority => {
-                const count = images.filter(img => img.priority === priority).length
-                if (count === 0) return null
-
-                return (
-                  <button
-                    key={priority}
-                    onClick={() => setSelectedPriority(priority)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-                      selectedPriority === priority
-                        ? 'bg-gray-900 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {priorityLabels[priority]} ({count})
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          )}
 
           {/* Lista de imágenes */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -177,9 +127,6 @@ export function ImagePanel({ images, onImageClick, isOpen, onClose, currentImage
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                       sizes="320px"
                     />
-                    <div className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-semibold border ${priorityColors[image.priority]}`}>
-                      {priorityLabels[image.priority]}
-                    </div>
                   </div>
 
                   {/* Info */}
@@ -187,15 +134,9 @@ export function ImagePanel({ images, onImageClick, isOpen, onClose, currentImage
                     <h3 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-1">
                       {image.title}
                     </h3>
-                    <p className="text-xs text-gray-600 line-clamp-2 mb-2">
+                    <p className="text-xs text-gray-600 line-clamp-2">
                       {image.description}
                     </p>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-500 italic">{image.when_to_show}</span>
-                      <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                      </svg>
-                    </div>
                   </div>
                 </button>
               ))

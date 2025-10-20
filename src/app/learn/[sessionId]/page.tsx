@@ -331,6 +331,10 @@ export default function LearnPage() {
       recognitionRef.current.stop()
       setIsRecording(false)
     } else {
+      // Auto-cerrar modal de imagen cuando el estudiante empieza a grabar
+      if (isModalOpen) {
+        closeModal()
+      }
       recognitionRef.current.start()
       setIsRecording(true)
     }
@@ -500,6 +504,10 @@ export default function LearnPage() {
                   value={input}
                   onChange={(e) => {
                     setInput(e.target.value)
+                    // Auto-cerrar modal de imagen cuando el estudiante empieza a escribir
+                    if (isModalOpen && e.target.value.length > input.length) {
+                      closeModal()
+                    }
                     // Auto-expandir hasta 4 líneas (~120px), luego scroll
                     e.target.style.height = 'auto'
                     e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'

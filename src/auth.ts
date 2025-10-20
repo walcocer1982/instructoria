@@ -19,9 +19,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
     Microsoft({
-      clientId: process.env.MICROSOFT_CLIENT_ID!,
-      clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
-      issuer: `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID || 'common'}/v2.0`,
+      // NextAuth v5 busca automáticamente estas variables:
+      // - AUTH_MICROSOFT_ENTRA_ID_ID (clientId)
+      // - AUTH_MICROSOFT_ENTRA_ID_SECRET (clientSecret)
+      // - AUTH_MICROSOFT_ENTRA_ID_ISSUER (issuer)
       authorization: {
         params: {
           scope: 'openid profile email User.Read',
