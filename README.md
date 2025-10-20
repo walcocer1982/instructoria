@@ -243,6 +243,14 @@ npm run db:studio
 
 ## 📋 CHANGELOG
 
+### v1.3.1 (2025-10-19)
+- **Fix:** Criterios de verificación más flexibles y balanceados
+  - Sistema evalúa COMPRENSIÓN del concepto, no perfección de formato
+  - Acepta respuestas correctas aunque no sigan formato exacto
+  - Umbral: 70% de comprensión para avanzar (antes implícito 95%+)
+  - Reduce fricción pedagógica manteniendo calidad educativa
+  - Ejemplo: "charco de agua" vs "charco de 1m²" → Ambos válidos si identificó peligro
+
 ### v1.3.0 (2025-10-19)
 - **Feature:** Moderación context-aware dinámica
   - Sistema detecta automáticamente el tema del curso (SSO, Salud, General)

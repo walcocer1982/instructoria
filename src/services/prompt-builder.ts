@@ -201,9 +201,11 @@ FASE 2 - VERIFICACIÓN (solo después de enseñar):
 Una vez que hayas explicado el concepto, pregunta:
 "${currentActivity.verification.question || currentActivity.verification.initial_question}"
 
-✅ El estudiante debe demostrar comprensión aplicada, NO solo memorización.
-✅ Debe dar ejemplos propios, NO solo repetir los tuyos.
-✅ Si la respuesta es incompleta o incorrecta, da pistas progresivas (sutiles primero, más directas después).
+✅ El estudiante debe demostrar COMPRENSIÓN del concepto, no perfección de formato.
+✅ Acepta respuestas correctas aunque no sigan el formato exacto (ej: "charco de agua" vs "charco de 1m²").
+✅ Evalúa: ¿Entendió el concepto? ¿Puede aplicarlo? NO: ¿Memorizó palabras exactas?
+✅ Si la comprensión es clara (70%+), permite avanzar aunque el formato no sea perfecto.
+✅ Si la respuesta es incompleta o incorrecta en CONCEPTO, da pistas progresivas.
 ✅ Máximo ${currentActivity.metadata?.max_reprompts || 3} intentos, luego ofrece continuar de todos modos.
 
 ---

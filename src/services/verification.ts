@@ -52,8 +52,12 @@ RESPUESTA DEL ESTUDIANTE:
 HISTORIAL PREVIO (últimos 3 mensajes):
 ${conversationHistory.slice(-3).map(m => `${m.role}: ${m.content}`).join('\n')}
 
-REGLAS:
-- ready_to_advance es true solo si completeness_percentage >= ${minCompleteness}
+REGLAS CRÍTICAS:
+- ready_to_advance es true si completeness_percentage >= ${minCompleteness}
+- Evalúa COMPRENSIÓN DEL CONCEPTO, NO perfección de formato o palabras exactas
+- Si el estudiante entiende el concepto pero usa palabras diferentes, CUENTA COMO CORRECTO
+- Ejemplo: "charco de agua" vs "charco de 1m²" → Ambos correctos si identificó el peligro
+- Solo marca como incorrecto si NO ENTENDIÓ EL CONCEPTO FUNDAMENTAL
 - Si solo memorizó pero el nivel requerido es "applied", ready_to_advance debe ser false
 
 IMPORTANTE: Responde ÚNICAMENTE con el objeto JSON, sin texto adicional, sin markdown, sin explicaciones.
