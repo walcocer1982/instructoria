@@ -11,7 +11,7 @@ import { ImageModal } from '@/components/ImageModal'
 import { useImageGallery } from '@/hooks/useImageGallery'
 import { MessageWithImageRefs } from '@/components/MessageWithImageRefs'
 import { LearningSidebar } from '@/components/learning/LearningSidebar'
-import { InstructorHeader } from '@/components/learning/InstructorHeader'
+import { InstructorBanner } from '@/components/learning/InstructorBanner'
 import { ProgressModal } from '@/components/learning/ProgressModal'
 
 interface Message {
@@ -349,16 +349,14 @@ export default function LearnPage() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      {/* Header - Todo el ancho superior */}
-      <InstructorHeader
+      {/* Banner del Instructor */}
+      <InstructorBanner
         instructorName={sessionInfo.instructor.name}
         instructorAvatar={sessionInfo.instructor.avatar}
         instructorSpecialty={sessionInfo.instructor.specialty}
-        userName={sessionInfo.user.name}
-        userAvatar={sessionInfo.user.avatar}
       />
 
-      {/* Contenido debajo del header: Sidebar | Chat | Imagen */}
+      {/* Contenido debajo del banner: Sidebar | Chat | Imagen */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar Izquierdo */}
         <LearningSidebar
