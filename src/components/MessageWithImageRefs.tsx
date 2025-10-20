@@ -7,6 +7,7 @@ interface MessageWithImageRefsProps {
   content: string
   onImageClick: (imageTitle: string) => void
   onImageMentioned?: (imageTitle: string) => void
+  variant?: 'plain' | 'bubble' // plain = sin burbuja (instructor), bubble = con burbuja (no usado ahora)
 }
 
 /**
@@ -14,10 +15,22 @@ interface MessageWithImageRefsProps {
  * y las convierte en links clickeables.
  * También renderiza Markdown (negrita, listas, líneas horizontales, etc.)
  * IMPORTANTE: Solo procesa la PRIMERA referencia de imagen por mensaje.
+ *
+ * @param variant - 'plain' para mensajes sin burbuja (instructor), 'bubble' para con burbuja
  */
-export function MessageWithImageRefs({ content, onImageClick, onImageMentioned }: MessageWithImageRefsProps) {
+export function MessageWithImageRefs({
+  content,
+  onImageClick,
+  onImageMentioned,
+  variant = 'plain'
+}: MessageWithImageRefsProps) {
   // Regex para detectar [VER IMAGEN: título] (sin flag 'g' para solo encontrar la primera)
   const imageRefRegex = /\[VER IMAGEN:\s*([^\]]+)\]/
+
+  // Estilos según variant
+  const textSizeClass = variant === 'plain' ? 'text-lg' : 'text-sm'
+  const textColorClass = variant === 'plain' ? 'text-gray-800' : 'text-gray-900'
+  const leadingClass = variant === 'plain' ? 'leading-relaxed' : 'leading-normal'
 
   const parts: React.ReactNode[] = []
 
@@ -91,12 +104,12 @@ export function MessageWithImageRefs({ content, onImageClick, onImageMentioned }
       )
     }
 
-    return <div className="text-sm leading-relaxed">{parts}</div>
+    return <div className={`${textSizeClass} ${textColorClass} ${leadingClass}`}>{parts}</div>
   }
 
   // Si no hay matches, retornar el contenido con renderizado de markdown
   return (
-    <div className="text-sm leading-relaxed">
+    <div className={`${textSizeClass} ${textColorClass} ${leadingClass}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

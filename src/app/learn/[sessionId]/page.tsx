@@ -376,96 +376,104 @@ export default function LearnPage() {
                   return null
                 }
 
-                return (
-                  <div
-                    key={idx}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className="flex gap-3 max-w-2xl">
-                      {msg.role === 'assistant' && (
-                        <Avatar className="h-8 w-8 border-2 border-instructor-200 flex-shrink-0">
-                          <AvatarImage src={sessionInfo.instructor.avatar} />
-                          <AvatarFallback className="bg-instructor-100 text-instructor-700 text-xs">
-                            {sessionInfo.instructor.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
+                // Mensaje del Instructor (sin burbuja)
+                if (msg.role === 'assistant') {
+                  // No mostrar mensajes vacíos (zombie messages)
+                  if (!msg.content || msg.content.trim() === '') {
+                    return null
+                  }
+
+                  return (
+                    <div key={idx} className="flex gap-4 max-w-4xl mb-6">
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        <AvatarImage src={sessionInfo.instructor.avatar} />
+                        <AvatarFallback className="bg-instructor-100 text-instructor-700 text-sm font-semibold">
+                          {sessionInfo.instructor.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
 
                       <div
-                        className={`px-4 py-3 rounded-2xl ${
-                          msg.role === 'user'
-                            ? 'bg-student-500 text-white'
-                            : 'bg-instructor-50 text-gray-900 border border-instructor-200 select-none'
-                        }`}
+                        className="flex-1 select-none"
                         onCopy={(e) => {
-                          if (msg.role === 'assistant') {
-                            e.preventDefault()
-                            console.log('[Security] Intento de copiar mensaje del instructor bloqueado')
-                          }
+                          e.preventDefault()
+                          console.log('[Security] Intento de copiar mensaje del instructor bloqueado')
                         }}
                         onCut={(e) => {
-                          if (msg.role === 'assistant') {
-                            e.preventDefault()
-                            console.log('[Security] Intento de cortar mensaje del instructor bloqueado')
-                          }
+                          e.preventDefault()
+                          console.log('[Security] Intento de cortar mensaje del instructor bloqueado')
                         }}
                       >
-                        {msg.role === 'assistant' ? (
-                          <MessageWithImageRefs
-                            content={msg.content}
-                            onImageClick={handleImageRefClick}
-                            onImageMentioned={handleImageMentioned}
-                          />
-                        ) : (
-                          <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
-                        )}
-                        <div
-                          className={`text-xs mt-2 ${msg.role === 'user' ? 'text-student-100' : 'text-gray-400'}`}
-                        >
-                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        <MessageWithImageRefs
+                          content={msg.content}
+                          onImageClick={handleImageRefClick}
+                          onImageMentioned={handleImageMentioned}
+                          variant="plain"
+                        />
+                        <span className="text-xs text-gray-400 mt-2 block">
+                          {new Date(msg.timestamp).toLocaleTimeString('es-PE', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                }
+
+                // Mensaje del Estudiante (con burbuja blanca)
+                return (
+                  <div key={idx} className="flex gap-3 justify-end max-w-4xl ml-auto mb-6 group">
+                    <div className='flex flex-col'>
+                      <div className="bg-white border border-slate-300 px-5 py-3 rounded-3xl rounded-br-none max-w-xl">
+                        <div className="text-gray-800 text-base whitespace-pre-wrap">
+                          {msg.content}
                         </div>
                       </div>
-
-                      {msg.role === 'user' && (
-                        <Avatar className="h-8 w-8 border-2 border-student-200 flex-shrink-0">
-                          <AvatarImage src={sessionInfo.user.avatar} />
-                          <AvatarFallback className="bg-student-100 text-student-700 text-xs">
-                            {sessionInfo.user.name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
+                      <div className="text-xs text-gray-400 mt-1 text-right scale-0 group-hover:scale-100">
+                        {new Date(msg.timestamp).toLocaleTimeString('es-PE', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
                     </div>
+
+
+
+                    <Avatar className="h-10 w-10 flex-shrink-0">
+                      <AvatarImage src={sessionInfo.user.avatar} />
+                      <AvatarFallback className="bg-slate-300 text-gray-700 text-sm">
+                        {sessionInfo.user.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                   </div>
                 )
               })}
 
               {loading && messages[messages.length - 1]?.content === '' && (
-                <div className="flex justify-start">
-                  <div className="flex gap-3">
-                    <Avatar className="h-8 w-8 border-2 border-instructor-200">
-                      <AvatarImage src={sessionInfo.instructor.avatar} />
-                      <AvatarFallback className="bg-instructor-100 text-instructor-700 text-xs">
-                        {sessionInfo.instructor.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="bg-instructor-50 border border-instructor-200 px-4 py-3 rounded-2xl">
-                      <div className="flex items-center space-x-2">
-                        <div className="flex space-x-1">
-                          <div
-                            className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
-                            style={{ animationDelay: '0ms' }}
-                          ></div>
-                          <div
-                            className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
-                            style={{ animationDelay: '150ms' }}
-                          ></div>
-                          <div
-                            className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
-                            style={{ animationDelay: '300ms' }}
-                          ></div>
-                        </div>
-                        <span className="text-sm text-gray-500">{sessionInfo.instructor.name} está escribiendo...</span>
+                <div className="flex gap-4 max-w-4xl mb-6">
+                  <Avatar className="h-10 w-10 flex-shrink-0">
+                    <AvatarImage src={sessionInfo.instructor.avatar} />
+                    <AvatarFallback className="bg-instructor-100 text-instructor-700 text-sm font-semibold">
+                      {sessionInfo.instructor.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex space-x-1">
+                        <div
+                          className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
+                          style={{ animationDelay: '0ms' }}
+                        ></div>
+                        <div
+                          className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
+                          style={{ animationDelay: '150ms' }}
+                        ></div>
+                        <div
+                          className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
+                          style={{ animationDelay: '300ms' }}
+                        ></div>
                       </div>
+                      <span className="text-sm text-gray-500">{sessionInfo.instructor.name} está escribiendo...</span>
                     </div>
                   </div>
                 </div>
@@ -519,11 +527,10 @@ export default function LearnPage() {
                   <button
                     onClick={toggleVoiceRecognition}
                     disabled={loading}
-                    className={`p-2 rounded-full transition-colors ${
-                      isRecording
+                    className={`p-2 rounded-full transition-colors ${isRecording
                         ? 'bg-red-100 text-red-600 hover:bg-red-200'
                         : 'hover:bg-gray-100 text-gray-600'
-                    }`}
+                      }`}
                     title={isRecording ? 'Detener grabación' : 'Iniciar dictado por voz'}
                     type="button"
                   >
@@ -538,11 +545,10 @@ export default function LearnPage() {
                   <button
                     onClick={sendMessage}
                     disabled={loading || !input.trim()}
-                    className={`p-2 rounded-full transition-all ${
-                      input.trim() && !loading
+                    className={`p-2 rounded-full transition-all ${input.trim() && !loading
                         ? 'bg-instructor-600 text-white hover:bg-instructor-700'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    }`}
+                      }`}
                     title="Enviar mensaje"
                     type="button"
                   >
@@ -560,7 +566,7 @@ export default function LearnPage() {
             images={images}
             onImageClick={openModal}
             isOpen={true}
-            onClose={() => {}}
+            onClose={() => { }}
             currentImage={currentImage}
             showAllImages={showAllImages}
             onToggleShowAll={toggleShowAll}
