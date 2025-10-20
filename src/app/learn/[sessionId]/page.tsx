@@ -372,67 +372,74 @@ export default function LearnPage() {
         <div className="flex-1 flex flex-col min-w-0">
           <ScrollArea className="flex-1">
             <div className="max-w-4xl mx-auto p-6 space-y-6">
-              {messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className="flex gap-3 max-w-2xl">
-                    {msg.role === 'assistant' && (
-                      <Avatar className="h-8 w-8 border-2 border-instructor-200 flex-shrink-0">
-                        <AvatarImage src={sessionInfo.instructor.avatar} />
-                        <AvatarFallback className="bg-instructor-100 text-instructor-700 text-xs">
-                          {sessionInfo.instructor.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
+              {messages.map((msg, idx) => {
+                // No mostrar mensajes del asistente vacíos mientras está loading (se muestra el typing indicator)
+                if (msg.role === 'assistant' && msg.content === '' && loading) {
+                  return null
+                }
 
-                    <div
-                      className={`px-4 py-3 rounded-2xl ${
-                        msg.role === 'user'
-                          ? 'bg-student-500 text-white'
-                          : 'bg-instructor-50 text-gray-900 border border-instructor-200 select-none'
-                      }`}
-                      onCopy={(e) => {
-                        if (msg.role === 'assistant') {
-                          e.preventDefault()
-                          console.log('[Security] Intento de copiar mensaje del instructor bloqueado')
-                        }
-                      }}
-                      onCut={(e) => {
-                        if (msg.role === 'assistant') {
-                          e.preventDefault()
-                          console.log('[Security] Intento de cortar mensaje del instructor bloqueado')
-                        }
-                      }}
-                    >
-                      {msg.role === 'assistant' ? (
-                        <MessageWithImageRefs
-                          content={msg.content}
-                          onImageClick={handleImageRefClick}
-                          onImageMentioned={handleImageMentioned}
-                        />
-                      ) : (
-                        <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
+                return (
+                  <div
+                    key={idx}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className="flex gap-3 max-w-2xl">
+                      {msg.role === 'assistant' && (
+                        <Avatar className="h-8 w-8 border-2 border-instructor-200 flex-shrink-0">
+                          <AvatarImage src={sessionInfo.instructor.avatar} />
+                          <AvatarFallback className="bg-instructor-100 text-instructor-700 text-xs">
+                            {sessionInfo.instructor.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
                       )}
-                      <div
-                        className={`text-xs mt-2 ${msg.role === 'user' ? 'text-student-100' : 'text-gray-400'}`}
-                      >
-                        {new Date(msg.timestamp).toLocaleTimeString()}
-                      </div>
-                    </div>
 
-                    {msg.role === 'user' && (
-                      <Avatar className="h-8 w-8 border-2 border-student-200 flex-shrink-0">
-                        <AvatarImage src={sessionInfo.user.avatar} />
-                        <AvatarFallback className="bg-student-100 text-student-700 text-xs">
-                          {sessionInfo.user.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
+                      <div
+                        className={`px-4 py-3 rounded-2xl ${
+                          msg.role === 'user'
+                            ? 'bg-student-500 text-white'
+                            : 'bg-instructor-50 text-gray-900 border border-instructor-200 select-none'
+                        }`}
+                        onCopy={(e) => {
+                          if (msg.role === 'assistant') {
+                            e.preventDefault()
+                            console.log('[Security] Intento de copiar mensaje del instructor bloqueado')
+                          }
+                        }}
+                        onCut={(e) => {
+                          if (msg.role === 'assistant') {
+                            e.preventDefault()
+                            console.log('[Security] Intento de cortar mensaje del instructor bloqueado')
+                          }
+                        }}
+                      >
+                        {msg.role === 'assistant' ? (
+                          <MessageWithImageRefs
+                            content={msg.content}
+                            onImageClick={handleImageRefClick}
+                            onImageMentioned={handleImageMentioned}
+                          />
+                        ) : (
+                          <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
+                        )}
+                        <div
+                          className={`text-xs mt-2 ${msg.role === 'user' ? 'text-student-100' : 'text-gray-400'}`}
+                        >
+                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        </div>
+                      </div>
+
+                      {msg.role === 'user' && (
+                        <Avatar className="h-8 w-8 border-2 border-student-200 flex-shrink-0">
+                          <AvatarImage src={sessionInfo.user.avatar} />
+                          <AvatarFallback className="bg-student-100 text-student-700 text-xs">
+                            {sessionInfo.user.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
 
               {loading && messages[messages.length - 1]?.content === '' && (
                 <div className="flex justify-start">

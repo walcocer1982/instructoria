@@ -243,6 +243,17 @@ npm run db:studio
 
 ## 📋 CHANGELOG
 
+### v1.3.4 (2025-10-20)
+- **Fix:** Eliminar burbuja vacía en chat durante carga de respuesta del instructor
+  - Problema: Aparecía burbuja vacía entre mensaje del estudiante y "está escribiendo..."
+  - Causa: Mensaje vacío del asistente se renderizaba mientras loading estaba activo
+  - Solución: Ocultar mensajes del asistente vacíos durante estado de carga
+  - Mejora experiencia visual del chat: solo aparece indicador "está escribiendo..."
+- **Feature:** Script de limpieza de base de datos (npm run db:clean)
+  - Elimina todos los mensajes, sesiones y progreso para empezar de cero
+  - Mantiene intactos: usuarios, carreras, cursos, temas, instructores
+  - Útil para testing y demos
+
 ### v1.3.3 (2025-10-19)
 - **Fix:** Corregir descripciones de imágenes basándose en fotografías reales
   - Almacén: Eliminados hallazgos ficticios (trabajador sin casco, celular, etc.)

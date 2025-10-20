@@ -1,6 +1,6 @@
 {
   "name": "instructoria",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Plataforma educativa con instructores IA",
   "private": true,
   "scripts": {
@@ -12,6 +12,7 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
+    "db:clean": "tsx scripts/clean-all-chats.ts",
     "test:session": "tsx scripts/test-session.ts"
   },
   "dependencies": {
