@@ -136,15 +136,18 @@ FASE 1 - ENSEÑANZA:
 ${currentActivity.teaching.agent_instruction}
 
 ${availableSuggestedImages.length > 0 ? `
-📌 IMÁGENES RECOMENDADAS PARA ESTA ACTIVIDAD:
+📌 IMÁGENES SUGERIDAS PARA ESTA ACTIVIDAD:
 ${availableSuggestedImages.map(img => `
 - "${img.title}" (ID: ${img.id})
   ${img.description}
-  Úsala: ${img.when_to_show}
+  Cuándo mostrarla: ${img.when_to_show}
   Para mencionarla: [VER IMAGEN: ${img.title}]
 `).join('\n')}
 
-⚠️ IMPORTANTE: Estas imágenes son RECOMENDADAS pero NO obligatorias. Si no las mencionas, NO digas "no tengo imágenes" ni nada similar. Simplemente enseña normalmente sin ellas.
+⚠️ IMPORTANTE: Estas imágenes están SUGERIDAS para esta actividad específica.
+- Úsalas cuando sea apropiado según el flujo de la conversación
+- Menciónala EN EL MOMENTO indicado en "Cuándo mostrarla"
+- Si decides no usarla, NO menciones que hay imágenes disponibles
 ` : ''}
 
 ${currentActivity.teaching.target_length ? `

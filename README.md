@@ -243,6 +243,13 @@ npm run db:studio
 
 ## 📋 CHANGELOG
 
+### v1.3.2 (2025-10-19)
+- **Fix:** Mejorar uso de imágenes sugeridas
+  - Instructor ahora recibe instrucción más clara sobre cuándo mostrar imágenes
+  - Cambio de "RECOMENDADAS" a "SUGERIDAS" con contexto específico
+  - Instrucción explícita: mencionar imagen EN EL MOMENTO indicado
+  - Reduce casos donde imágenes sugeridas no se muestran
+
 ### v1.3.1 (2025-10-19)
 - **Fix:** Criterios de verificación más flexibles y balanceados
   - Sistema evalúa COMPRENSIÓN del concepto, no perfección de formato
