@@ -243,6 +243,12 @@ npm run db:studio
 
 ## 📋 CHANGELOG
 
+### v1.2.1 (2025-10-19)
+- **Fix:** Moderación mejorada para contextos educativos de SSO
+  - Sistema ahora reconoce términos educativos (riesgo, peligro, lesión, crítico, mayor, menor) como apropiados
+  - Prompt de moderación especifica contexto de Seguridad y Salud Ocupacional
+  - Elimina falsos positivos en respuestas legítimas de estudiantes sobre clasificación de riesgos
+
 ### v1.2.0 (2025-10-19)
 - **Feature:** Sistema de imágenes sugeridas con fallback transparente
   - Actividades pueden especificar imágenes recomendadas vía `suggested_image_ids`

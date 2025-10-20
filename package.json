@@ -1,6 +1,6 @@
 {
   "name": "instructoria",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Plataforma educativa con instructores IA",
   "private": true,
   "scripts": {

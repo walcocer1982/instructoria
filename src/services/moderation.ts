@@ -36,14 +36,24 @@ function isObviouslySafe(message: string): boolean {
 
 /**
  * Detecta patrones sospechosos que requieren moderación
+ * NOTA: En contextos educativos de SSO, términos como "riesgo", "peligro", "lesión" son NORMALES
  */
 function containsSuspiciousPatterns(message: string): boolean {
+  // Términos educativos de SSO que NO son sospechosos
+  const ssoEducationalTerms = /\b(riesgo|peligro|lesión|accidente|incidente|hallazgo|crítico|mayor|menor|emergencia|evacuación|EPP|control|inspección|clasificación|severidad)\b/i
+
+  // Si contiene términos educativos de SSO, NO es sospechoso
+  if (ssoEducationalTerms.test(message)) {
+    return false
+  }
+
+  // Patrones genuinamente sospechosos (contexto NO educativo)
   const suspiciousPatterns = [
-    /\b(matar|morir|muerte|suicid|violencia)\b/i,
-    /\b(droga|cocaína|marihuana|heroína)\b/i,
-    /\b(sex|porno|xxx|desnud)\b/i,
-    /\b(idiota|estúpid|imbécil|mierda|joder)\b/i,
-    /\b(hack|robar|estafar|piratear)\b/i,
+    /\b(suicid|asesinat)\b/i, // Específicos, no incluir "muerte" genérico
+    /\b(cocaína|heroína|metanfetamina)\b/i, // Drogas ilegales específicas
+    /\b(porno|xxx|desnud|sexual)\b/i,
+    /\b(idiota|estúpid|imbécil|mierda|carajo|joder)\b/i,
+    /\b(robar|estafar|piratear|hackear)\b/i,
     /(https?:\/\/|www\.)/i, // URLs pueden ser spam
   ]
 
@@ -87,16 +97,29 @@ export async function moderateContent(message: string): Promise<ModerationResult
 
   const moderationPrompt = `Analiza si este mensaje de un estudiante contiene contenido inapropiado para un contexto educativo profesional.
 
+⚠️ CONTEXTO IMPORTANTE: Este es un curso de SEGURIDAD Y SALUD OCUPACIONAL (SSO).
+Es NORMAL y APROPIADO que los estudiantes mencionen:
+- Riesgos, peligros, accidentes, lesiones, muerte laboral
+- Clasificaciones de severidad: CRÍTICO, MAYOR, MENOR
+- Inspecciones, hallazgos, condiciones peligrosas
+- EPP, controles, emergencias, evacuaciones
+
 MENSAJE DEL ESTUDIANTE:
 "${message}"
 
-Categorías prohibidas:
-1. sexual_content: Contenido sexual explícito o insinuaciones
-2. violence: Violencia explícita o amenazas
+Categorías REALMENTE prohibidas:
+1. sexual_content: Contenido sexual explícito o insinuaciones (NO relacionado a acoso laboral educativo)
+2. violence: Violencia personal explícita o amenazas (NO riesgos laborales educativos)
 3. illegal_activities: Actividades ilegales
-4. personal_attacks: Insultos o ataques personales
+4. personal_attacks: Insultos o ataques personales al instructor
 5. hate_speech: Discurso de odio
 6. spam: Spam o promoción comercial
+
+⚠️ NO marcar como inapropiado si el estudiante está:
+- Respondiendo preguntas sobre seguridad laboral
+- Clasificando riesgos (crítico/mayor/menor)
+- Describiendo accidentes laborales para aprender prevención
+- Mencionando lesiones o peligros en contexto educativo
 
 IMPORTANTE: Responde ÚNICAMENTE con el objeto JSON, sin texto adicional, sin markdown, sin explicaciones.
 
