@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth'
 import Google from 'next-auth/providers/google'
+import Microsoft from 'next-auth/providers/microsoft-entra-id'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from '@/lib/prisma'
 
@@ -14,6 +15,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           prompt: 'consent',
           access_type: 'offline',
           response_type: 'code',
+        },
+      },
+    }),
+    Microsoft({
+      clientId: process.env.MICROSOFT_CLIENT_ID!,
+      clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
+      issuer: `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID || 'common'}/v2.0`,
+      authorization: {
+        params: {
+          scope: 'openid profile email User.Read',
         },
       },
     }),
