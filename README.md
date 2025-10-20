@@ -243,6 +243,14 @@ npm run db:studio
 
 ## 📋 CHANGELOG
 
+### v1.3.0 (2025-10-19)
+- **Feature:** Moderación context-aware dinámica
+  - Sistema detecta automáticamente el tema del curso (SSO, Salud, General)
+  - Contexto adaptativo según carrera y tema actual
+  - Whitelists dinámicas basadas en contenido educativo
+  - Soporte para múltiples disciplinas educativas (SSO, Medicina, etc.)
+  - Elimina necesidad de configuración hardcodeada
+
 ### v1.2.1 (2025-10-19)
 - **Fix:** Moderación mejorada para contextos educativos de SSO
   - Sistema ahora reconoce términos educativos (riesgo, peligro, lesión, crítico, mayor, menor) como apropiados

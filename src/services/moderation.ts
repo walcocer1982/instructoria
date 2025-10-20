@@ -61,6 +61,54 @@ function containsSuspiciousPatterns(message: string): boolean {
 }
 
 /**
+ * Construye nota de contexto dinámicamente según el tema
+ */
+function buildContextNote(context?: { topicTitle?: string; careerName?: string }): string {
+  if (!context?.topicTitle) {
+    return '⚠️ CONTEXTO: Curso educativo general. Evalúa el mensaje en contexto académico.'
+  }
+
+  const topicLower = context.topicTitle.toLowerCase()
+  const careerLower = context.careerName?.toLowerCase() || ''
+
+  // Detectar temas de SSO (Seguridad y Salud Ocupacional)
+  if (
+    topicLower.includes('seguridad') ||
+    topicLower.includes('riesgo') ||
+    topicLower.includes('iperc') ||
+    topicLower.includes('inspeccion') ||
+    careerLower.includes('sso') ||
+    careerLower.includes('seguridad')
+  ) {
+    return `⚠️ CONTEXTO IMPORTANTE: Este es un curso de SEGURIDAD Y SALUD OCUPACIONAL.
+Es NORMAL y APROPIADO que los estudiantes mencionen:
+- Riesgos, peligros, accidentes, lesiones, muerte laboral
+- Clasificaciones de severidad: CRÍTICO, MAYOR, MENOR
+- Inspecciones, hallazgos, condiciones peligrosas
+- EPP, controles, emergencias, evacuaciones
+- Describir accidentes laborales para aprender prevención`
+  }
+
+  // Detectar temas de salud/medicina
+  if (
+    topicLower.includes('salud') ||
+    topicLower.includes('enfermería') ||
+    topicLower.includes('medicina') ||
+    topicLower.includes('primeros auxilios')
+  ) {
+    return `⚠️ CONTEXTO IMPORTANTE: Este es un curso de SALUD/MEDICINA.
+Es NORMAL y APROPIADO que los estudiantes mencionen:
+- Síntomas, enfermedades, lesiones, procedimientos médicos
+- Partes del cuerpo humano, anatomía
+- Tratamientos, medicamentos, intervenciones médicas
+- Casos clínicos para aprendizaje`
+  }
+
+  // Otros cursos
+  return `⚠️ CONTEXTO: Curso de "${context.topicTitle}". Evalúa el mensaje en contexto educativo del tema.`
+}
+
+/**
  * Extrae JSON de texto que puede contener explicaciones adicionales
  */
 function extractJSON(text: string): string {
@@ -83,8 +131,14 @@ function extractJSON(text: string): string {
 /**
  * Modera el contenido del mensaje del estudiante
  * para detectar contenido inapropiado
+ *
+ * @param message - Mensaje del estudiante
+ * @param context - Contexto opcional del tema actual
  */
-export async function moderateContent(message: string): Promise<ModerationResult> {
+export async function moderateContent(
+  message: string,
+  context?: { topicTitle?: string; careerName?: string }
+): Promise<ModerationResult> {
   // OPTIMIZACIÓN: Skip moderación para mensajes obviamente seguros
   if (isObviouslySafe(message)) {
     return {
@@ -95,31 +149,26 @@ export async function moderateContent(message: string): Promise<ModerationResult
     }
   }
 
+  // Construir contexto dinámico basándose en el tema
+  const contextNote = buildContextNote(context)
+
   const moderationPrompt = `Analiza si este mensaje de un estudiante contiene contenido inapropiado para un contexto educativo profesional.
 
-⚠️ CONTEXTO IMPORTANTE: Este es un curso de SEGURIDAD Y SALUD OCUPACIONAL (SSO).
-Es NORMAL y APROPIADO que los estudiantes mencionen:
-- Riesgos, peligros, accidentes, lesiones, muerte laboral
-- Clasificaciones de severidad: CRÍTICO, MAYOR, MENOR
-- Inspecciones, hallazgos, condiciones peligrosas
-- EPP, controles, emergencias, evacuaciones
+${contextNote}
 
 MENSAJE DEL ESTUDIANTE:
 "${message}"
 
 Categorías REALMENTE prohibidas:
-1. sexual_content: Contenido sexual explícito o insinuaciones (NO relacionado a acoso laboral educativo)
-2. violence: Violencia personal explícita o amenazas (NO riesgos laborales educativos)
+1. sexual_content: Contenido sexual explícito o insinuaciones
+2. violence: Violencia personal explícita o amenazas (distinguir de contenido educativo según contexto)
 3. illegal_activities: Actividades ilegales
 4. personal_attacks: Insultos o ataques personales al instructor
 5. hate_speech: Discurso de odio
 6. spam: Spam o promoción comercial
 
-⚠️ NO marcar como inapropiado si el estudiante está:
-- Respondiendo preguntas sobre seguridad laboral
-- Clasificando riesgos (crítico/mayor/menor)
-- Describiendo accidentes laborales para aprender prevención
-- Mencionando lesiones o peligros en contexto educativo
+⚠️ IMPORTANTE: Evalúa el mensaje en el CONTEXTO EDUCATIVO del curso.
+Términos que pueden parecer inapropiados en conversación normal pueden ser apropiados en contexto educativo.
 
 IMPORTANTE: Responde ÚNICAMENTE con el objeto JSON, sin texto adicional, sin markdown, sin explicaciones.
 

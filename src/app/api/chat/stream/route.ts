@@ -46,7 +46,12 @@ export async function POST(request: NextRequest) {
               include: {
                 topic: {
                   include: {
-                    instructor: true
+                    instructor: true,
+                    course: {
+                      include: {
+                        career: true
+                      }
+                    }
                   }
                 },
                 activities: {
@@ -92,7 +97,10 @@ export async function POST(request: NextRequest) {
         // 2. Moderación + Clasificación en paralelo
         const t2 = Date.now()
         const [moderation, intent] = await Promise.all([
-          moderateContent(studentMessage),
+          moderateContent(studentMessage, {
+            topicTitle: topic.title,
+            careerName: topic.course?.career?.name
+          }),
           classifyIntent(studentMessage, currentActivity, {
             currentTopic: topic.title,
             currentMoment: currentMoment.title,
