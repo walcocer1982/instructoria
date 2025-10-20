@@ -243,6 +243,14 @@ npm run db:studio
 
 ## 📋 CHANGELOG
 
+### v1.3.3 (2025-10-19)
+- **Fix:** Corregir descripciones de imágenes basándose en fotografías reales
+  - Almacén: Eliminados hallazgos ficticios (trabajador sin casco, celular, etc.)
+  - Almacén: Descripción real: charco de agua grande, cables en piso, caja herramientas
+  - Soldadura: Eliminados hallazgos inventados (nombres ficticios, fechas extintor)
+  - Soldadura: Descripción real: soldador trabajando con chispas, extintor, cables
+  - Actualizado MCP Server y base de datos con descripciones fieles a imágenes reales
+
 ### v1.3.2 (2025-10-19)
 - **Fix:** Mejorar uso de imágenes sugeridas
   - Instructor ahora recibe instrucción más clara sobre cuándo mostrar imágenes
