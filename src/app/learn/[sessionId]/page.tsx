@@ -1,18 +1,17 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Send } from 'lucide-react'
-import { ImagePanel } from '@/components/ImagePanel'
+import { ImageGalleryPanel } from '@/components/image-gallery-panel'
 import { ImageModal } from '@/components/ImageModal'
 import { useImageGallery } from '@/hooks/useImageGallery'
-import { MessageWithImageRefs } from '@/components/MessageWithImageRefs'
-import { LearningSidebar } from '@/components/learning/LearningSidebar'
-import { InstructorHeader } from '@/components/learning/InstructorHeader'
+import { useSoftPageExitTracking } from '@/hooks/useSoftPageExitTracking'
+import { useVoiceRecognition } from '@/hooks/useVoiceRecognition'
+import { LearningSidebar } from '@/components/learning/learning-sidebar'
 import { ProgressModal } from '@/components/learning/ProgressModal'
+import { ChatMessages } from '@/components/learning/chat-messages'
+import { ChatInput } from '@/components/learning/chat-input'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -56,7 +55,20 @@ export default function LearnPage() {
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null)
   const [showProgressModal, setShowProgressModal] = useState(false)
 
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  // Estados para sidebars mobile
+  const [mobileLearningSidebarOpen, setMobileLearningSidebarOpen] = useState(false)
+  const [mobileImagePanelOpen, setMobileImagePanelOpen] = useState(false)
+
+  // Handlers para abrir sidebars (solo uno a la vez en mobile)
+  const openLearningSidebar = () => {
+    setMobileImagePanelOpen(false)
+    setMobileLearningSidebarOpen(true)
+  }
+
+  const openImagePanel = () => {
+    setMobileLearningSidebarOpen(false)
+    setMobileImagePanelOpen(true)
+  }
 
   // Hook para manejar galería de imágenes
   const {
@@ -71,6 +83,18 @@ export default function LearnPage() {
     toggleShowAll,
   } = useImageGallery({ sessionId })
 
+  // Hook para rastrear salidas de página durante verificaciones
+  useSoftPageExitTracking({
+    sessionId,
+    enabled: true
+  })
+
+  // Hook para reconocimiento de voz
+  const { isRecording, toggleRecording, stopRecording } = useVoiceRecognition({
+    onTranscript: (transcript) => setInput((prev) => prev + transcript),
+    lang: 'es-ES',
+  })
+
   // Manejar click en referencia de imagen desde el mensaje del instructor
   const handleImageRefClick = (imageTitle: string) => {
     const image = images.find((img) => img.title.toLowerCase() === imageTitle.toLowerCase())
@@ -84,14 +108,6 @@ export default function LearnPage() {
     setCurrentImageByTitle(imageTitle)
   }
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
   useEffect(() => {
     // Cargar info de sesión y historial
     loadSessionInfo()
@@ -103,10 +119,6 @@ export default function LearnPage() {
       const response = await fetch(`/api/sessions/${sessionId}/info`)
       if (response.ok) {
         const data = await response.json()
-        console.log('[LearnPage] Session info loaded:', data)
-        console.log('[LearnPage] Learning objectives:', data.learningObjectives)
-        console.log('[LearnPage] Key points:', data.keyPoints)
-        console.log('[LearnPage] Progress:', data.progress)
         setSessionInfo(data)
       }
     } catch (error) {
@@ -147,6 +159,11 @@ export default function LearnPage() {
     setMessages((prev) => [...prev, userMessage])
     setInput('')
     setLoading(true)
+
+    // Detener grabación de voz si está activa
+    if (isRecording) {
+      stopRecording()
+    }
 
     // Crear mensaje del asistente vacío para ir llenándolo
     const assistantMessageIndex = messages.length + 1
@@ -260,11 +277,12 @@ export default function LearnPage() {
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
+  const handleToggleVoice = () => {
+    // Auto-cerrar modal de imagen cuando el estudiante empieza a grabar
+    if (!isRecording && isModalOpen) {
+      closeModal()
     }
+    toggleRecording()
   }
 
   if (!sessionInfo) {
@@ -279,150 +297,104 @@ export default function LearnPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      {/* Header - Todo el ancho superior */}
-      <InstructorHeader
+    <div className="flex h-full bg-slate-100 relative">
+      {/* Sidebar Izquierdo */}
+      <LearningSidebar
         instructorName={sessionInfo.instructor.name}
         instructorAvatar={sessionInfo.instructor.avatar}
         instructorSpecialty={sessionInfo.instructor.specialty}
-        userName={sessionInfo.user.name}
-        userAvatar={sessionInfo.user.avatar}
+        objectives={sessionInfo.learningObjectives}
+        keyPoints={sessionInfo.keyPoints}
+        progress={sessionInfo.progress}
+        onProgressClick={() => setShowProgressModal(true)}
+        isMobileOpen={mobileLearningSidebarOpen}
+        onMobileClose={() => setMobileLearningSidebarOpen(false)}
       />
 
-      {/* Contenido debajo del header: Sidebar | Chat | Imagen */}
+      {/* Contenido principal: Chat | Imagen */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar Izquierdo */}
-        <LearningSidebar
-          objectives={sessionInfo.learningObjectives}
-          keyPoints={sessionInfo.keyPoints}
-          progress={sessionInfo.progress}
-          onProgressClick={() => setShowProgressModal(true)}
-        />
 
         {/* Chat Area */}
         <div className="flex-1 flex flex-col min-w-0">
-          <ScrollArea className="flex-1">
-            <div className="max-w-4xl mx-auto p-6 space-y-6">
-              {messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className="flex gap-3 max-w-2xl">
-                    {msg.role === 'assistant' && (
-                      <Avatar className="h-8 w-8 border-2 border-instructor-200 flex-shrink-0">
-                        <AvatarImage src={sessionInfo.instructor.avatar} />
-                        <AvatarFallback className="bg-instructor-100 text-instructor-700 text-xs">
-                          {sessionInfo.instructor.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
+          <ChatMessages
+            messages={messages}
+            loading={loading}
+            sessionInfo={sessionInfo}
+            onImageRefClick={handleImageRefClick}
+            onImageMentioned={handleImageMentioned}
+          />
 
-                    <div
-                      className={`px-4 py-3 rounded-2xl ${
-                        msg.role === 'user'
-                          ? 'bg-student-500 text-white'
-                          : 'bg-instructor-50 text-gray-900 border border-instructor-200'
-                      }`}
-                    >
-                      {msg.role === 'assistant' ? (
-                        <MessageWithImageRefs
-                          content={msg.content}
-                          onImageClick={handleImageRefClick}
-                          onImageMentioned={handleImageMentioned}
-                        />
-                      ) : (
-                        <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
-                      )}
-                      <div
-                        className={`text-xs mt-2 ${msg.role === 'user' ? 'text-student-100' : 'text-gray-400'}`}
-                      >
-                        {new Date(msg.timestamp).toLocaleTimeString()}
-                      </div>
-                    </div>
-
-                    {msg.role === 'user' && (
-                      <Avatar className="h-8 w-8 border-2 border-student-200 flex-shrink-0">
-                        <AvatarImage src={sessionInfo.user.avatar} />
-                        <AvatarFallback className="bg-student-100 text-student-700 text-xs">
-                          {sessionInfo.user.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {loading && messages[messages.length - 1]?.content === '' && (
-                <div className="flex justify-start">
-                  <div className="flex gap-3">
-                    <Avatar className="h-8 w-8 border-2 border-instructor-200">
-                      <AvatarImage src={sessionInfo.instructor.avatar} />
-                      <AvatarFallback className="bg-instructor-100 text-instructor-700 text-xs">
-                        {sessionInfo.instructor.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="bg-instructor-50 border border-instructor-200 px-4 py-3 rounded-2xl">
-                      <div className="flex items-center space-x-2">
-                        <div className="flex space-x-1">
-                          <div
-                            className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
-                            style={{ animationDelay: '0ms' }}
-                          ></div>
-                          <div
-                            className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
-                            style={{ animationDelay: '150ms' }}
-                          ></div>
-                          <div
-                            className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
-                            style={{ animationDelay: '300ms' }}
-                          ></div>
-                        </div>
-                        <span className="text-sm text-gray-500">{sessionInfo.instructor.name} está escribiendo...</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
-
-          {/* Input Area */}
-          <div className="border-t bg-white p-4">
-            <div className="max-w-4xl mx-auto flex gap-3">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="Escribe tu respuesta o pregunta..."
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-instructor-500 resize-none text-sm"
-                rows={2}
-                disabled={loading}
-              />
-              <Button
-                onClick={sendMessage}
-                disabled={loading || !input.trim()}
-                className="bg-instructor-600 hover:bg-instructor-700 h-auto px-6"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <ChatInput
+            input={input}
+            loading={loading}
+            isRecording={isRecording}
+            onInputChange={setInput}
+            onSend={sendMessage}
+            onToggleVoice={handleToggleVoice}
+            isModalOpen={isModalOpen}
+            onModalClose={closeModal}
+          />
         </div>
 
         {/* Panel lateral de imágenes - Solo mostrar si hay una imagen actual o showAllImages */}
         {(currentImage || showAllImages) && (
-          <ImagePanel
+          <ImageGalleryPanel
             images={images}
             onImageClick={openModal}
             isOpen={true}
-            onClose={() => {}}
+            onClose={() => { }}
             currentImage={currentImage}
             showAllImages={showAllImages}
             onToggleShowAll={toggleShowAll}
+            isMobileOpen={mobileImagePanelOpen}
+            onMobileClose={() => setMobileImagePanelOpen(false)}
           />
+        )}
+      </div>
+
+      {/* Overlays Mobile para cerrar sidebars */}
+      {mobileLearningSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+          onClick={() => setMobileLearningSidebarOpen(false)}
+        />
+      )}
+      {mobileImagePanelOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+          onClick={() => setMobileImagePanelOpen(false)}
+        />
+      )}
+
+      {/* Botones Flotantes Mobile (FABs) */}
+      <div className="sm:hidden">
+        {/* Botón Panel Aprendizaje - Inferior Izquierda */}
+        <button
+          onClick={openLearningSidebar}
+          className="absolute top-20 left-4 z-40 bg-slate-700/50 text-white py-3 px-2 rounded-full shadow-lg hover:bg-slate-700 active:scale-95 transition-transform"
+          title="Panel de Aprendizaje"
+        >
+          <div className="text-xl flex gap-1">
+            <span>📚</span>
+            <ChevronRight />
+          </div>
+        </button>
+
+        {/* Botón Panel Imágenes - Inferior Derecha (solo si hay imágenes) */}
+        {images.length > 0 && (
+          <button
+            onClick={openImagePanel}
+            className="absolute top-20 right-4 z-40 bg-slate-700/50 text-white py-3 px-2 rounded-full shadow-lg hover:bg-slate-700 active:scale-95 transition-transform"
+            title="Panel de Imágenes"
+          >
+            <div className="text-xl flex gap-1">
+              <ChevronLeft />
+              <span>🖼️</span>
+            </div>
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
+              {images.length}
+            </span>
+          </button>
         )}
       </div>
 

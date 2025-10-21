@@ -46,7 +46,12 @@ export async function POST(request: NextRequest) {
               include: {
                 topic: {
                   include: {
-                    instructor: true
+                    instructor: true,
+                    course: {
+                      include: {
+                        career: true
+                      }
+                    }
                   }
                 },
                 activities: {
@@ -92,7 +97,10 @@ export async function POST(request: NextRequest) {
         // 2. Moderación + Clasificación en paralelo
         const t2 = Date.now()
         const [moderation, intent] = await Promise.all([
-          moderateContent(studentMessage),
+          moderateContent(studentMessage, {
+            topicTitle: topic.title,
+            careerName: topic.course?.career?.name
+          }),
           classifyIntent(studentMessage, currentActivity, {
             currentTopic: topic.title,
             currentMoment: currentMoment.title,
@@ -121,6 +129,11 @@ export async function POST(request: NextRequest) {
 
         // 3. Construir prompt
         const t3 = Date.now()
+
+        // Detectar si es la última actividad del tema (reusar content ya parseado arriba)
+        const nextActivity = findNextActivity(content, currentMoment.id, currentActivity.id)
+        const isLastActivity = nextActivity === null
+
         const { staticBlocks, dynamicPrompt } = buildSystemPrompt({
           topic,
           session,
@@ -128,7 +141,8 @@ export async function POST(request: NextRequest) {
           currentActivity,
           conversationHistory: session.messages.reverse(),
           completedActivities: session.topicEnrollment.activities.map(a => a.activityId),
-          images: topicImages
+          images: topicImages,
+          isLastActivity
         })
 
         let finalDynamicPrompt = dynamicPrompt
@@ -146,11 +160,25 @@ export async function POST(request: NextRequest) {
 
         console.log(`[STREAM] Construir prompt: ${Date.now() - t3}ms`)
 
-        // 4. STREAMING de Claude
+        // 4. Calcular maxTokens según complejidad de la actividad
+        // Añadimos margen de seguridad (~20%) para que pueda completar frases
+        const COMPLEXITY_TOKENS = {
+          simple: 600,     // Target: 150-300 palabras (~300-400 tokens) + margen
+          moderate: 850,   // Target: 300-450 palabras (~450-600 tokens) + margen
+          complex: 1100    // Target: 450-600 palabras (~650-800 tokens) + margen
+        }
+
+        const maxTokens = currentActivity.complexity
+          ? COMPLEXITY_TOKENS[currentActivity.complexity]
+          : (topic.instructor.maxTokens || 850)  // Default: moderate
+
+        console.log(`[STREAM] Using maxTokens: ${maxTokens} (complexity: ${currentActivity.complexity || 'default'}) - Target: ${currentActivity.teaching?.target_length || 'N/A'}`)
+
+        // 5. STREAMING de Claude
         const t4 = Date.now()
         const claudeStream = await anthropic.messages.stream({
-          model: topic.instructor.modelId || DEFAULT_MODEL,
-          max_tokens: topic.instructor.maxTokens || 1024,
+          model: DEFAULT_MODEL, // Siempre usa DEFAULT_MODEL (Haiku 4.5)
+          max_tokens: maxTokens,
           temperature: topic.instructor.temperature || 0.6,
           system: [
             ...staticBlocks,
@@ -293,7 +321,10 @@ async function saveToDatabase(
 ) {
   const t5 = Date.now()
 
-  // Guardar mensajes
+  // Guardar mensajes secuencialmente para garantizar orden correcto por timestamp
+  const userTimestamp = new Date()
+  const assistantTimestamp = new Date(userTimestamp.getTime() + 1) // +1ms garantiza orden
+
   await prisma.message.createMany({
     data: [
       {
@@ -303,6 +334,7 @@ async function saveToDatabase(
         activityId: currentActivity.id,
         momentId: currentMoment.id,
         classId: session.currentClassId,
+        timestamp: userTimestamp
       },
       {
         sessionId,
@@ -313,6 +345,7 @@ async function saveToDatabase(
         classId: session.currentClassId,
         inputTokens,
         outputTokens,
+        timestamp: assistantTimestamp
       }
     ]
   })

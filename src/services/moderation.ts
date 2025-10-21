@@ -1,4 +1,4 @@
-import { anthropic, HAIKU_MODEL } from '@/lib/anthropic'
+import { anthropic, HAIKU_BASIC_MODEL } from '@/lib/anthropic'
 import { ModerationResult } from '@/types/topic-content'
 
 /**
@@ -36,18 +36,37 @@ function isObviouslySafe(message: string): boolean {
 
 /**
  * Detecta patrones sospechosos que requieren moderación
+ * NOTA: En contextos educativos, muchos términos técnicos son normales y apropiados
  */
 function containsSuspiciousPatterns(message: string): boolean {
+  // Patrones genuinamente sospechosos (requieren moderación de IA)
   const suspiciousPatterns = [
-    /\b(matar|morir|muerte|suicid|violencia)\b/i,
-    /\b(droga|cocaína|marihuana|heroína)\b/i,
-    /\b(sex|porno|xxx|desnud)\b/i,
-    /\b(idiota|estúpid|imbécil|mierda|joder)\b/i,
-    /\b(hack|robar|estafar|piratear)\b/i,
+    /\b(porno|xxx|sexual)\b/i, // Contenido sexual explícito
+    /\b(idiota|estúpid|imbécil|mierda|carajo|joder)\b/i, // Insultos
+    /\b(robar|estafar|piratear|hackear)\b/i, // Actividades ilegales
     /(https?:\/\/|www\.)/i, // URLs pueden ser spam
   ]
 
   return suspiciousPatterns.some(pattern => pattern.test(message))
+}
+
+/**
+ * Construye nota de contexto dinámicamente según el tema
+ */
+function buildContextNote(context?: { topicTitle?: string; careerName?: string }): string {
+  const courseName = context?.topicTitle || 'educativo general'
+  const careerName = context?.careerName || ''
+
+  return `⚠️ CONTEXTO EDUCATIVO IMPORTANTE:
+Este es un curso de: "${courseName}" ${careerName ? `(Carrera: ${careerName})` : ''}
+
+Es NORMAL y APROPIADO que los estudiantes mencionen términos técnicos del tema:
+- Conceptos especializados de la materia
+- Ejemplos prácticos relacionados con el curso
+- Términos profesionales del área de estudio
+- Casos de estudio o situaciones reales del campo
+
+EVALÚA EL CONTENIDO EN CONTEXTO EDUCATIVO. No bloquees términos técnicos apropiados para el curso.`
 }
 
 /**
@@ -73,8 +92,14 @@ function extractJSON(text: string): string {
 /**
  * Modera el contenido del mensaje del estudiante
  * para detectar contenido inapropiado
+ *
+ * @param message - Mensaje del estudiante
+ * @param context - Contexto opcional del tema actual
  */
-export async function moderateContent(message: string): Promise<ModerationResult> {
+export async function moderateContent(
+  message: string,
+  context?: { topicTitle?: string; careerName?: string }
+): Promise<ModerationResult> {
   // OPTIMIZACIÓN: Skip moderación para mensajes obviamente seguros
   if (isObviouslySafe(message)) {
     return {
@@ -85,18 +110,26 @@ export async function moderateContent(message: string): Promise<ModerationResult
     }
   }
 
+  // Construir contexto dinámico basándose en el tema
+  const contextNote = buildContextNote(context)
+
   const moderationPrompt = `Analiza si este mensaje de un estudiante contiene contenido inapropiado para un contexto educativo profesional.
+
+${contextNote}
 
 MENSAJE DEL ESTUDIANTE:
 "${message}"
 
-Categorías prohibidas:
+Categorías REALMENTE prohibidas:
 1. sexual_content: Contenido sexual explícito o insinuaciones
-2. violence: Violencia explícita o amenazas
+2. violence: Violencia personal explícita o amenazas (distinguir de contenido educativo según contexto)
 3. illegal_activities: Actividades ilegales
-4. personal_attacks: Insultos o ataques personales
+4. personal_attacks: Insultos o ataques personales al instructor
 5. hate_speech: Discurso de odio
 6. spam: Spam o promoción comercial
+
+⚠️ IMPORTANTE: Evalúa el mensaje en el CONTEXTO EDUCATIVO del curso.
+Términos que pueden parecer inapropiados en conversación normal pueden ser apropiados en contexto educativo.
 
 IMPORTANTE: Responde ÚNICAMENTE con el objeto JSON, sin texto adicional, sin markdown, sin explicaciones.
 
@@ -105,7 +138,7 @@ Formato de respuesta:
 
   try {
     const response = await anthropic.messages.create({
-      model: HAIKU_MODEL, // Optimización: Haiku es suficiente para moderación
+      model: HAIKU_BASIC_MODEL, // Haiku 3.5 para tarea básica
       max_tokens: 300,
       messages: [{ role: 'user', content: moderationPrompt }],
     })

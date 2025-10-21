@@ -21,7 +21,8 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <form
+          {/* Google OAuth - DESHABILITADO (solo usuarios corporativos) */}
+          {/* <form
             action={async () => {
               'use server'
               await signIn('google', { redirectTo: '/topics' })
@@ -55,6 +56,27 @@ export default function LoginPage() {
                 />
               </svg>
               Continuar con Google
+            </Button>
+          </form> */}
+
+          <form
+            action={async () => {
+              'use server'
+              await signIn('microsoft-entra-id', { redirectTo: '/topics' })
+            }}
+          >
+            <Button
+              type="submit"
+              className="w-full h-12 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 shadow-sm"
+              variant="outline"
+            >
+              <svg className="w-5 h-5 mr-3" viewBox="0 0 23 23">
+                <path fill="#f35325" d="M0 0h11v11H0z" />
+                <path fill="#81bc06" d="M12 0h11v11H12z" />
+                <path fill="#05a6f0" d="M0 12h11v11H0z" />
+                <path fill="#ffba08" d="M12 12h11v11H12z" />
+              </svg>
+              Continuar con Microsoft
             </Button>
           </form>
 

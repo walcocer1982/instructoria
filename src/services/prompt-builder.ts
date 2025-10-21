@@ -22,6 +22,7 @@ interface PromptContext {
   conversationHistory: Message[]
   completedActivities: string[]
   images?: TopicImage[]
+  isLastActivity?: boolean
 }
 
 /**
@@ -32,7 +33,7 @@ export function buildSystemPrompt(context: PromptContext): {
   staticBlocks: Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }>
   dynamicPrompt: string
 } {
-  const { topic, session, currentMoment, currentActivity, conversationHistory, completedActivities, images } = context
+  const { topic, session, currentMoment, currentActivity, conversationHistory, completedActivities, images, isLastActivity } = context
   const content = parseTopicContent(topic.contentJson)
   const instructor = topic.instructor
 
@@ -117,17 +118,77 @@ TONO: ${instructor.tone || 'Profesional, empático y motivador'}
 `
 
   // BLOQUE ESTÁTICO 2: Instrucciones de actividad (CACHEABLE)
+  // Detectar imágenes sugeridas disponibles
+  const suggestedImageIds = currentActivity.teaching.suggested_image_ids || []
+  const availableSuggestedImages = suggestedImageIds
+    .map(id => images?.find(img => img.id === id))
+    .filter((img): img is NonNullable<typeof img> => img !== undefined)
+
+  // Logging interno (no visible al estudiante)
+  if (suggestedImageIds.length > 0 && availableSuggestedImages.length === 0) {
+    console.warn(`[PROMPT] ⚠️ Imágenes sugeridas no disponibles para actividad ${currentActivity.id}: ${suggestedImageIds.join(', ')}`)
+  }
+
   const staticBlock2 = `
 ACTIVIDAD ACTUAL:
 
 FASE 1 - ENSEÑANZA:
 ${currentActivity.teaching.agent_instruction}
 
-Conceptos clave que debes cubrir:
-${currentActivity.teaching.key_concepts.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+${availableSuggestedImages.length > 0 ? `
+📌 IMÁGENES SUGERIDAS PARA ESTA ACTIVIDAD:
+${availableSuggestedImages.map(img => `
+- "${img.title}" (ID: ${img.id})
+  ${img.description}
+  Cuándo mostrarla: ${img.when_to_show}
+  Para mencionarla: [VER IMAGEN: ${img.title}]
+`).join('\n')}
 
-Ejemplos recomendados:
+⚠️ IMPORTANTE: Estas imágenes están SUGERIDAS para esta actividad específica.
+- Úsalas cuando sea apropiado según el flujo de la conversación
+- Menciónala EN EL MOMENTO indicado en "Cuándo mostrarla"
+- Si decides no usarla, NO menciones que hay imágenes disponibles
+` : ''}
+
+${currentActivity.teaching.target_length ? `
+📏 EXTENSIÓN OBLIGATORIA: ${currentActivity.teaching.target_length}
+
+⚠️ REGLAS CRÍTICAS DE BREVEDAD:
+1. USA EXACTAMENTE ${currentActivity.teaching.target_length}. Ni más, ni menos.
+2. DIVIDE tu explicación en 2-3 párrafos cortos
+3. TERMINA con una pregunta o frase completa (NO cortes a media frase)
+4. SÉ DIRECTO: ve al punto, elimina relleno innecesario
+5. Si llegas al límite, CONCLUYE con una frase final breve
+
+❌ NO HAGAS:
+- Listas largas con muchos puntos
+- Explicaciones detalladas de cada concepto
+- Repetir información
+- Usar emojis excesivos
+
+✅ SÍ HAZLO:
+- Explica solo lo esencial
+- Usa 1-2 ejemplos máximo
+- Mantén párrafos de 3-4 líneas
+- Termina con pregunta de verificación
+` : `
+⚠️ IMPORTANTE: Sé BREVE y CONCISO. Máximo 3-4 párrafos cortos.
+`}
+
+${currentActivity.teaching.context ? `
+📍 CONTEXTO: ${currentActivity.teaching.context}
+💡 Genera ejemplos relevantes basados en este contexto.
+` : ''}
+
+${currentActivity.teaching.key_concepts && currentActivity.teaching.key_concepts.length > 0 ? `
+Conceptos clave sugeridos:
+${currentActivity.teaching.key_concepts.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+` : '💡 GENERA tus propios conceptos clave basados en la instrucción.'}
+
+${currentActivity.teaching.examples && currentActivity.teaching.examples.length > 0 ? `
+Ejemplos sugeridos:
 ${currentActivity.teaching.examples.map((e, i) => `${i + 1}. ${e}`).join('\n')}
+` : '💡 GENERA tus propios ejemplos basados en el contexto y la instrucción.'}
 
 ${currentActivity.teaching.image ? `
 Material de apoyo disponible:
@@ -141,29 +202,14 @@ Cuando sea relevante, menciona: "Te recomiendo ver esta imagen: ${currentActivit
 FASE 2 - VERIFICACIÓN (solo después de enseñar):
 
 Una vez que hayas explicado el concepto, pregunta:
-"${currentActivity.verification.initial_question}"
+"${currentActivity.verification.question || currentActivity.verification.initial_question}"
 
-CRITERIOS DE ÉXITO (El estudiante debe demostrar):
-${currentActivity.verification.success_criteria.must_include.map((c, i) => `${i + 1}. ${c}`).join('\n')}
-
-Nivel de comprensión requerido: ${currentActivity.verification.success_criteria.understanding_level}
-Completitud mínima: ${currentActivity.verification.success_criteria.min_completeness}%
-
----
-
-ESTRATEGIA DE REPREGUNTAS:
-
-🔄 Si la respuesta está INCOMPLETA:
-${currentActivity.verification.reprompt_strategy.if_incomplete.map(r => `- ${r}`).join('\n')}
-
-🔄 Si solo MEMORIZÓ pero no COMPRENDIÓ:
-${currentActivity.verification.reprompt_strategy.if_memorized_only.map(r => `- ${r}`).join('\n')}
-
-🔄 Si la respuesta está INCORRECTA:
-${currentActivity.verification.reprompt_strategy.if_incorrect.map(r => `- ${r}`).join('\n')}
-
-💡 PISTAS (usa progresivamente):
-${currentActivity.verification.reprompt_strategy.hints.map((h, i) => `Pista ${i + 1}: ${h}`).join('\n')}
+✅ El estudiante debe demostrar COMPRENSIÓN del concepto, no perfección de formato.
+✅ Acepta respuestas correctas aunque no sigan el formato exacto (ej: "charco de agua" vs "charco de 1m²").
+✅ Evalúa: ¿Entendió el concepto? ¿Puede aplicarlo? NO: ¿Memorizó palabras exactas?
+✅ Si la comprensión es clara (70%+), permite avanzar aunque el formato no sea perfecto.
+✅ Si la respuesta es incompleta o incorrecta en CONCEPTO, da pistas progresivas.
+✅ Máximo ${currentActivity.metadata?.max_reprompts || 3} intentos, luego ofrece continuar de todos modos.
 
 ---
 
@@ -182,48 +228,30 @@ El estudiante PUEDE hacer preguntas en cualquier momento.
 - Verifica qué parte específica no entendió
 
 ⚠️ PREGUNTAS FUERA DE ALCANCE:
-${currentActivity.student_questions ? `
-Alcance permitido:
-- Actividad actual: ${currentActivity.student_questions.scope.current_activity ? 'SÍ' : 'NO'}
-- Momento actual: ${currentActivity.student_questions.scope.current_moment ? 'SÍ' : 'NO'}
-- Todo el tema: ${currentActivity.student_questions.scope.current_topic ? 'SÍ' : 'NO'}
-- Temas relacionados: ${currentActivity.student_questions.scope.related_topics ? 'SÍ' : 'NO'}
-
-Si pregunta algo fuera del alcance:
-- Reconoce la pregunta
-- Da respuesta MUY breve (1-2 oraciones) si es válida
+- La aplicación clasifica automáticamente si la pregunta está fuera de alcance
+- Si recibes indicación de que está fuera de alcance, da una respuesta MUY breve (1-2 oraciones)
 - Redirige amablemente al tema actual
-- Usa las plantillas:
-  * Tema futuro: "${currentActivity.student_questions.out_of_scope_strategy.response_templates.related_but_future_topic}"
-  * Otro curso: "${currentActivity.student_questions.out_of_scope_strategy.response_templates.related_but_different_course}"
-  * Tangencial: "${currentActivity.student_questions.out_of_scope_strategy.response_templates.tangentially_related}"
-  * Completamente off-topic: "${currentActivity.student_questions.out_of_scope_strategy.response_templates.completely_off_topic}"
-` : 'Mantén el foco en la actividad actual'}
-
-🚫 CONTENIDO PROHIBIDO (GUARDRAILS):
-${currentActivity.guardrails ? `
-Si el estudiante menciona temas inapropiados: ${currentActivity.guardrails.prohibited_topics.join(', ')}
-
-DEBES responder:
-"${currentActivity.guardrails.response_on_violation.template.replace('{especialidad}', instructor.specialty).replace('{tema_actual}', currentActivity.teaching.agent_instruction)}"
-
-Y TERMINAR ahí. NO expliques por qué, simplemente redirige profesionalmente.
-` : ''}
 
 ---
 
-9. ✅ MÁXIMO ${currentActivity.metadata?.max_reprompts || 3} intentos: Después, ofrece continuar de todos modos
+CUANDO EL ESTUDIANTE ESTÉ LISTO:
 
----
-
-CÓMO SABER SI PUEDE AVANZAR:
-
-✅ Cumplió al menos ${currentActivity.verification.success_criteria.min_completeness}% de los criterios
-✅ Demostró comprensión nivel "${currentActivity.verification.success_criteria.understanding_level}"
-✅ Dio ejemplos propios (no solo repitió los tuyos)
-
-Cuando esté listo, di algo como:
+Cuando el estudiante demuestre comprensión suficiente, di algo como:
 "¡Excelente trabajo! Has completado esta actividad ✅. ¿Listo para continuar?"
+
+${isLastActivity ? `
+---
+
+🏁 INSTRUCCIÓN ESPECIAL - ÚLTIMA ACTIVIDAD DEL TEMA:
+
+Esta es la ÚLTIMA actividad del tema "${topic.title}".
+
+Cuando el estudiante la complete exitosamente:
+1. Felicítalo por completar TODO el tema
+2. Resume brevemente los puntos clave aprendidos (2-3 bullet points)
+3. Anímalo a aplicar lo aprendido
+4. Indica que el sistema lo llevará al siguiente tema del curso
+` : ''}
 `
 
   // BLOQUE DINÁMICO: Conversación y progreso (NO cacheable)

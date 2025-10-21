@@ -241,6 +241,130 @@ npm run db:studio
 - [ ] Sistema de evaluación automática
 - [ ] Exportar progreso a PDF
 
+## 📋 CHANGELOG
+
+### v1.5.0 (2025-10-21)
+- **Feature:** Sistema de sidebars responsive con botones flotantes en mobile
+  - Sidebars (Learning y Gallery) se ocultan en pantallas pequeñas (<sm)
+  - Botones flotantes (FABs) para abrir cada sidebar en mobile
+  - Solo un sidebar puede estar abierto a la vez en mobile
+  - Sidebars respetan el navbar (no lo cubren) usando `top-16`
+  - Botones de colapsar solo visibles en desktop (ocultos en mobile)
+- **Refactor:** Desacople de voice recognition a hook reutilizable
+  - Creado `useVoiceRecognition` hook con toda la lógica de Web Speech API
+  - Eliminados 153 líneas de código del componente principal
+  - Sistema más limpio, mantenible y reutilizable
+  - Removidos logs de debug para código production-ready
+- **Refactor:** Renombramiento de componentes siguiendo convención del proyecto
+  - `ImagePanel.tsx` → `image-gallery-panel.tsx` (kebab-case)
+  - Componente `ImagePanel` → `ImageGalleryPanel` (nombre más descriptivo)
+  - Interfaz `ImagePanelProps` → `ImageGalleryPanelProps`
+- **Mejora:** UX mejorada en página de temas
+  - Estado de carga global al iniciar tema ("Cargando Clase...")
+  - Botón "Continuar" muestra spinner durante carga
+  - Todos los cards se deshabilitan mientras se inicia sesión
+- **Fix:** Avatar de usuario OAuth ahora se muestra correctamente en chat
+  - API `/api/sessions/[sessionId]/info` ahora retorna campo `image` de NextAuth
+  - Prioriza `session.user.image` (OAuth) sobre `session.user.avatar` (custom)
+
+### v1.4.0 (2025-10-21)
+- **Feature:** Sistema de detección de salidas de página durante verificaciones
+  - Hook `useSoftPageExitTracking` detecta cuando el estudiante cambia de ventana/pestaña
+  - Toast suave informa tiempo exacto fuera (formato inteligente: segundos, minutos, horas)
+  - Registro en base de datos (tabla SecurityIncident) para auditoría y transparencia
+  - Mensaje educativo no punitivo: "Por transparencia: tu actividad durante las verificaciones queda registrada"
+  - API endpoint `/api/audit/page-exit` para tracking de actividad
+- **Mejora:** Prompts genéricos para intent-classification y guardrails
+  - Sistema ahora funciona para cualquier curso educativo (no solo SSO)
+  - Reglas claras para clasificación de intención (answer_verification, ask_question, off-topic)
+  - Mensajes de guardrail adaptados por severidad y contexto del curso
+- **Fix:** Corrección de errores TypeScript en moderation severity y response types
+- **Refactor:** Eliminación de campo `modelId` obsoleto del schema (ahora usa DEFAULT_MODEL constante)
+
+### v1.3.4 (2025-10-20)
+- **Fix:** Eliminar burbuja vacía en chat durante carga de respuesta del instructor
+  - Problema: Aparecía burbuja vacía entre mensaje del estudiante y "está escribiendo..."
+  - Causa: Mensaje vacío del asistente se renderizaba mientras loading estaba activo
+  - Solución: Ocultar mensajes del asistente vacíos durante estado de carga
+  - Mejora experiencia visual del chat: solo aparece indicador "está escribiendo..."
+- **Feature:** Script de limpieza de base de datos (npm run db:clean)
+  - Elimina todos los mensajes, sesiones y progreso para empezar de cero
+  - Mantiene intactos: usuarios, carreras, cursos, temas, instructores
+  - Útil para testing y demos
+
+### v1.3.3 (2025-10-19)
+- **Fix:** Corregir descripciones de imágenes basándose en fotografías reales
+  - Almacén: Eliminados hallazgos ficticios (trabajador sin casco, celular, etc.)
+  - Almacén: Descripción real: charco de agua grande, cables en piso, caja herramientas
+  - Soldadura: Eliminados hallazgos inventados (nombres ficticios, fechas extintor)
+  - Soldadura: Descripción real: soldador trabajando con chispas, extintor, cables
+  - Actualizado MCP Server y base de datos con descripciones fieles a imágenes reales
+
+### v1.3.2 (2025-10-19)
+- **Fix:** Mejorar uso de imágenes sugeridas
+  - Instructor ahora recibe instrucción más clara sobre cuándo mostrar imágenes
+  - Cambio de "RECOMENDADAS" a "SUGERIDAS" con contexto específico
+  - Instrucción explícita: mencionar imagen EN EL MOMENTO indicado
+  - Reduce casos donde imágenes sugeridas no se muestran
+
+### v1.3.1 (2025-10-19)
+- **Fix:** Criterios de verificación más flexibles y balanceados
+  - Sistema evalúa COMPRENSIÓN del concepto, no perfección de formato
+  - Acepta respuestas correctas aunque no sigan formato exacto
+  - Umbral: 70% de comprensión para avanzar (antes implícito 95%+)
+  - Reduce fricción pedagógica manteniendo calidad educativa
+  - Ejemplo: "charco de agua" vs "charco de 1m²" → Ambos válidos si identificó peligro
+
+### v1.3.0 (2025-10-19)
+- **Feature:** Moderación context-aware dinámica
+  - Sistema detecta automáticamente el tema del curso (SSO, Salud, General)
+  - Contexto adaptativo según carrera y tema actual
+  - Whitelists dinámicas basadas en contenido educativo
+  - Soporte para múltiples disciplinas educativas (SSO, Medicina, etc.)
+  - Elimina necesidad de configuración hardcodeada
+
+### v1.2.1 (2025-10-19)
+- **Fix:** Moderación mejorada para contextos educativos de SSO
+  - Sistema ahora reconoce términos educativos (riesgo, peligro, lesión, crítico, mayor, menor) como apropiados
+  - Prompt de moderación especifica contexto de Seguridad y Salud Ocupacional
+  - Elimina falsos positivos en respuestas legítimas de estudiantes sobre clasificación de riesgos
+
+### v1.2.0 (2025-10-19)
+- **Feature:** Sistema de imágenes sugeridas con fallback transparente
+  - Actividades pueden especificar imágenes recomendadas vía `suggested_image_ids`
+  - Si imágenes no disponibles, sistema continúa sin que estudiante perciba problema
+  - Logging interno para developers cuando imágenes sugeridas faltan
+  - Implementado en tema Inspecciones: 3 imágenes educativas con descripciones detalladas
+- **Mejora:** Descripciones de imágenes más detalladas con hallazgos específicos
+  - Almacén: 8 hallazgos listados (ACTO/CONDICIÓN)
+  - Taller de soldadura: 5 hallazgos con clasificación CRÍTICO/MAYOR/MENOR
+
+### v1.1.1 (2025-10-19)
+- **Fix:** Mensaje de finalización cuando estudiante completa último tema
+  - Instructor ahora felicita y resume puntos clave al completar tema completo
+  - Agregada instrucción especial para última actividad del tema
+- **Fix:** Orden de mensajes al recargar página
+  - Timestamps explícitos (+1ms) garantizan orden correcto user→assistant
+  - Corregida condición de carrera en createMany
+
+### v1.1.0 (2025-10-19)
+- **Feature:** Nuevo tema "Inspecciones de Seguridad" (60 min, 5 momentos)
+  - Clasificación de actos y condiciones subestándares
+  - Tipos de inspecciones según normativa peruana (DS 005-2012-TR)
+  - Registro profesional de hallazgos
+  - Clasificación CRÍTICO/MAYOR/MENOR con tiempos de levantamiento
+  - Inspección simulada completa (caso práctico de área de soldadura)
+- **Docs:** Archivo CLAUDE.md con guía completa de arquitectura y desarrollo
+
+### v1.0.0 (2025-10-19)
+- **Inicial:** Sistema completo de instructores IA conversacionales
+- **Feature:** Moderación de contenido con guardrails de seguridad
+- **Feature:** Verificación automática de comprensión del estudiante
+- **Feature:** Sistema de memoria y tracking de progreso por actividad
+- **Feature:** Integración con MCP Server para imágenes educativas
+- **Feature:** Tema completo de IPERC (SSO) con instructor especializado
+- **Feature:** Deployment en Vercel con PostgreSQL (Neon)
+
 ## 🤝 Contribuir
 
 ¡Las contribuciones son bienvenidas! Por favor:

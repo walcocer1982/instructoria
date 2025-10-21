@@ -133,8 +133,7 @@ model AIInstructor {
   bio             String?   @db.Text
   avatar          String?
 
-  // Configuración del modelo IA
-  modelId         String    @default("claude-sonnet-4-5-20250929")
+  // Configuración del modelo IA (modelId se maneja en código con DEFAULT_MODEL)
   systemPromptBase String   @db.Text
   temperature     Float     @default(0.7)
   maxTokens       Int       @default(2048)

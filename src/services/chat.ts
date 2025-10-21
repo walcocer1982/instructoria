@@ -120,16 +120,32 @@ export async function processStudentMessage(
       }
     })
 
-    const guardrailResponse = currentActivity.guardrails?.response_on_violation.template
-      .replace('{especialidad}', topic.instructor.specialty)
-      .replace('{tema_actual}', currentMoment.title) ||
-      'No puedo continuar con ese tema. Mantengamos la conversación profesional.'
+    // Mensaje específico según severidad (genérico para cualquier curso)
+    let guardrailMessage = ''
+    const severity = moderation.severity
+
+    if (severity === 'high') {
+      guardrailMessage = 'Lo siento, pero no puedo responder a ese tipo de contenido. Mantengamos nuestra conversación enfocada en el tema educativo de forma profesional y respetuosa.'
+    } else {
+      // Intentar usar template personalizado del curso, sino usar mensaje genérico
+      guardrailMessage = currentActivity.guardrails?.response_on_violation.template
+        ?.replace('{especialidad}', topic.instructor.specialty)
+        ?.replace('{tema_actual}', currentMoment.title) ||
+        `Como ${topic.instructor.specialty}, prefiero que mantengamos la conversación enfocada en "${currentMoment.title}". ¿Continuamos con la actividad actual?`
+    }
+
+    console.log(`[MODERATION] ⚠️ Contenido bloqueado - Severidad: ${severity}, Violaciones: ${moderation.violations.join(', ')}`)
 
     return {
-      message: guardrailResponse,
+      message: guardrailMessage,
       type: 'guardrail',
       allowContinue: false
     }
+  }
+  // Logging detallado para debug
+  console.log(`[CLASSIFICATION] Intent: ${intent.intent}, On-topic: ${intent.is_on_topic}, Relevance: ${intent.relevance_score}%`)
+  if (intent.topic_mentioned) {
+    console.log(`[CLASSIFICATION] Tema mencionado: "${intent.topic_mentioned}"`)
   }
   console.log(`[PERF] Moderación + Clasificación: ${Date.now() - t2}ms`)
 
@@ -148,6 +164,7 @@ export async function processStudentMessage(
   // Agregar instrucciones específicas según intención al bloque dinámico
   let finalDynamicPrompt = dynamicPrompt
   if (intent.intent === 'ask_question' && !intent.is_on_topic) {
+    console.log(`[REDIRECT] ⚠️ Pregunta off-topic detectada: "${intent.topic_mentioned}" - Estrategia: ${intent.suggested_response_strategy}`)
     finalDynamicPrompt += `\n\n⚠️ IMPORTANTE: El estudiante preguntó sobre "${intent.topic_mentioned}" que está fuera del alcance actual. Usa la estrategia: ${intent.suggested_response_strategy}`
   }
 
@@ -166,7 +183,7 @@ export async function processStudentMessage(
   // El bloque dinámico cambia en cada request (historial, progreso)
   const t4 = Date.now()
   const response = await anthropic.messages.create({
-    model: topic.instructor.modelId || DEFAULT_MODEL,
+    model: DEFAULT_MODEL, // Siempre usa DEFAULT_MODEL (Haiku 4.5)
     max_tokens: topic.instructor.maxTokens || 2048,
     temperature: topic.instructor.temperature || 0.7,
     system: [
