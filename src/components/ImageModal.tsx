@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import Image from 'next/image'
-import { TopicImage } from './ImagePanel'
+import { TopicImage } from './image-gallery-panel'
 
 interface ImageModalProps {
   image: TopicImage | null
@@ -30,11 +30,11 @@ export function ImageModal({ image, isOpen, onClose }: ImageModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black bg-opacity-90 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black bg-opacity-90 backdrop-blur-sm animate-fadeIn"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden animate-scaleIn"
+        className="relative w-full max-w-6xl h-full bg-white rounded-2xl shadow-2xl overflow-hidden animate-scaleIn"
         onClick={e => e.stopPropagation()}
       >
         {/* Header con título y botón cerrar */}

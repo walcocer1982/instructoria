@@ -8,11 +8,10 @@ interface KeyPointsCardProps {
 }
 
 export function KeyPointsCard({ keyPoints }: KeyPointsCardProps) {
-  console.log('KeyPointsCard - keyPoints:', keyPoints)
 
   if (!keyPoints || keyPoints.length === 0) {
     return (
-      <Card className="border-focus-200 bg-focus-50/50">
+      <Card className="border-slate-300 bg-white shadow-none">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-focus-700 flex items-center gap-2">
             <Lightbulb className="h-4 w-4" />
@@ -27,7 +26,7 @@ export function KeyPointsCard({ keyPoints }: KeyPointsCardProps) {
   }
 
   return (
-    <Card className="border-focus-200 bg-focus-50/50">
+    <Card className="border-slate-300 bg-white shadow-none">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-semibold text-focus-700 flex items-center gap-2">
           <Lightbulb className="h-4 w-4" />

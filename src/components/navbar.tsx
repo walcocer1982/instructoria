@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { User, LogOut, Settings, Home, BookOpen } from 'lucide-react'
+import { User, LogOut, Settings, Home, BookOpen, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 
 export function Navbar() {
@@ -38,8 +38,10 @@ export function Navbar() {
     <header className="h-14 border-b bg-white flex items-center justify-between px-6 sticky top-0 z-50">
       {/* Logo */}
       <Link href="/" className="flex items-center gap-6">
-        <div className="h-10 w-32 bg-gradient-to-r from-instructor-500 to-learning-500 rounded-md flex items-center justify-center hover:shadow-md transition-shadow">
-          <span className="text-white font-bold text-sm">INSTRUCTORIA</span>
+        <div className="h-10 w-fit bg-gradient-to-r from-cyan-700 to-teal-700 rounded-md flex items-center justify-center gap-2 hover:shadow-md transition-shadow px-4">
+          <Sparkles className='size-4 text-white' />
+          <span className="text-white font-bold text-xs hidden lg:block">Instructor IA</span>
+          <span className="text-white font-bold text-xs block lg:hidden">I-IA</span>
         </div>
       </Link>
 
@@ -73,8 +75,9 @@ export function Navbar() {
       {session?.user ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-              <Avatar className="h-9 w-9">
+            <Button variant="ghost" className="relative h-10 rounded-xl flex items-center gap-2 px-4 ring-0">
+              <span className='text-xs'>{session.user.name || ''}</span>
+              <Avatar className="size-8">
                 <AvatarImage src={session.user.image || undefined} alt={session.user.name || 'Usuario'} />
                 <AvatarFallback className="bg-student-100 text-student-700">
                   {session.user.name?.charAt(0).toUpperCase() || 'U'}
@@ -92,16 +95,16 @@ export function Navbar() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push('/profile')}>
+            <DropdownMenuItem onClick={() => router.push('/profile')} className='cursor-pointer'>
               <User className="mr-2 h-4 w-4" />
               <span>Perfil</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push('/settings')}>
+            <DropdownMenuItem onClick={() => router.push('/settings')} className='cursor-pointer'>
               <Settings className="mr-2 h-4 w-4" />
               <span>Configuración</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
+            <DropdownMenuItem onClick={handleLogout} className='cursor-pointer'>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Cerrar sesión</span>
             </DropdownMenuItem>

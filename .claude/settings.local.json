@@ -58,7 +58,13 @@
       "Bash(node -e \"console.log(require(''crypto'').randomBytes(32).toString(''base64''))\")",
       "Bash(git fetch:*)",
       "Bash(node fix-vercel-routes.js)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(test:*)",
+      "Bash(npm run lint:*)",
+      "Bash(pkill -f \"npm run lint\")",
+      "Bash(lsof:*)",
+      "Bash(xargs kill -9)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []

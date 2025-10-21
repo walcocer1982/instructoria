@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 interface Topic {
   id: string
@@ -21,6 +22,8 @@ export default function TopicsPage() {
   const router = useRouter()
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
+  const [startingTopic, setStartingTopic] = useState(false)
+  const [loadingTopicId, setLoadingTopicId] = useState<string | null>(null)
 
   useEffect(() => {
     loadTopics()
@@ -39,6 +42,9 @@ export default function TopicsPage() {
   }
 
   const startTopic = async (topicId: string, continueSession = true) => {
+    setStartingTopic(true)
+    setLoadingTopicId(topicId)
+
     try {
       // Obtener el usuario de prueba
       const userResponse = await fetch('/api/user')
@@ -70,6 +76,9 @@ export default function TopicsPage() {
     } catch (error) {
       console.error('Error iniciando tema:', error)
       alert('Error iniciando tema')
+    } finally {
+      setStartingTopic(false)
+      setLoadingTopicId(null)
     }
   }
 
@@ -93,6 +102,17 @@ export default function TopicsPage() {
           <p className="text-gray-600">Selecciona un tema para comenzar tu aprendizaje</p>
         </div>
 
+        {/* Overlay de carga cuando se está iniciando un tema */}
+        {startingTopic && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+            <div className="bg-white rounded-lg p-8 shadow-xl text-center max-w-sm mx-4">
+              <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-900 font-semibold text-lg">Cargando Clase...</p>
+              <p className="text-gray-500 text-sm mt-2">Preparando tu sesión de aprendizaje</p>
+            </div>
+          </div>
+        )}
+
         {/* Topics Grid */}
         {topics.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow-sm">
@@ -103,7 +123,12 @@ export default function TopicsPage() {
             {topics.map(topic => (
               <div
                 key={topic.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition"
+                className={cn(
+                  "bg-white rounded-lg shadow-sm border border-gray-200 p-6 transition",
+                  startingTopic
+                    ? "opacity-50 pointer-events-none"
+                    : "hover:shadow-md"
+                )}
               >
                 {/* Topic header */}
                 <div className="mb-4">
@@ -131,13 +156,31 @@ export default function TopicsPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => startTopic(topic.id, true)}
-                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+                    disabled={startingTopic}
+                    className={cn(
+                      "flex-1 py-3 rounded-lg font-semibold transition",
+                      startingTopic && loadingTopicId === topic.id
+                        ? "bg-blue-400 text-white cursor-wait"
+                        : "bg-blue-600 text-white hover:bg-blue-700",
+                      startingTopic && "disabled:opacity-50 disabled:cursor-not-allowed"
+                    )}
                   >
-                    Continuar
+                    {startingTopic && loadingTopicId === topic.id ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                        </svg>
+                        Cargando...
+                      </span>
+                    ) : (
+                      'Continuar'
+                    )}
                   </button>
                   <button
                     onClick={() => startTopic(topic.id, false)}
-                    className="px-4 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition"
+                    disabled={startingTopic}
+                    className="px-4 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Iniciar nueva sesión"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

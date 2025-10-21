@@ -1,19 +1,17 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Send, Mic, MicOff } from 'lucide-react'
-import { ImagePanel } from '@/components/ImagePanel'
+import { ImageGalleryPanel } from '@/components/image-gallery-panel'
 import { ImageModal } from '@/components/ImageModal'
 import { useImageGallery } from '@/hooks/useImageGallery'
 import { useSoftPageExitTracking } from '@/hooks/useSoftPageExitTracking'
-import { MessageWithImageRefs } from '@/components/MessageWithImageRefs'
-import { LearningSidebar } from '@/components/learning/LearningSidebar'
-import { InstructorBanner } from '@/components/learning/InstructorBanner'
+import { useVoiceRecognition } from '@/hooks/useVoiceRecognition'
+import { LearningSidebar } from '@/components/learning/learning-sidebar'
 import { ProgressModal } from '@/components/learning/ProgressModal'
+import { ChatMessages } from '@/components/learning/chat-messages'
+import { ChatInput } from '@/components/learning/chat-input'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -56,10 +54,21 @@ export default function LearnPage() {
   const [loading, setLoading] = useState(false)
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null)
   const [showProgressModal, setShowProgressModal] = useState(false)
-  const [isRecording, setIsRecording] = useState(false)
 
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const recognitionRef = useRef<any>(null)
+  // Estados para sidebars mobile
+  const [mobileLearningSidebarOpen, setMobileLearningSidebarOpen] = useState(false)
+  const [mobileImagePanelOpen, setMobileImagePanelOpen] = useState(false)
+
+  // Handlers para abrir sidebars (solo uno a la vez en mobile)
+  const openLearningSidebar = () => {
+    setMobileImagePanelOpen(false)
+    setMobileLearningSidebarOpen(true)
+  }
+
+  const openImagePanel = () => {
+    setMobileLearningSidebarOpen(false)
+    setMobileImagePanelOpen(true)
+  }
 
   // Hook para manejar galería de imágenes
   const {
@@ -80,6 +89,11 @@ export default function LearnPage() {
     enabled: true
   })
 
+  // Hook para reconocimiento de voz
+  const { isRecording, toggleRecording, stopRecording } = useVoiceRecognition({
+    onTranscript: (transcript) => setInput((prev) => prev + transcript),
+    lang: 'es-ES',
+  })
 
   // Manejar click en referencia de imagen desde el mensaje del instructor
   const handleImageRefClick = (imageTitle: string) => {
@@ -94,14 +108,6 @@ export default function LearnPage() {
     setCurrentImageByTitle(imageTitle)
   }
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
   useEffect(() => {
     // Cargar info de sesión y historial
     loadSessionInfo()
@@ -113,10 +119,6 @@ export default function LearnPage() {
       const response = await fetch(`/api/sessions/${sessionId}/info`)
       if (response.ok) {
         const data = await response.json()
-        console.log('[LearnPage] Session info loaded:', data)
-        console.log('[LearnPage] Learning objectives:', data.learningObjectives)
-        console.log('[LearnPage] Key points:', data.keyPoints)
-        console.log('[LearnPage] Progress:', data.progress)
         setSessionInfo(data)
       }
     } catch (error) {
@@ -159,9 +161,8 @@ export default function LearnPage() {
     setLoading(true)
 
     // Detener grabación de voz si está activa
-    if (isRecording && recognitionRef.current) {
-      recognitionRef.current.stop()
-      setIsRecording(false)
+    if (isRecording) {
+      stopRecording()
     }
 
     // Crear mensaje del asistente vacío para ir llenándolo
@@ -276,82 +277,12 @@ export default function LearnPage() {
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
+  const handleToggleVoice = () => {
+    // Auto-cerrar modal de imagen cuando el estudiante empieza a grabar
+    if (!isRecording && isModalOpen) {
+      closeModal()
     }
-  }
-
-  // Inicializar Web Speech API
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-
-      if (SpeechRecognition) {
-        recognitionRef.current = new SpeechRecognition()
-        recognitionRef.current.continuous = true
-        recognitionRef.current.interimResults = true
-        recognitionRef.current.lang = 'es-PE' // Español de Perú
-
-        recognitionRef.current.onresult = (event: any) => {
-          let interimTranscript = ''
-          let finalTranscript = ''
-
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript
-            if (event.results[i].isFinal) {
-              finalTranscript += transcript + ' '
-            } else {
-              interimTranscript += transcript
-            }
-          }
-
-          // Actualizar input con la transcripción
-          if (finalTranscript) {
-            setInput((prev) => prev + finalTranscript)
-          }
-        }
-
-        recognitionRef.current.onerror = (event: any) => {
-          console.error('[Voice] Error:', event.error)
-          setIsRecording(false)
-
-          if (event.error === 'not-allowed') {
-            alert('⚠️ Permiso de micrófono denegado. Por favor, permite el acceso al micrófono en tu navegador.')
-          }
-        }
-
-        recognitionRef.current.onend = () => {
-          setIsRecording(false)
-        }
-      }
-    }
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop()
-      }
-    }
-  }, [])
-
-  const toggleVoiceRecognition = () => {
-    if (!recognitionRef.current) {
-      alert('⚠️ Tu navegador no soporta reconocimiento de voz. Usa Chrome, Edge o Safari.')
-      return
-    }
-
-    if (isRecording) {
-      recognitionRef.current.stop()
-      setIsRecording(false)
-    } else {
-      // Auto-cerrar modal de imagen cuando el estudiante empieza a grabar
-      if (isModalOpen) {
-        closeModal()
-      }
-      recognitionRef.current.start()
-      setIsRecording(true)
-    }
+    toggleRecording()
   }
 
   if (!sessionInfo) {
@@ -366,225 +297,48 @@ export default function LearnPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      {/* Banner del Instructor */}
-      <InstructorBanner
+    <div className="flex h-full bg-slate-100 relative">
+      {/* Sidebar Izquierdo */}
+      <LearningSidebar
         instructorName={sessionInfo.instructor.name}
         instructorAvatar={sessionInfo.instructor.avatar}
         instructorSpecialty={sessionInfo.instructor.specialty}
+        objectives={sessionInfo.learningObjectives}
+        keyPoints={sessionInfo.keyPoints}
+        progress={sessionInfo.progress}
+        onProgressClick={() => setShowProgressModal(true)}
+        isMobileOpen={mobileLearningSidebarOpen}
+        onMobileClose={() => setMobileLearningSidebarOpen(false)}
       />
 
-      {/* Contenido debajo del banner: Sidebar | Chat | Imagen */}
+      {/* Contenido principal: Chat | Imagen */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar Izquierdo */}
-        <LearningSidebar
-          objectives={sessionInfo.learningObjectives}
-          keyPoints={sessionInfo.keyPoints}
-          progress={sessionInfo.progress}
-          onProgressClick={() => setShowProgressModal(true)}
-        />
 
         {/* Chat Area */}
         <div className="flex-1 flex flex-col min-w-0">
-          <ScrollArea className="flex-1">
-            <div className="max-w-4xl mx-auto p-6 space-y-6">
-              {messages.map((msg, idx) => {
-                // No mostrar mensajes del asistente vacíos mientras está loading (se muestra el typing indicator)
-                if (msg.role === 'assistant' && msg.content === '' && loading) {
-                  return null
-                }
+          <ChatMessages
+            messages={messages}
+            loading={loading}
+            sessionInfo={sessionInfo}
+            onImageRefClick={handleImageRefClick}
+            onImageMentioned={handleImageMentioned}
+          />
 
-                // Mensaje del Instructor (sin burbuja)
-                if (msg.role === 'assistant') {
-                  // No mostrar mensajes vacíos (zombie messages)
-                  if (!msg.content || msg.content.trim() === '') {
-                    return null
-                  }
-
-                  return (
-                    <div key={idx} className="flex gap-4 max-w-4xl mb-6">
-                      <Avatar className="h-10 w-10 flex-shrink-0">
-                        <AvatarImage src={sessionInfo.instructor.avatar} />
-                        <AvatarFallback className="bg-instructor-100 text-instructor-700 text-sm font-semibold">
-                          {sessionInfo.instructor.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-
-                      <div
-                        className="flex-1 select-none"
-                        onCopy={(e) => {
-                          e.preventDefault()
-                          console.log('[Security] Intento de copiar mensaje del instructor bloqueado')
-                        }}
-                        onCut={(e) => {
-                          e.preventDefault()
-                          console.log('[Security] Intento de cortar mensaje del instructor bloqueado')
-                        }}
-                      >
-                        <MessageWithImageRefs
-                          content={msg.content}
-                          onImageClick={handleImageRefClick}
-                          onImageMentioned={handleImageMentioned}
-                          variant="plain"
-                        />
-                        <span className="text-xs text-gray-400 mt-2 block">
-                          {new Date(msg.timestamp).toLocaleTimeString('es-PE', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                }
-
-                // Mensaje del Estudiante (con burbuja blanca)
-                return (
-                  <div key={idx} className="flex gap-3 justify-end max-w-4xl ml-auto mb-6 group">
-                    <div className='flex flex-col'>
-                      <div className="bg-white border border-slate-300 px-5 py-3 rounded-3xl rounded-br-none max-w-xl">
-                        <div className="text-gray-800 text-base whitespace-pre-wrap">
-                          {msg.content}
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-400 mt-1 text-right scale-0 group-hover:scale-100">
-                        {new Date(msg.timestamp).toLocaleTimeString('es-PE', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </div>
-                    </div>
-
-
-
-                    <Avatar className="h-10 w-10 flex-shrink-0">
-                      <AvatarImage src={sessionInfo.user.avatar} />
-                      <AvatarFallback className="bg-slate-300 text-gray-700 text-sm">
-                        {sessionInfo.user.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                )
-              })}
-
-              {loading && messages[messages.length - 1]?.content === '' && (
-                <div className="flex gap-4 max-w-4xl mb-6">
-                  <Avatar className="h-10 w-10 flex-shrink-0">
-                    <AvatarImage src={sessionInfo.instructor.avatar} />
-                    <AvatarFallback className="bg-instructor-100 text-instructor-700 text-sm font-semibold">
-                      {sessionInfo.instructor.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <div className="flex space-x-1">
-                        <div
-                          className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
-                          style={{ animationDelay: '0ms' }}
-                        ></div>
-                        <div
-                          className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
-                          style={{ animationDelay: '150ms' }}
-                        ></div>
-                        <div
-                          className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
-                          style={{ animationDelay: '300ms' }}
-                        ></div>
-                      </div>
-                      <span className="text-sm text-gray-500">{sessionInfo.instructor.name} está escribiendo...</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
-
-          {/* Input Area */}
-          <div className="border-t bg-white p-4">
-            <div className="max-w-4xl mx-auto">
-              {/* Indicador de grabación sobre el textarea */}
-              {isRecording && (
-                <div className="mb-2 flex items-center gap-2 text-red-600 text-sm">
-                  <span className="w-2 h-2 bg-red-600 rounded-full animate-ping"></span>
-                  <span className="font-medium">Grabando... Habla ahora</span>
-                </div>
-              )}
-
-              {/* Contenedor con posición relativa para íconos flotantes */}
-              <div className="relative">
-                <textarea
-                  value={input}
-                  onChange={(e) => {
-                    setInput(e.target.value)
-                    // Auto-cerrar modal de imagen cuando el estudiante empieza a escribir
-                    if (isModalOpen && e.target.value.length > input.length) {
-                      closeModal()
-                    }
-                    // Auto-expandir hasta 4 líneas (~120px), luego scroll
-                    e.target.style.height = 'auto'
-                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
-                  }}
-                  onKeyDown={handleKeyPress}
-                  onPaste={(e) => {
-                    e.preventDefault()
-                    console.log('[Security] Intento de pegar bloqueado - usa tus propias palabras o el micrófono')
-                  }}
-                  placeholder="Escribe o usa el micrófono..."
-                  className="w-full px-4 py-3 pr-24 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-instructor-500 resize-none text-sm"
-                  style={{
-                    minHeight: '52px',
-                    maxHeight: '120px',
-                    overflowY: 'auto',
-                    scrollbarWidth: 'thin'
-                  }}
-                  rows={1}
-                  disabled={loading}
-                />
-
-                {/* Íconos flotantes FUERA del área de scroll */}
-                <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-white">
-                  {/* Botón de micrófono */}
-                  <button
-                    onClick={toggleVoiceRecognition}
-                    disabled={loading}
-                    className={`p-2 rounded-full transition-colors ${isRecording
-                        ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                        : 'hover:bg-gray-100 text-gray-600'
-                      }`}
-                    title={isRecording ? 'Detener grabación' : 'Iniciar dictado por voz'}
-                    type="button"
-                  >
-                    {isRecording ? (
-                      <MicOff className="h-5 w-5" />
-                    ) : (
-                      <Mic className="h-5 w-5" />
-                    )}
-                  </button>
-
-                  {/* Botón de enviar */}
-                  <button
-                    onClick={sendMessage}
-                    disabled={loading || !input.trim()}
-                    className={`p-2 rounded-full transition-all ${input.trim() && !loading
-                        ? 'bg-instructor-600 text-white hover:bg-instructor-700'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      }`}
-                    title="Enviar mensaje"
-                    type="button"
-                  >
-                    <Send className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ChatInput
+            input={input}
+            loading={loading}
+            isRecording={isRecording}
+            onInputChange={setInput}
+            onSend={sendMessage}
+            onToggleVoice={handleToggleVoice}
+            isModalOpen={isModalOpen}
+            onModalClose={closeModal}
+          />
         </div>
 
         {/* Panel lateral de imágenes - Solo mostrar si hay una imagen actual o showAllImages */}
         {(currentImage || showAllImages) && (
-          <ImagePanel
+          <ImageGalleryPanel
             images={images}
             onImageClick={openModal}
             isOpen={true}
@@ -592,7 +346,55 @@ export default function LearnPage() {
             currentImage={currentImage}
             showAllImages={showAllImages}
             onToggleShowAll={toggleShowAll}
+            isMobileOpen={mobileImagePanelOpen}
+            onMobileClose={() => setMobileImagePanelOpen(false)}
           />
+        )}
+      </div>
+
+      {/* Overlays Mobile para cerrar sidebars */}
+      {mobileLearningSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+          onClick={() => setMobileLearningSidebarOpen(false)}
+        />
+      )}
+      {mobileImagePanelOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+          onClick={() => setMobileImagePanelOpen(false)}
+        />
+      )}
+
+      {/* Botones Flotantes Mobile (FABs) */}
+      <div className="sm:hidden">
+        {/* Botón Panel Aprendizaje - Inferior Izquierda */}
+        <button
+          onClick={openLearningSidebar}
+          className="absolute top-20 left-4 z-40 bg-slate-700/50 text-white py-3 px-2 rounded-full shadow-lg hover:bg-slate-700 active:scale-95 transition-transform"
+          title="Panel de Aprendizaje"
+        >
+          <div className="text-xl flex gap-1">
+            <span>📚</span>
+            <ChevronRight />
+          </div>
+        </button>
+
+        {/* Botón Panel Imágenes - Inferior Derecha (solo si hay imágenes) */}
+        {images.length > 0 && (
+          <button
+            onClick={openImagePanel}
+            className="absolute top-20 right-4 z-40 bg-slate-700/50 text-white py-3 px-2 rounded-full shadow-lg hover:bg-slate-700 active:scale-95 transition-transform"
+            title="Panel de Imágenes"
+          >
+            <div className="text-xl flex gap-1">
+              <ChevronLeft />
+              <span>🖼️</span>
+            </div>
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
+              {images.length}
+            </span>
+          </button>
         )}
       </div>
 

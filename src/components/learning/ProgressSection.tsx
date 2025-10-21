@@ -12,7 +12,7 @@ interface ProgressSectionProps {
 
 export function ProgressSection({ progress, onViewDetails }: ProgressSectionProps) {
   return (
-    <Card className="border-gray-200">
+    <Card className="border-slate-300 shadow-none">
       <CardContent className="pt-4">
         <div className="space-y-3">
           <div className="flex items-center justify-between">

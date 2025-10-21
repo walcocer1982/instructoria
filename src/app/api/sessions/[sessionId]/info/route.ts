@@ -32,6 +32,7 @@ export async function GET(
             id: true,
             name: true,
             email: true,
+            image: true,
             avatar: true,
           },
         },
@@ -134,7 +135,7 @@ export async function GET(
       },
       user: {
         name: session.user.name || 'Usuario',
-        avatar: session.user.avatar,
+        avatar: session.user.image || session.user.avatar, // Priorizar 'image' (NextAuth) sobre 'avatar' (custom)
       },
       topic: {
         title: topic.title,

@@ -243,6 +243,30 @@ npm run db:studio
 
 ## 📋 CHANGELOG
 
+### v1.5.0 (2025-10-21)
+- **Feature:** Sistema de sidebars responsive con botones flotantes en mobile
+  - Sidebars (Learning y Gallery) se ocultan en pantallas pequeñas (<sm)
+  - Botones flotantes (FABs) para abrir cada sidebar en mobile
+  - Solo un sidebar puede estar abierto a la vez en mobile
+  - Sidebars respetan el navbar (no lo cubren) usando `top-16`
+  - Botones de colapsar solo visibles en desktop (ocultos en mobile)
+- **Refactor:** Desacople de voice recognition a hook reutilizable
+  - Creado `useVoiceRecognition` hook con toda la lógica de Web Speech API
+  - Eliminados 153 líneas de código del componente principal
+  - Sistema más limpio, mantenible y reutilizable
+  - Removidos logs de debug para código production-ready
+- **Refactor:** Renombramiento de componentes siguiendo convención del proyecto
+  - `ImagePanel.tsx` → `image-gallery-panel.tsx` (kebab-case)
+  - Componente `ImagePanel` → `ImageGalleryPanel` (nombre más descriptivo)
+  - Interfaz `ImagePanelProps` → `ImageGalleryPanelProps`
+- **Mejora:** UX mejorada en página de temas
+  - Estado de carga global al iniciar tema ("Cargando Clase...")
+  - Botón "Continuar" muestra spinner durante carga
+  - Todos los cards se deshabilitan mientras se inicia sesión
+- **Fix:** Avatar de usuario OAuth ahora se muestra correctamente en chat
+  - API `/api/sessions/[sessionId]/info` ahora retorna campo `image` de NextAuth
+  - Prioriza `session.user.image` (OAuth) sobre `session.user.avatar` (custom)
+
 ### v1.4.0 (2025-10-21)
 - **Feature:** Sistema de detección de salidas de página durante verificaciones
   - Hook `useSoftPageExitTracking` detecta cuando el estudiante cambia de ventana/pestaña

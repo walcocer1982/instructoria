@@ -1,5 +1,5 @@
 import NextAuth from 'next-auth'
-// import Google from 'next-auth/providers/google'
+import Google from 'next-auth/providers/google'
 import Microsoft from 'next-auth/providers/microsoft-entra-id'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from '@/lib/prisma'
@@ -8,17 +8,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
     // Google OAuth - DESHABILITADO (solo usuarios corporativos con Microsoft)
-    // Google({
-    //   clientId: process.env.GOOGLE_CLIENT_ID!,
-    //   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    //   authorization: {
-    //     params: {
-    //       prompt: 'consent',
-    //       access_type: 'offline',
-    //       response_type: 'code',
-    //     },
-    //   },
-    // }),
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          prompt: 'consent',
+          access_type: 'offline',
+          response_type: 'code',
+        },
+      },
+    }),
     Microsoft({
       // NextAuth v5 busca automáticamente estas variables:
       // - AUTH_MICROSOFT_ENTRA_ID_ID (clientId)

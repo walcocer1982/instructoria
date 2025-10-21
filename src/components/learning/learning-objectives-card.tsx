@@ -8,11 +8,9 @@ interface LearningObjectivesCardProps {
 }
 
 export function LearningObjectivesCard({ objectives }: LearningObjectivesCardProps) {
-  console.log('LearningObjectivesCard - objectives:', objectives)
-
   if (!objectives || objectives.length === 0) {
     return (
-      <Card className="border-learning-200 bg-learning-50/50">
+      <Card className="border-slate-300 bg-white shadow-none">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-learning-700 flex items-center gap-2">
             <span className="text-lg">🎯</span>
@@ -27,7 +25,7 @@ export function LearningObjectivesCard({ objectives }: LearningObjectivesCardPro
   }
 
   return (
-    <Card className="border-learning-200 bg-learning-50/50">
+    <Card className="border-slate-300 bg-white shadow-none">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-semibold text-learning-700 flex items-center gap-2">
           <span className="text-lg">🎯</span>

@@ -91,7 +91,7 @@ export function useSoftPageExitTracking({
                 padding: '16px',
                 borderRadius: '8px'
               },
-              position: 'top-center'
+              position: 'bottom-left'
             })
 
             // Registrar en BD (silenciosamente, sin bloquear UI)

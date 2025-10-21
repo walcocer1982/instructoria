@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { TopicImage } from '@/components/ImagePanel'
+import { TopicImage } from '@/components/image-gallery-panel'
 
 interface UseImageGalleryProps {
   sessionId: string
@@ -102,7 +102,6 @@ export function useImageGallery({ sessionId }: UseImageGalleryProps): UseImageGa
     if (image) {
       setCurrentImage(image)
       setShowAllImages(false) // Cuando se menciona una imagen, solo mostrar esa
-      console.log(`[ImageGallery] Current image set to: ${image.title}`)
     }
   }
 

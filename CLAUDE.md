@@ -15,6 +15,81 @@ Instructoria es una plataforma educativa que utiliza instructores IA conversacio
 - **Autenticación:** NextAuth.js con Google OAuth (preparado pero no implementado aún)
 - **Imágenes:** MCP Server personalizado que sirve imágenes educativas desde Azure Blob Storage
 
+## 📝 Convenciones de Nomenclatura
+
+### Regla de Oro: kebab-case para archivos, PascalCase para componentes
+
+**Seguimos el estándar de shadcn/ui y Next.js moderno:**
+
+#### ✅ Archivos de Componentes: `kebab-case.tsx`
+```
+src/components/
+├── learning/
+│   ├── chat-messages.tsx           ✅ kebab-case
+│   ├── instructor-card.tsx         ✅ kebab-case
+│   └── learning-sidebar.tsx        ✅ kebab-case
+└── ui/                             (shadcn/ui)
+    ├── button.tsx                  ✅ kebab-case
+    └── avatar.tsx                  ✅ kebab-case
+```
+
+#### ✅ Nombres de Componentes: `PascalCase`
+```tsx
+// Archivo: instructor-card.tsx
+export function InstructorCard({ ... }) {  // ✅ PascalCase
+  return <div>...</div>
+}
+
+// Importación:
+import { InstructorCard } from '@/components/learning/instructor-card'
+```
+
+#### ✅ Páginas y Rutas: `kebab-case`
+```
+src/app/
+├── learn/[sessionId]/page.tsx      ✅ kebab-case en carpetas
+├── user-profile/page.tsx           ✅ kebab-case
+└── api/chat/route.ts               ✅ kebab-case
+```
+
+#### ✅ Utilities y Libs: `kebab-case.ts`
+```
+src/lib/
+├── anthropic.ts                    ✅ kebab-case
+├── type-helpers.ts                 ✅ kebab-case
+└── session-cache.ts                ✅ kebab-case
+```
+
+#### ✅ Hooks Personalizados: `use-nombre.ts`
+```
+src/hooks/
+├── use-image-gallery.ts            ✅ use-* + kebab-case
+└── use-soft-page-exit-tracking.ts  ✅ use-* + kebab-case
+```
+
+#### ✅ Servicios: `kebab-case.ts`
+```
+src/services/
+├── chat.ts                         ✅ kebab-case
+├── prompt-builder.ts               ✅ kebab-case
+└── intent-classification.ts        ✅ kebab-case
+```
+
+### Razones para kebab-case:
+
+1. **Consistencia con shadcn/ui**: Todos los componentes de shadcn usan kebab-case
+2. **Compatibilidad con file systems**: Evita problemas en sistemas case-insensitive (macOS, Windows)
+3. **URLs y routing**: Consistente con rutas web (`/user-profile` vs `/UserProfile`)
+4. **Tendencia moderna**: Next.js 13+, Vercel templates, y proyectos modernos usan kebab-case
+5. **Legibilidad**: Más fácil de leer nombres largos (`learning-objectives-card.tsx` vs `LearningObjectivesCard.tsx`)
+
+### ❌ Evitar:
+
+- ❌ PascalCase para archivos: `UserProfile.tsx`
+- ❌ camelCase para componentes: `userProfile.tsx`
+- ❌ snake_case: `user_profile.tsx`
+- ❌ Mezclar convenciones en el mismo proyecto
+
 ## Comandos de Desarrollo
 
 ### Desarrollo Local
