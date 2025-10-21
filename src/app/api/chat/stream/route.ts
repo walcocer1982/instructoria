@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
         // 5. STREAMING de Claude
         const t4 = Date.now()
         const claudeStream = await anthropic.messages.stream({
-          model: topic.instructor.modelId || DEFAULT_MODEL,
+          model: DEFAULT_MODEL, // Siempre usa DEFAULT_MODEL (Haiku 4.5)
           max_tokens: maxTokens,
           temperature: topic.instructor.temperature || 0.6,
           system: [

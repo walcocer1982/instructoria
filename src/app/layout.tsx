@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { SessionProvider } from '@/components/providers/SessionProvider'
 import { Navbar } from '@/components/layout/Navbar'
+import { Toaster } from 'sonner'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -22,6 +23,7 @@ export default function RootLayout({
         <SessionProvider>
           <Navbar />
           {children}
+          <Toaster richColors closeButton />
         </SessionProvider>
       </body>
     </html>

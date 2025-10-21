@@ -243,6 +243,20 @@ npm run db:studio
 
 ## 📋 CHANGELOG
 
+### v1.4.0 (2025-10-21)
+- **Feature:** Sistema de detección de salidas de página durante verificaciones
+  - Hook `useSoftPageExitTracking` detecta cuando el estudiante cambia de ventana/pestaña
+  - Toast suave informa tiempo exacto fuera (formato inteligente: segundos, minutos, horas)
+  - Registro en base de datos (tabla SecurityIncident) para auditoría y transparencia
+  - Mensaje educativo no punitivo: "Por transparencia: tu actividad durante las verificaciones queda registrada"
+  - API endpoint `/api/audit/page-exit` para tracking de actividad
+- **Mejora:** Prompts genéricos para intent-classification y guardrails
+  - Sistema ahora funciona para cualquier curso educativo (no solo SSO)
+  - Reglas claras para clasificación de intención (answer_verification, ask_question, off-topic)
+  - Mensajes de guardrail adaptados por severidad y contexto del curso
+- **Fix:** Corrección de errores TypeScript en moderation severity y response types
+- **Refactor:** Eliminación de campo `modelId` obsoleto del schema (ahora usa DEFAULT_MODEL constante)
+
 ### v1.3.4 (2025-10-20)
 - **Fix:** Eliminar burbuja vacía en chat durante carga de respuesta del instructor
   - Problema: Aparecía burbuja vacía entre mensaje del estudiante y "está escribiendo..."

@@ -35,7 +35,6 @@ async function main() {
       specialty: 'Seguridad y Salud Ocupacional',
       bio: 'Instructor especializado en normativa peruana de seguridad y salud en el trabajo. Experto en IPERC, Ley 29783 y gestión de riesgos laborales.',
       avatar: '🧑‍🏫',
-      modelId: 'claude-sonnet-4-5-20250929',
       systemPromptBase: 'Eres un instructor experto en Seguridad y Salud Ocupacional con conocimiento profundo de la normativa peruana.',
       temperature: 0.7,
       maxTokens: 2048,

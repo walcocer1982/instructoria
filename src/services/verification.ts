@@ -1,4 +1,4 @@
-import { anthropic, HAIKU_MODEL } from '@/lib/anthropic'
+import { anthropic, DEFAULT_MODEL } from '@/lib/anthropic'
 import { Activity, VerificationResult } from '@/types/topic-content'
 import { Message } from '@prisma/client'
 
@@ -52,13 +52,13 @@ RESPUESTA DEL ESTUDIANTE:
 HISTORIAL PREVIO (últimos 3 mensajes):
 ${conversationHistory.slice(-3).map(m => `${m.role}: ${m.content}`).join('\n')}
 
-REGLAS CRÍTICAS:
+REGLAS CRÍTICAS PARA EVALUACIÓN FLEXIBLE:
 - ready_to_advance es true si completeness_percentage >= ${minCompleteness}
-- Evalúa COMPRENSIÓN DEL CONCEPTO, NO perfección de formato o palabras exactas
-- Si el estudiante entiende el concepto pero usa palabras diferentes, CUENTA COMO CORRECTO
-- Ejemplo: "charco de agua" vs "charco de 1m²" → Ambos correctos si identificó el peligro
-- Solo marca como incorrecto si NO ENTENDIÓ EL CONCEPTO FUNDAMENTAL
-- Si solo memorizó pero el nivel requerido es "applied", ready_to_advance debe ser false
+- SÉ FLEXIBLE: Evalúa COMPRENSIÓN DEL CONCEPTO, NO palabras exactas ni formato perfecto
+- Si el estudiante demuestra que ENTENDIÓ LA IDEA CENTRAL, marca como correcto
+- Acepta sinónimos, paráfrasis y diferentes formas de expresar el mismo concepto
+- Solo marca como incorrecto si claramente NO ENTENDIÓ o dio información TOTALMENTE ERRÓNEA
+- Si mencionó la idea principal aunque falten detalles menores, considera ready_to_advance=true
 
 IMPORTANTE: Responde ÚNICAMENTE con el objeto JSON, sin texto adicional, sin markdown, sin explicaciones.
 
@@ -67,7 +67,7 @@ Formato de respuesta:
 
   try {
     const response = await anthropic.messages.create({
-      model: HAIKU_MODEL, // Optimización: Haiku es suficiente para verificación
+      model: DEFAULT_MODEL, // Haiku 3.5 v2 (20250110)
       max_tokens: 500,
       messages: [{ role: 'user', content: analysisPrompt }],
     })

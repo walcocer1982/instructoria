@@ -8,7 +8,8 @@ export const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
 
-export const DEFAULT_MODEL = 'claude-sonnet-4-5-20250929'
-export const HAIKU_MODEL = 'claude-3-5-haiku-20241022' // Modelo económico para tareas simples
+// Modelos optimizados por caso de uso
+export const DEFAULT_MODEL = 'claude-haiku-4-5' // Para razonamiento y chat (instructor, verificación)
+export const HAIKU_BASIC_MODEL = 'claude-3-5-haiku-20241022' // Para tareas básicas (moderación, clasificación)
 export const DEFAULT_MAX_TOKENS = 2048
 export const DEFAULT_TEMPERATURE = 0.7

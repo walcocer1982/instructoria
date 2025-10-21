@@ -1,4 +1,4 @@
-import { anthropic, HAIKU_MODEL } from '@/lib/anthropic'
+import { anthropic, HAIKU_BASIC_MODEL } from '@/lib/anthropic'
 import { Activity, IntentClassification } from '@/types/topic-content'
 
 export interface ConversationContext {
@@ -106,6 +106,21 @@ MENSAJE DEL ESTUDIANTE:
 Alcance permitido:
 ${JSON.stringify(activity.student_questions?.scope || {}, null, 2)}
 
+⚠️ REGLAS CRÍTICAS (aplicables a CUALQUIER curso educativo):
+
+1. RESPUESTA A VERIFICACIÓN:
+   - Si el instructor hizo una pregunta recientemente Y el estudiante responde con contenido técnico/educativo
+   → intent = "answer_verification" (incluso si es parcial, informal, o con errores)
+
+2. ON-TOPIC (SÉ GENEROSO):
+   - Relacionado al tema = is_on_topic: true, relevance_score >= 70
+   - Solo marca off-topic si es completamente ajeno al curso
+
+3. EJEMPLOS:
+   - "A, c, a, c, a, c La 1 la 3..." (intentando clasificar) → answer_verification, on-topic, relevance 75+
+   - "que hice mal" (pregunta sobre su respuesta) → ask_question, on-topic, relevance 90+
+   - "cuéntame un chiste" → small_talk, off-topic, relevance 0
+
 Responde SOLO con un objeto JSON válido (sin markdown, sin \`\`\`json):
 {
   "intent": "answer_verification" | "ask_question" | "request_clarification" | "off_topic" | "small_talk",
@@ -118,22 +133,40 @@ Responde SOLO con un objeto JSON válido (sin markdown, sin \`\`\`json):
 }
 `
 
+  let rawResponse: any = null
   try {
     const response = await anthropic.messages.create({
-      model: HAIKU_MODEL, // Optimización: Haiku es suficiente para clasificación
+      model: HAIKU_BASIC_MODEL, // Haiku 3.5 para tarea básica
       max_tokens: 400,
       messages: [{ role: 'user', content: classificationPrompt }],
     })
 
     const content = response.content[0]
+    rawResponse = content // Guardar para debug en caso de error
+
     if (content.type !== 'text') {
       throw new Error('Respuesta inesperada de la API')
     }
 
-    const result = JSON.parse(content.text) as IntentClassification
+    // Extraer JSON del texto (puede venir con markdown o texto adicional)
+    let jsonText = content.text.trim()
+
+    // Eliminar bloques de código markdown si existen
+    jsonText = jsonText.replace(/```json\s*/g, '').replace(/```\s*/g, '')
+
+    // Buscar el JSON dentro del texto (entre { y })
+    const jsonMatch = jsonText.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      jsonText = jsonMatch[0]
+    }
+
+    const result = JSON.parse(jsonText) as IntentClassification
     return result
   } catch (error) {
     console.error('Error en clasificación de intención:', error)
+    if (rawResponse && rawResponse.type === 'text') {
+      console.error('Texto recibido:', rawResponse.text)
+    }
     // Valor por defecto en caso de error
     return {
       intent: 'answer_verification',

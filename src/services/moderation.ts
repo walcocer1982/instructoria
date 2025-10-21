@@ -1,4 +1,4 @@
-import { anthropic, HAIKU_MODEL } from '@/lib/anthropic'
+import { anthropic, HAIKU_BASIC_MODEL } from '@/lib/anthropic'
 import { ModerationResult } from '@/types/topic-content'
 
 /**
@@ -36,24 +36,14 @@ function isObviouslySafe(message: string): boolean {
 
 /**
  * Detecta patrones sospechosos que requieren moderación
- * NOTA: En contextos educativos de SSO, términos como "riesgo", "peligro", "lesión" son NORMALES
+ * NOTA: En contextos educativos, muchos términos técnicos son normales y apropiados
  */
 function containsSuspiciousPatterns(message: string): boolean {
-  // Términos educativos de SSO que NO son sospechosos
-  const ssoEducationalTerms = /\b(riesgo|peligro|lesión|accidente|incidente|hallazgo|crítico|mayor|menor|emergencia|evacuación|EPP|control|inspección|clasificación|severidad)\b/i
-
-  // Si contiene términos educativos de SSO, NO es sospechoso
-  if (ssoEducationalTerms.test(message)) {
-    return false
-  }
-
-  // Patrones genuinamente sospechosos (contexto NO educativo)
+  // Patrones genuinamente sospechosos (requieren moderación de IA)
   const suspiciousPatterns = [
-    /\b(suicid|asesinat)\b/i, // Específicos, no incluir "muerte" genérico
-    /\b(cocaína|heroína|metanfetamina)\b/i, // Drogas ilegales específicas
-    /\b(porno|xxx|desnud|sexual)\b/i,
-    /\b(idiota|estúpid|imbécil|mierda|carajo|joder)\b/i,
-    /\b(robar|estafar|piratear|hackear)\b/i,
+    /\b(porno|xxx|sexual)\b/i, // Contenido sexual explícito
+    /\b(idiota|estúpid|imbécil|mierda|carajo|joder)\b/i, // Insultos
+    /\b(robar|estafar|piratear|hackear)\b/i, // Actividades ilegales
     /(https?:\/\/|www\.)/i, // URLs pueden ser spam
   ]
 
@@ -64,48 +54,19 @@ function containsSuspiciousPatterns(message: string): boolean {
  * Construye nota de contexto dinámicamente según el tema
  */
 function buildContextNote(context?: { topicTitle?: string; careerName?: string }): string {
-  if (!context?.topicTitle) {
-    return '⚠️ CONTEXTO: Curso educativo general. Evalúa el mensaje en contexto académico.'
-  }
+  const courseName = context?.topicTitle || 'educativo general'
+  const careerName = context?.careerName || ''
 
-  const topicLower = context.topicTitle.toLowerCase()
-  const careerLower = context.careerName?.toLowerCase() || ''
+  return `⚠️ CONTEXTO EDUCATIVO IMPORTANTE:
+Este es un curso de: "${courseName}" ${careerName ? `(Carrera: ${careerName})` : ''}
 
-  // Detectar temas de SSO (Seguridad y Salud Ocupacional)
-  if (
-    topicLower.includes('seguridad') ||
-    topicLower.includes('riesgo') ||
-    topicLower.includes('iperc') ||
-    topicLower.includes('inspeccion') ||
-    careerLower.includes('sso') ||
-    careerLower.includes('seguridad')
-  ) {
-    return `⚠️ CONTEXTO IMPORTANTE: Este es un curso de SEGURIDAD Y SALUD OCUPACIONAL.
-Es NORMAL y APROPIADO que los estudiantes mencionen:
-- Riesgos, peligros, accidentes, lesiones, muerte laboral
-- Clasificaciones de severidad: CRÍTICO, MAYOR, MENOR
-- Inspecciones, hallazgos, condiciones peligrosas
-- EPP, controles, emergencias, evacuaciones
-- Describir accidentes laborales para aprender prevención`
-  }
+Es NORMAL y APROPIADO que los estudiantes mencionen términos técnicos del tema:
+- Conceptos especializados de la materia
+- Ejemplos prácticos relacionados con el curso
+- Términos profesionales del área de estudio
+- Casos de estudio o situaciones reales del campo
 
-  // Detectar temas de salud/medicina
-  if (
-    topicLower.includes('salud') ||
-    topicLower.includes('enfermería') ||
-    topicLower.includes('medicina') ||
-    topicLower.includes('primeros auxilios')
-  ) {
-    return `⚠️ CONTEXTO IMPORTANTE: Este es un curso de SALUD/MEDICINA.
-Es NORMAL y APROPIADO que los estudiantes mencionen:
-- Síntomas, enfermedades, lesiones, procedimientos médicos
-- Partes del cuerpo humano, anatomía
-- Tratamientos, medicamentos, intervenciones médicas
-- Casos clínicos para aprendizaje`
-  }
-
-  // Otros cursos
-  return `⚠️ CONTEXTO: Curso de "${context.topicTitle}". Evalúa el mensaje en contexto educativo del tema.`
+EVALÚA EL CONTENIDO EN CONTEXTO EDUCATIVO. No bloquees términos técnicos apropiados para el curso.`
 }
 
 /**
@@ -177,7 +138,7 @@ Formato de respuesta:
 
   try {
     const response = await anthropic.messages.create({
-      model: HAIKU_MODEL, // Optimización: Haiku es suficiente para moderación
+      model: HAIKU_BASIC_MODEL, // Haiku 3.5 para tarea básica
       max_tokens: 300,
       messages: [{ role: 'user', content: moderationPrompt }],
     })

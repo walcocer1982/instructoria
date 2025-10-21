@@ -9,6 +9,7 @@ import { Send, Mic, MicOff } from 'lucide-react'
 import { ImagePanel } from '@/components/ImagePanel'
 import { ImageModal } from '@/components/ImageModal'
 import { useImageGallery } from '@/hooks/useImageGallery'
+import { useSoftPageExitTracking } from '@/hooks/useSoftPageExitTracking'
 import { MessageWithImageRefs } from '@/components/MessageWithImageRefs'
 import { LearningSidebar } from '@/components/learning/LearningSidebar'
 import { InstructorBanner } from '@/components/learning/InstructorBanner'
@@ -72,6 +73,13 @@ export default function LearnPage() {
     setCurrentImageByTitle,
     toggleShowAll,
   } = useImageGallery({ sessionId })
+
+  // Hook para rastrear salidas de página durante verificaciones
+  useSoftPageExitTracking({
+    sessionId,
+    enabled: true
+  })
+
 
   // Manejar click en referencia de imagen desde el mensaje del instructor
   const handleImageRefClick = (imageTitle: string) => {
@@ -149,6 +157,12 @@ export default function LearnPage() {
     setMessages((prev) => [...prev, userMessage])
     setInput('')
     setLoading(true)
+
+    // Detener grabación de voz si está activa
+    if (isRecording && recognitionRef.current) {
+      recognitionRef.current.stop()
+      setIsRecording(false)
+    }
 
     // Crear mensaje del asistente vacío para ir llenándolo
     const assistantMessageIndex = messages.length + 1
