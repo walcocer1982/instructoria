@@ -8,7 +8,7 @@ import { useImageGallery } from '@/hooks/useImageGallery'
 import { useSoftPageExitTracking } from '@/hooks/useSoftPageExitTracking'
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition'
 import { LearningSidebar } from '@/components/learning/learning-sidebar'
-import { ProgressModal } from '@/components/learning/ProgressModal'
+import { ProgressModal } from '@/components/learning/progress-modal'
 import { ChatMessages } from '@/components/learning/chat-messages'
 import { ChatInput } from '@/components/learning/chat-input'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
@@ -380,8 +380,8 @@ export default function LearnPage() {
           </div>
         </button>
 
-        {/* Botón Panel Imágenes - Inferior Derecha (solo si hay imágenes) */}
-        {images.length > 0 && (
+        {/* Botón Panel Imágenes - Inferior Derecha (solo si hay imágenes activas) */}
+        {images.length > 0 && (currentImage || showAllImages) && (
           <button
             onClick={openImagePanel}
             className="absolute top-20 right-4 z-40 bg-slate-700/50 text-white py-3 px-2 rounded-full shadow-lg hover:bg-slate-700 active:scale-95 transition-transform"
