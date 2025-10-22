@@ -9,9 +9,13 @@ export function useVoiceRecognition({ onTranscript, lang = 'es-ES' }: UseVoiceRe
   const [isRecording, setIsRecording] = useState(false)
   const recognitionRef = useRef<any>(null)
   const networkRetryCount = useRef(0)
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isMountedRef = useRef(true)
   const maxNetworkRetries = 3
 
   useEffect(() => {
+    isMountedRef.current = true
+
     if (typeof window !== 'undefined') {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
 
@@ -23,8 +27,10 @@ export function useVoiceRecognition({ onTranscript, lang = 'es-ES' }: UseVoiceRe
         recognitionRef.current.maxAlternatives = 1
 
         recognitionRef.current.onstart = () => {
-          setIsRecording(true)
-          networkRetryCount.current = 0
+          if (isMountedRef.current) {
+            setIsRecording(true)
+            networkRetryCount.current = 0
+          }
         }
 
         recognitionRef.current.onresult = (event: any) => {
@@ -38,52 +44,68 @@ export function useVoiceRecognition({ onTranscript, lang = 'es-ES' }: UseVoiceRe
             }
           }
 
-          if (finalTranscript && onTranscript) {
+          if (finalTranscript && onTranscript && isMountedRef.current) {
             onTranscript(finalTranscript)
           }
         }
 
         recognitionRef.current.onerror = (event: any) => {
           if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-            setIsRecording(false)
-            networkRetryCount.current = 0
-            alert('⚠️ Permiso de micrófono denegado. Por favor, permite el acceso al micrófono en tu navegador.')
+            if (isMountedRef.current) {
+              setIsRecording(false)
+              networkRetryCount.current = 0
+              alert('⚠️ Permiso de micrófono denegado. Por favor, permite el acceso al micrófono en tu navegador.')
+            }
           } else if (event.error === 'network') {
             if (networkRetryCount.current < maxNetworkRetries) {
               networkRetryCount.current++
 
-              setTimeout(() => {
-                if (recognitionRef.current && isRecording) {
+              retryTimeoutRef.current = setTimeout(() => {
+                if (isMountedRef.current && recognitionRef.current && isRecording) {
                   try {
                     recognitionRef.current.start()
                   } catch (error) {
-                    setIsRecording(false)
-                    networkRetryCount.current = 0
+                    if (isMountedRef.current) {
+                      setIsRecording(false)
+                      networkRetryCount.current = 0
+                    }
                   }
                 }
               }, 1000)
             } else {
-              setIsRecording(false)
-              networkRetryCount.current = 0
-              alert('⚠️ No se pudo conectar al servicio de reconocimiento de voz. Por favor intenta de nuevo.')
+              if (isMountedRef.current) {
+                setIsRecording(false)
+                networkRetryCount.current = 0
+                alert('⚠️ No se pudo conectar al servicio de reconocimiento de voz. Por favor intenta de nuevo.')
+              }
             }
           } else {
-            setIsRecording(false)
+            if (isMountedRef.current) {
+              setIsRecording(false)
+            }
           }
         }
 
         recognitionRef.current.onend = () => {
-          setIsRecording(false)
+          if (isMountedRef.current) {
+            setIsRecording(false)
+          }
         }
       }
     }
 
     return () => {
+      isMountedRef.current = false
+
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current)
+      }
+
       if (recognitionRef.current) {
         recognitionRef.current.stop()
       }
     }
-  }, [lang, onTranscript])
+  }, [lang, onTranscript, isRecording])
 
   const startRecording = () => {
     if (!recognitionRef.current) {
