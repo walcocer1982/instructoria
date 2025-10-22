@@ -64,7 +64,8 @@
       "Bash(pkill -f \"npm run lint\")",
       "Bash(lsof:*)",
       "Bash(xargs kill -9)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(npm version:*)"
     ],
     "deny": [],
     "ask": []

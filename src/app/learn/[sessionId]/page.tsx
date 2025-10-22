@@ -391,9 +391,6 @@ export default function LearnPage() {
               <ChevronLeft />
               <span>🖼️</span>
             </div>
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
-              {images.length}
-            </span>
           </button>
         )}
       </div>

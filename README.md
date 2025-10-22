@@ -243,6 +243,20 @@ npm run db:studio
 
 ## 📋 CHANGELOG
 
+### v1.5.1 (2025-10-21)
+- **Fix:** Prevenir memory leak en useVoiceRecognition hook
+  - Agregar isMountedRef para verificar si componente está montado
+  - Guardar timeout ID en retryTimeoutRef para poder limpiarlo
+  - Limpiar timeout en cleanup del useEffect
+  - Soluciona React error #310 (actualización de estado en componente desmontado)
+- **Fix:** Ocultar botón flotante de imágenes hasta que haya contenido activo
+  - El botón 🖼️ solo aparece cuando instructor menciona la primera imagen
+  - Evita confusión en mobile al mostrar "5 imágenes" sin contexto
+  - Mejora UX al alinear UI con estado real de la conversación
+- **Fix:** Remover badge de cantidad de imágenes en botón flotante
+  - Interfaz más limpia y menos distractora
+- **Refactor:** Renombrar ProgressModal a progress-modal (convención kebab-case)
+
 ### v1.5.0 (2025-10-21)
 - **Feature:** Sistema de sidebars responsive con botones flotantes en mobile
   - Sidebars (Learning y Gallery) se ocultan en pantallas pequeñas (<sm)
