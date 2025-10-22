@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { TopicImage } from '@/components/image-gallery-panel'
 
 interface UseImageGalleryProps {
@@ -39,30 +39,47 @@ export function useImageGallery({ sessionId }: UseImageGalleryProps): UseImageGa
   const [currentImage, setCurrentImage] = useState<TopicImage | null>(null)
   const [showAllImages, setShowAllImages] = useState(false)
 
+  const isMountedRef = useRef(true)
+  const closeModalTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   // Cargar imágenes al montar el componente
   useEffect(() => {
+    isMountedRef.current = true
     loadImages()
+
+    return () => {
+      isMountedRef.current = false
+      if (closeModalTimeoutRef.current) {
+        clearTimeout(closeModalTimeoutRef.current)
+      }
+    }
   }, [sessionId])
 
   const loadImages = async () => {
     try {
+      if (!isMountedRef.current) return
+
       setIsLoading(true)
       setError(null)
 
       // Obtener imágenes desde la API (que las lee de la DB)
       const response = await fetch(`/api/sessions/${sessionId}/images`)
 
+      if (!isMountedRef.current) return
+
       if (!response.ok) {
         // Si no hay imágenes, es normal (degradación graceful)
         if (response.status === 404) {
           console.log('[ImageGallery] No images found for this topic (expected)')
-          setImages([])
+          if (isMountedRef.current) setImages([])
           return
         }
         throw new Error(`Error loading images: ${response.status}`)
       }
 
       const data = await response.json()
+
+      if (!isMountedRef.current) return
 
       if (data.success && Array.isArray(data.images)) {
         setImages(data.images)
@@ -73,10 +90,14 @@ export function useImageGallery({ sessionId }: UseImageGalleryProps): UseImageGa
     } catch (err) {
       console.error('[ImageGallery] Error loading images:', err)
       // Degradación graceful: no mostrar error al usuario
-      setError(null)
-      setImages([])
+      if (isMountedRef.current) {
+        setError(null)
+        setImages([])
+      }
     } finally {
-      setIsLoading(false)
+      if (isMountedRef.current) {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -90,12 +111,26 @@ export function useImageGallery({ sessionId }: UseImageGalleryProps): UseImageGa
   }
 
   const closeModal = () => {
+    if (!isMountedRef.current) return
+
     setIsModalOpen(false)
+
+    // Limpiar timeout anterior si existe
+    if (closeModalTimeoutRef.current) {
+      clearTimeout(closeModalTimeoutRef.current)
+    }
+
     // Pequeño delay antes de limpiar la imagen para que la animación se vea bien
-    setTimeout(() => setSelectedImage(null), 300)
+    closeModalTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) {
+        setSelectedImage(null)
+      }
+    }, 300)
   }
 
   const setCurrentImageByTitle = (title: string) => {
+    if (!isMountedRef.current) return
+
     const image = images.find(img =>
       img.title.toLowerCase() === title.toLowerCase()
     )
