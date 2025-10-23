@@ -53,7 +53,7 @@ export function MessageWithImageRefs({
     }
   }, [trimmedTitle, onImageMentioned])
 
-  if (match) {
+  if (match && trimmedTitle) {
     console.log('[MessageWithImageRefs] 🎯 Image detected:', match[1])
     const [fullMatch, imageTitle] = match
     const matchIndex = match.index!
