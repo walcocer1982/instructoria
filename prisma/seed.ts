@@ -63,7 +63,7 @@ async function main() {
 
   console.log('✅ Curso Fundamentos creado')
 
-  // 4. Crear Tema IPERC con contenido completo
+  // 4. Crear Tema IPERC con contenido completo (estructura simplificada)
   const ipercContent: TopicContent = {
     topic: {
       id: 'topic_iperc_001',
@@ -86,568 +86,127 @@ async function main() {
             {
               id: 'activity_001',
               type: 'explanation',
+              complexity: 'simple',
               teaching: {
-                agent_instruction: 'Explica qué es IPERC y su importancia en la prevención de accidentes laborales. Define la diferencia entre peligro (fuente de daño) y riesgo (probabilidad de que ocurra el daño). Usa ejemplos peruanos del sector construcción.',
-                key_concepts: [
-                  'Peligro: Fuente o situación con potencial de daño',
-                  'Riesgo: Probabilidad de que el peligro cause daño',
-                  'IPERC: Metodología sistemática de gestión de riesgos'
-                ],
-                examples: [
-                  'Peligro: Piso mojado → Riesgo: Probabilidad de resbalarse',
-                  'Peligro: Cable pelado → Riesgo: Probabilidad de electrocución',
-                  'Peligro: Escalera sin barandal → Riesgo: Probabilidad de caerse'
-                ],
-                image: {
-                  url: 'https://example.com/images/peligro_vs_riesgo.png',
-                  description: 'Infografía mostrando la diferencia entre peligro y riesgo'
-                }
+                agent_instruction: 'Explica de forma concisa qué es IPERC y la diferencia fundamental entre PELIGRO (fuente de daño, algo que ya existe - ejemplo: piso mojado, cable pelado) y RIESGO (probabilidad de que ese peligro cause daño - ejemplo: probabilidad de resbalarse, probabilidad de electrocutarse). Enfatiza que IPERC es la metodología sistemática usada en Perú (Ley 29783) para identificar peligros, evaluar riesgos y establecer controles. Luego presenta un caso práctico con múltiples peligros para que el estudiante aplique los conceptos.',
+                target_length: '200-300 palabras',
+                context: 'Normativa: Ley 29783. País: Perú. Sector: General'
               },
               verification: {
-                method: 'conversational',
-                initial_question: 'Ahora que hemos visto la diferencia entre peligro y riesgo, ¿puedes explicarme con tus propias palabras cuál es esa diferencia? Dame un ejemplo de tu vida cotidiana o trabajo.',
-                success_criteria: {
-                  must_include: [
-                    'Identifica que el peligro es la fuente/condición peligrosa',
-                    'Entiende que el riesgo es la probabilidad/posibilidad de daño',
-                    'Da un ejemplo coherente'
-                  ],
-                  understanding_level: 'applied',
-                  min_completeness: 70
-                },
-                reprompt_strategy: {
-                  if_incomplete: [
-                    'Entiendo lo que dices, pero ¿podrías explicar también la diferencia entre ambos conceptos?',
-                    'Vas por buen camino. Ahora, ¿cómo relacionas eso con la probabilidad de que ocurra un daño?'
-                  ],
-                  if_memorized_only: [
-                    'Correcto, esa es la definición. Ahora, para asegurarme de que lo entendiste: imagina que ves un cable eléctrico sin aislamiento. ¿Qué sería el peligro y qué sería el riesgo?'
-                  ],
-                  if_incorrect: [
-                    'Veo que hay confusión. Déjame darte una pista: el peligro es algo que ya existe, mientras que el riesgo es algo que podría pasar. ¿Puedes intentarlo nuevamente?'
-                  ],
-                  hints: [
-                    'Piensa: el peligro es la CAUSA, el riesgo es la CONSECUENCIA potencial',
-                    'Ejemplo: si hay un charco (peligro), ¿qué podría pasar? (riesgo)',
-                    'Peligro = ¿Qué situación peligrosa hay? | Riesgo = ¿Qué probabilidad hay de daño?'
-                  ]
-                }
-              },
-              student_evidence: {
-                type: 'conversational_assessment',
-                description: 'El estudiante explica con sus palabras la diferencia entre peligro y riesgo',
-                captured_data: {
-                  conversation_transcript: true,
-                  key_insights: true,
-                  attempts_count: true,
-                  understanding_level: true
-                }
-              },
-              student_questions: {
-                allowed: true,
-                scope: {
-                  current_activity: true,
-                  current_moment: true,
-                  current_topic: true,
-                  related_topics: false,
-                  off_topic: false
-                },
-                out_of_scope_strategy: {
-                  acknowledge: true,
-                  brief_answer: true,
-                  redirect: true,
-                  response_templates: {
-                    related_but_future_topic: 'Excelente pregunta sobre {tema}. Ese tema lo veremos más adelante. Por ahora, enfoquémonos en entender bien peligro vs riesgo.',
-                    related_but_different_course: 'Buena pregunta. {tema} es parte de otro curso. Si te interesa, puedes inscribirte después.',
-                    tangentially_related: 'Interesante punto, aunque no es parte de este tema. Te puedo dar una respuesta breve: {respuesta_corta}. Ahora, volvamos a IPERC.',
-                    completely_off_topic: 'Entiendo tu curiosidad, pero esa pregunta está fuera del alcance de este curso de SSO. Mantengamos el foco en IPERC.'
-                  }
-                },
-                expected_question_types: ['clarification', 'example_request', 'application', 'why_question']
-              },
-              guardrails: {
-                prohibited_topics: ['sexual_content', 'violence', 'illegal_activities', 'personal_attacks'],
-                response_on_violation: {
-                  template: 'No puedo ayudarte con ese tema. Soy un instructor de {especialidad} y debo mantener conversaciones profesionales. ¿Volvemos a {tema_actual}?',
-                  log_incident: true,
-                  escalate_after: 3
-                },
-                tone_requirements: {
-                  professional: true,
-                  respectful: true,
-                  encouraging: true,
-                  no_judgment: true
-                }
+                question: 'Analiza esta situación de un TALLER MECÁNICO:\n\n"En el área de trabajo hay máquinas con partes móviles expuestas, piso con manchas de aceite, cables eléctricos deteriorados cruzando el pasillo, y ruido constante de más de 85 decibeles."\n\nTarea:\n1. Identifica TRES PELIGROS específicos que observas en este escenario\n2. Para cada peligro, explica cuál sería el RIESGO asociado (¿qué daño podría ocurrir? ¿qué tan probable es?)\n3. Explica con tus palabras: ¿cuál es la diferencia entre peligro y riesgo?\n\nFormato: "Peligro: [X] → Riesgo: [probabilidad de Y daño]"'
               },
               metadata: {
                 estimated_minutes: 10,
                 difficulty: 'easy',
-                max_reprompts: 3,
-                allow_skip: false,
-                required_for_completion: true
+                max_reprompts: 3
               }
             }
           ]
         },
-        // MOMENTO 2: Identificación de Peligros
         {
           id: 'moment_002',
           title: 'Identificación de Peligros',
           order: 2,
-          description: 'Aprende a identificar los 7 tipos de peligros en el trabajo',
+          description: 'Aprende a identificar los 7 tipos de peligros laborales',
           activities: [
             {
               id: 'activity_002',
               type: 'explanation',
+              complexity: 'simple',
               teaching: {
-                agent_instruction: 'Enseña cómo identificar peligros: mecánicos, físicos, químicos, biológicos, ergonómicos, psicosociales y locativos. Explica que se debe recorrer el área de trabajo y observar todas las actividades.',
-                key_concepts: [
-                  'Mecánicos: Máquinas, herramientas, vehículos',
-                  'Físicos: Ruido, vibración, iluminación, temperatura',
-                  'Químicos: Solventes, gases, polvos',
-                  'Biológicos: Virus, bacterias, hongos',
-                  'Ergonómicos: Posturas forzadas, movimientos repetitivos',
-                  'Psicosociales: Estrés, hostigamiento, carga mental',
-                  'Locativos: Pisos, escaleras, techos, espacios confinados'
-                ],
-                examples: [
-                  'Taller de soldadura: proyección de chispas (mecánico), humos metálicos (químico), ruido (físico)',
-                  'Oficina: postura sentada prolongada (ergonómico), carga de trabajo (psicosocial)',
-                  'Almacén: estanterías inestables (locativo), cargas pesadas (ergonómico)'
-                ],
-                image: {
-                  url: 'https://example.com/images/tipos_peligros.png',
-                  description: 'Tabla con los 7 tipos de peligros y ejemplos'
-                }
+                agent_instruction: 'Explica brevemente los 7 tipos de peligros laborales según normativa peruana: MECÁNICOS (máquinas, herramientas, vehículos), FÍSICOS (ruido, vibración, temperatura, iluminación), QUÍMICOS (gases, polvos, solventes), BIOLÓGICOS (virus, bacterias, hongos), ERGONÓMICOS (posturas, movimientos repetitivos, cargas), PSICOSOCIALES (estrés, hostigamiento, carga mental), LOCATIVOS (pisos, escaleras, techos, espacios confinados). Muestra la imagen con los 7 tipos para que el estudiante tenga una referencia visual. Luego presenta el caso del taller de soldadura con múltiples peligros simultáneos.',
+                target_length: '250-350 palabras',
+                context: 'Normativa: Ley 29783, DS 005-2012-TR. País: Perú',
+                suggested_image_ids: ['iperc-tipos-riesgos-laborales', 'iperc-caso-soldadura-corte']
               },
               verification: {
-                method: 'conversational',
-                initial_question: 'Te voy a describir un taller de soldadura: hay máquinas de soldar funcionando, trabajadores cortando metal, humos en el ambiente, ruido constante y algunos cables en el piso. ¿Qué peligros identificas aquí? Nómbralos y clasifícalos por tipo.',
-                success_criteria: {
-                  must_include: [
-                    'Identifica al menos 3 tipos diferentes de peligros',
-                    'Clasifica correctamente cada peligro',
-                    'Menciona peligros reales del escenario'
-                  ],
-                  understanding_level: 'applied',
-                  min_completeness: 70
-                },
-                reprompt_strategy: {
-                  if_incomplete: [
-                    'Bien, has identificado algunos. ¿Qué más observas? Piensa en el ruido, los humos y el estado del piso.',
-                    'Vas bien, pero faltan algunos. Te doy una pista: ¿qué pasa con el aire que respiran? ¿Y el nivel de ruido?'
-                  ],
-                  if_memorized_only: [
-                    'Correcto en la teoría. Ahora aplícalo: en el taller que te describí, ¿cuáles específicamente serían los peligros mecánicos y químicos?'
-                  ],
-                  if_incorrect: [
-                    'Revisa la clasificación. Por ejemplo, los humos metálicos son peligros químicos, no físicos. ¿Puedes intentarlo de nuevo?'
-                  ],
-                  hints: [
-                    'Recuerda: máquinas y herramientas = mecánico, sustancias en el aire = químico, sonido = físico',
-                    'Los cables en el piso también son un peligro. ¿De qué tipo?',
-                    'Piensa en qué puede dañar al trabajador: las máquinas, los gases, el ruido...'
-                  ]
-                }
-              },
-              student_evidence: {
-                type: 'conversational_assessment',
-                description: 'El estudiante identifica y clasifica peligros en un escenario laboral',
-                captured_data: {
-                  conversation_transcript: true,
-                  key_insights: true,
-                  attempts_count: true,
-                  understanding_level: true
-                }
-              },
-              student_questions: {
-                allowed: true,
-                scope: {
-                  current_activity: true,
-                  current_moment: true,
-                  current_topic: true,
-                  related_topics: false,
-                  off_topic: false
-                },
-                out_of_scope_strategy: {
-                  acknowledge: true,
-                  brief_answer: true,
-                  redirect: true,
-                  response_templates: {
-                    related_but_future_topic: 'Buena pregunta. Ese tema lo veremos más adelante.',
-                    related_but_different_course: 'Esa pregunta corresponde a otro curso.',
-                    tangentially_related: 'Interesante, pero enfoquémonos en identificar peligros primero.',
-                    completely_off_topic: 'Esa pregunta está fuera del tema. Volvamos a IPERC.'
-                  }
-                },
-                expected_question_types: ['clarification', 'example_request', 'application']
-              },
-              guardrails: {
-                prohibited_topics: ['sexual_content', 'violence', 'illegal_activities', 'personal_attacks'],
-                response_on_violation: {
-                  template: 'No puedo ayudarte con ese tema. Mantengamos una conversación profesional sobre SSO.',
-                  log_incident: true,
-                  escalate_after: 3
-                },
-                tone_requirements: {
-                  professional: true,
-                  respectful: true,
-                  encouraging: true,
-                  no_judgment: true
-                }
+                question: 'Observa la [VER IMAGEN: Caso Práctico: Trabajo de Soldadura y Corte]\n\nAnaliza el TALLER DE SOLDADURA mostrado en la imagen:\n\nTarea:\n1. Identifica AL MENOS 5 peligros específicos que observas en la imagen\n2. Clasifica cada uno por tipo usando los 7 tipos: Mecánico, Físico, Químico, Biológico, Ergonómico, Psicosocial o Locativo\n3. Para cada peligro, explica EN UNA LÍNEA por qué pertenece a esa categoría\n\nFormato:\n"Peligro 1: [descripción] - Tipo: [X] - Razón: [porque...]"\n"Peligro 2: [descripción] - Tipo: [Y] - Razón: [porque...]"\n...'
               },
               metadata: {
                 estimated_minutes: 12,
                 difficulty: 'medium',
-                max_reprompts: 3,
-                allow_skip: false,
-                required_for_completion: true
+                max_reprompts: 3
               }
             }
           ]
         },
-        // MOMENTO 3: Evaluación de Riesgos
         {
           id: 'moment_003',
           title: 'Evaluación de Riesgos',
           order: 3,
-          description: 'Aprende a evaluar riesgos usando la matriz de probabilidad y severidad',
+          description: 'Aprende a evaluar riesgos usando la matriz 5×5',
           activities: [
             {
               id: 'activity_003',
               type: 'explanation',
+              complexity: 'moderate',
               teaching: {
-                agent_instruction: 'Explica la matriz de evaluación de riesgos: Probabilidad (Baja=1, Media=2, Alta=3) x Severidad (Ligeramente dañino=1, Dañino=2, Extremadamente dañino=3). Resultado: Trivial (1-2), Tolerable (3-4), Moderado (5-6), Importante (8-9), Intolerable (12+).',
-                key_concepts: [
-                  'Probabilidad: ¿Qué tan probable es que ocurra? (Baja, Media, Alta)',
-                  'Severidad: Si ocurre, ¿qué tan grave sería? (Leve, Dañino, Extremo)',
-                  'Nivel de Riesgo = Probabilidad × Severidad',
-                  'Acción según nivel: Trivial (seguimiento), Tolerable (verificar), Moderado (reducir), Importante (corregir pronto), Intolerable (detener trabajo)'
-                ],
-                examples: [
-                  'Piso mojado: Probabilidad Alta (3) × Severidad Dañina (2) = 6 (Moderado)',
-                  'Trabajo en altura sin arnés: Probabilidad Media (2) × Severidad Extrema (3) = 6 pero crítico',
-                  'Cable pelado en zona de tránsito: Probabilidad Alta (3) × Severidad Extrema (3) = 9 (Importante)'
-                ],
-                image: {
-                  url: 'https://example.com/images/matriz_riesgo.png',
-                  description: 'Matriz 5x5 de evaluación de riesgos (severidad vs probabilidad)'
-                }
+                agent_instruction: 'Explica la Matriz de Evaluación de Riesgos 5×5 mostrada en la imagen. Detalla cómo funciona: eje vertical = SEVERIDAD (Catastrófico=1, Mortalidad=2, Permanente=3, Temporal=4, Menor=5), eje horizontal = FRECUENCIA (Común=A, Ha sucedido=B, Podría suceder=C, Raro=D, Imposible=E). Al cruzarlos obtienes un número (1-25) que indica el nivel de riesgo. Código de colores: ROJO (1-6: intolerable, acción inmediata), AMARILLO (7-14: tolerable con control, revisar periódicamente), VERDE (15-25: aceptable, mantener controles). Luego presenta casos prácticos para que el estudiante evalúe usando la matriz.',
+                target_length: '300-400 palabras',
+                context: 'Normativa: Ley 29783. Método: Matriz 5×5. País: Perú',
+                suggested_image_ids: ['iperc-matriz-evaluacion-5x5']
               },
               verification: {
-                method: 'conversational',
-                initial_question: 'Ahora vamos a practicar. Si tenemos un peligro de "proyección de chispas durante soldadura" y sabemos que ocurre frecuentemente en el taller (probabilidad Alta=3) y puede causar quemaduras en piel (severidad Dañina=2), ¿cuál sería el nivel de riesgo? Muéstrame el cálculo.',
-                success_criteria: {
-                  must_include: [
-                    'Realiza el cálculo correcto: 3 × 2 = 6',
-                    'Identifica el nivel de riesgo: Moderado',
-                    'Demuestra comprensión de la fórmula'
-                  ],
-                  understanding_level: 'applied',
-                  min_completeness: 80
-                },
-                reprompt_strategy: {
-                  if_incomplete: [
-                    'Bien el cálculo. Ahora, con ese resultado de 6, ¿en qué categoría de riesgo lo clasificarías?',
-                    'Correcto. Y según esa clasificación, ¿qué acción deberíamos tomar?'
-                  ],
-                  if_memorized_only: [
-                    'La fórmula está correcta. Ahora aplícala: ¿cuánto es 3 por 2?'
-                  ],
-                  if_incorrect: [
-                    'Revisa la operación. Recuerda: Probabilidad × Severidad. Si es Alta (3) y Dañina (2), ¿cuánto da?',
-                    'Ese resultado no es correcto. La probabilidad Alta es 3, la severidad Dañina es 2. ¿Qué operación hacemos con esos números?'
-                  ],
-                  hints: [
-                    'Recuerda: es una multiplicación, no una suma',
-                    'Alta = 3, Dañina = 2. Entonces: 3 × 2 = ?',
-                    'Los niveles son: 1-2 Trivial, 3-4 Tolerable, 5-6 Moderado, 8-9 Importante, 12 Intolerable'
-                  ]
-                }
-              },
-              student_evidence: {
-                type: 'conversational_assessment',
-                description: 'El estudiante calcula correctamente el nivel de riesgo',
-                captured_data: {
-                  conversation_transcript: true,
-                  key_insights: true,
-                  attempts_count: true,
-                  understanding_level: true
-                }
-              },
-              student_questions: {
-                allowed: true,
-                scope: {
-                  current_activity: true,
-                  current_moment: true,
-                  current_topic: true,
-                  related_topics: false,
-                  off_topic: false
-                },
-                out_of_scope_strategy: {
-                  acknowledge: true,
-                  brief_answer: true,
-                  redirect: true,
-                  response_templates: {
-                    related_but_future_topic: 'Esa pregunta la veremos más adelante.',
-                    related_but_different_course: 'Eso corresponde a otro curso.',
-                    tangentially_related: 'Interesante, pero enfoquémonos en la evaluación de riesgos.',
-                    completely_off_topic: 'Mantengamos el foco en IPERC.'
-                  }
-                },
-                expected_question_types: ['clarification', 'example_request', 'application']
-              },
-              guardrails: {
-                prohibited_topics: ['sexual_content', 'violence', 'illegal_activities', 'personal_attacks'],
-                response_on_violation: {
-                  template: 'Mantengamos una conversación profesional sobre SSO.',
-                  log_incident: true,
-                  escalate_after: 3
-                },
-                tone_requirements: {
-                  professional: true,
-                  respectful: true,
-                  encouraging: true,
-                  no_judgment: true
-                }
+                question: 'Usa la [VER IMAGEN: Matriz de Evaluación de Riesgos 5×5] para evaluar estos 3 peligros:\n\nPELIGRO 1: "Proyección de chispas durante soldadura"\n• Frecuencia: Ocurre frecuentemente, casi todos los días\n• Daño potencial: Quemaduras leves en piel y ojos\n\nPELIGRO 2: "Caída desde andamio de 8 metros de altura sin arnés"\n• Frecuencia: Poco frecuente, solo 2 veces al mes se usa el andamio\n• Daño potencial: Muerte o lesiones permanentes (paraplejia)\n\nPELIGRO 3: "Trabajo sentado prolongado en oficina (8 horas)"\n• Frecuencia: Todos los días laborales\n• Daño potencial: Dolores lumbares, molestias temporales\n\nPara cada peligro:\n1. Determina SEVERIDAD (1-5) según la matriz\n2. Determina FRECUENCIA (A-E) según la matriz\n3. Encuentra el NÚMERO resultante en la matriz (1-25)\n4. Indica el COLOR (rojo/amarillo/verde) y NIVEL DE RIESGO (intolerable/tolerable/aceptable)\n5. ¿Cuál de los 3 peligros es el MÁS CRÍTICO y por qué?\n\nFormato:\n"Peligro 1: Severidad=X, Frecuencia=Y, Número=Z, Color=[color], Nivel=[nivel]"'
               },
               metadata: {
                 estimated_minutes: 15,
                 difficulty: 'medium',
-                max_reprompts: 3,
-                allow_skip: false,
-                required_for_completion: true
+                max_reprompts: 3
               }
             }
           ]
         },
-        // MOMENTO 4: Determinación de Controles
         {
           id: 'moment_004',
           title: 'Determinación de Controles',
           order: 4,
-          description: 'Aprende la jerarquía de controles según normativa peruana',
+          description: 'Aprende la jerarquía de controles y cómo aplicarlos',
           activities: [
             {
               id: 'activity_004',
               type: 'explanation',
+              complexity: 'moderate',
               teaching: {
-                agent_instruction: 'Explica la jerarquía de controles: 1° Eliminación, 2° Sustitución, 3° Controles de ingeniería, 4° Controles administrativos (señalización, capacitación, procedimientos), 5° EPP (última opción). Enfatiza que el EPP solo protege al trabajador pero no elimina el peligro.',
-                key_concepts: [
-                  '1. Eliminación: Remover completamente el peligro',
-                  '2. Sustitución: Reemplazar por algo menos peligroso',
-                  '3. Controles de ingeniería: Barreras, ventilación, guardas',
-                  '4. Controles administrativos: Procedimientos, capacitación, señalización',
-                  '5. EPP: Equipos de protección personal (última línea de defensa)'
-                ],
-                examples: [
-                  'Eliminación: Automatizar soldadura para que no haya operador expuesto',
-                  'Sustitución: Usar pintura al agua en vez de pintura con solventes',
-                  'Ingeniería: Instalar extractores de humo en zona de soldadura',
-                  'Administrativos: Crear procedimiento de trabajo seguro para soldadura',
-                  'EPP: Careta de soldar, guantes de cuero, mandil'
-                ],
-                image: {
-                  url: 'https://example.com/images/jerarquia_controles.png',
-                  description: 'Pirámide invertida de jerarquía de controles'
-                }
+                agent_instruction: 'Explica la Jerarquía de Controles mostrada en la pirámide invertida de la imagen. Los 5 niveles ordenados por efectividad son: 1) ELIMINACIÓN (más efectivo - eliminar completamente el peligro), 2) SUSTITUCIÓN (reemplazar por algo menos peligroso), 3) CONTROLES DE INGENIERÍA (guardas, ventilación, automatización), 4) CONTROLES ADMINISTRATIVOS (procedimientos, capacitación, señalización), 5) EPP (menos efectivo - último recurso porque el peligro sigue existiendo). Enfatiza que siempre se debe buscar controles de los niveles superiores primero. El EPP solo protege al trabajador, no elimina el peligro. Luego presenta casos para que el estudiante proponga controles.',
+                target_length: '300-400 palabras',
+                context: 'Normativa: Ley 29783, ISO 45001. País: Perú',
+                suggested_image_ids: ['iperc-jerarquia-controles']
               },
               verification: {
-                method: 'conversational',
-                initial_question: 'Perfecto. Ahora dime: ¿por qué crees que el EPP (como casco, guantes, lentes) es la última opción en la jerarquía y no la primera? Explica con tus palabras.',
-                success_criteria: {
-                  must_include: [
-                    'Menciona que el EPP solo protege al trabajador',
-                    'Entiende que el peligro sigue existiendo con EPP',
-                    'Explica que eliminar/sustituir es más efectivo'
-                  ],
-                  understanding_level: 'understood',
-                  min_completeness: 70
-                },
-                reprompt_strategy: {
-                  if_incomplete: [
-                    'Vas bien. Ahora piensa: si un trabajador usa casco, ¿el riesgo de caída de objetos desaparece o solo se reduce el daño?',
-                    'Correcto. Entonces, ¿qué sería mejor: eliminar el riesgo de caída o darle casco al trabajador?'
-                  ],
-                  if_memorized_only: [
-                    'Exacto, esa es la teoría. Dame un ejemplo práctico: si hay un cable pelado, ¿es mejor darle guantes al trabajador o reparar el cable?'
-                  ],
-                  if_incorrect: [
-                    'Piénsalo así: el EPP protege a la persona, pero el peligro sigue ahí. Si eliminamos el peligro, ya no hace falta el EPP. ¿Ahora tiene más sentido?'
-                  ],
-                  hints: [
-                    'Pista: El EPP es como un paraguas. Te protege de la lluvia, pero la lluvia sigue cayendo',
-                    'Los controles superiores atacan la causa; el EPP solo reduce la consecuencia',
-                    'Si puedes eliminar el peligro, ¿para qué necesitas EPP?'
-                  ]
-                }
-              },
-              student_evidence: {
-                type: 'conversational_assessment',
-                description: 'El estudiante explica la jerarquía de controles',
-                captured_data: {
-                  conversation_transcript: true,
-                  key_insights: true,
-                  attempts_count: true,
-                  understanding_level: true
-                }
-              },
-              student_questions: {
-                allowed: true,
-                scope: {
-                  current_activity: true,
-                  current_moment: true,
-                  current_topic: true,
-                  related_topics: false,
-                  off_topic: false
-                },
-                out_of_scope_strategy: {
-                  acknowledge: true,
-                  brief_answer: true,
-                  redirect: true,
-                  response_templates: {
-                    related_but_future_topic: 'Eso lo veremos después.',
-                    related_but_different_course: 'Eso es otro tema.',
-                    tangentially_related: 'Interesante, pero enfoquémonos en la jerarquía de controles.',
-                    completely_off_topic: 'Volvamos al tema de controles.'
-                  }
-                },
-                expected_question_types: ['clarification', 'example_request', 'why_question']
-              },
-              guardrails: {
-                prohibited_topics: ['sexual_content', 'violence', 'illegal_activities', 'personal_attacks'],
-                response_on_violation: {
-                  template: 'Mantengamos una conversación profesional.',
-                  log_incident: true,
-                  escalate_after: 3
-                },
-                tone_requirements: {
-                  professional: true,
-                  respectful: true,
-                  encouraging: true,
-                  no_judgment: true
-                }
+                question: 'Consulta la [VER IMAGEN: Jerarquía de Controles - Pirámide de Efectividad] y propón controles para estos 3 peligros:\n\nPELIGRO 1: "Ruido de 95 dB en área de producción por máquinas antiguas"\n\nPELIGRO 2: "Trabajadores manipulan solvente tóxico (tolueno) para limpieza de piezas"\n\nPELIGRO 3: "Operarios trabajan con esmeril angular sin guarda de protección"\n\nPara cada peligro:\n1. Propón UN control de cada nivel de la jerarquía que sea aplicable (Eliminación, Sustitución, Ingeniería, Administrativo, EPP)\n2. Indica cuál control es el MÁS EFECTIVO según la jerarquía\n3. Explica POR QUÉ ese control es el más efectivo\n4. Si tuvieras presupuesto limitado y solo pudieras aplicar UN control, ¿cuál elegirías y por qué?\n\nFormato:\n"Peligro 1:\n- Eliminación: [propuesta o N/A]\n- Sustitución: [propuesta]\n- Ingeniería: [propuesta]\n- Administrativo: [propuesta]\n- EPP: [propuesta]\nMás efectivo: [X] porque [razón]\nCon presupuesto limitado: [X] porque [razón práctica]"'
               },
               metadata: {
                 estimated_minutes: 12,
                 difficulty: 'medium',
-                max_reprompts: 3,
-                allow_skip: false,
-                required_for_completion: true
+                max_reprompts: 3
               }
             }
           ]
         },
-        // MOMENTO 5: Evaluación Final - Aplicación Completa
         {
           id: 'moment_005',
-          title: 'Evaluación Final - Aplicación Completa de IPERC',
+          title: 'Integración: Matriz IPERC Completa',
           order: 5,
-          description: 'Demuestra tu comprensión aplicando todo lo aprendido',
+          description: 'Aplica todo lo aprendido en un caso integrador real',
           activities: [
             {
               id: 'activity_005',
-              type: 'project',
+              type: 'exercise',
+              complexity: 'complex',
               teaching: {
-                agent_instruction: 'Guía al estudiante para que aplique toda la metodología IPERC: 1) Elegir un área de trabajo (su casa, oficina, taller), 2) Identificar mínimo 2 peligros, 3) Evaluar cada riesgo con la matriz, 4) Proponer controles usando la jerarquía.',
-                key_concepts: [
-                  'Aplicación completa de IPERC',
-                  'Identificación de peligros reales',
-                  'Evaluación cuantitativa de riesgos',
-                  'Propuesta de controles jerárquicos'
-                ],
-                examples: [
-                  'Ejemplo completo: Peligro=escalera sin barandal → Riesgo=caída → P(3)×S(3)=9 (Importante) → Control: instalar barandal (ingeniería)',
-                  'Otro: Peligro=monitor muy cerca → Riesgo=fatiga visual → P(2)×S(1)=2 (Trivial) → Control: ajustar distancia (administrativo)'
-                ],
-                image: {
-                  url: 'https://example.com/images/plantilla_iperc.png',
-                  description: 'Plantilla de matriz IPERC'
-                }
+                agent_instruction: 'Presenta el caso integrador final: el estudiante debe realizar una matriz IPERC completa de un área de trabajo real. Recuerda brevemente los 4 pasos: 1) Identificar peligros (usando los 7 tipos), 2) Evaluar riesgos (usando matriz 5×5), 3) Proponer controles (siguiendo jerarquía), 4) Documentar todo. Presenta un escenario complejo con múltiples peligros simultáneos para que demuestre dominio completo de la metodología IPERC.',
+                target_length: '250-350 palabras',
+                context: 'Caso real: Área de trabajo eléctrico en altura. Normativa: Ley 29783. País: Perú',
+                suggested_image_ids: ['iperc-caso-trabajo-electrico-altura']
               },
               verification: {
-                method: 'conversational',
-                initial_question: 'Para tu evaluación final, elige un lugar que conozcas (tu casa, trabajo, o un lugar público). Identifica 2 peligros, evalúa sus riesgos y propón controles. Usa este formato:\n\nPeligro 1: [describe]\nRiesgo: [qué daño podría ocurrir]\nProbabilidad: [Baja/Media/Alta]\nSeveridad: [Leve/Dañino/Extremo]\nNivel de Riesgo: [cálculo]\nControles propuestos: [lista]',
-                success_criteria: {
-                  must_include: [
-                    'Identifica 2 peligros reales y específicos',
-                    'Evalúa correctamente probabilidad y severidad',
-                    'Calcula nivel de riesgo correctamente',
-                    'Propone controles que siguen la jerarquía'
-                  ],
-                  understanding_level: 'analyzed',
-                  min_completeness: 80
-                },
-                reprompt_strategy: {
-                  if_incomplete: [
-                    'Bien, pero falta completar algunos campos. ¿Podrías agregar la evaluación de probabilidad y severidad?',
-                    'Vas bien, pero necesito que propongas controles específicos para cada peligro.'
-                  ],
-                  if_memorized_only: [
-                    'Veo que conoces la teoría. Ahora sé más específico: en lugar de decir "usar EPP", dime qué EPP exactamente.'
-                  ],
-                  if_incorrect: [
-                    'Revisa tu cálculo de riesgo. Recuerda que es Probabilidad × Severidad.',
-                    'Ese control no sigue la jerarquía. ¿Hay algo que puedas hacer antes de llegar al EPP?'
-                  ],
-                  hints: [
-                    'Piensa en tu entorno diario: cables, escaleras, ventanas, productos de limpieza...',
-                    'Recuerda usar la escala: 1, 2 o 3 para probabilidad y severidad',
-                    'Los controles deben ser realistas y aplicables'
-                  ]
-                }
-              },
-              student_evidence: {
-                type: 'conversational_assessment',
-                description: 'Matriz IPERC completa con 2 peligros evaluados',
-                captured_data: {
-                  conversation_transcript: true,
-                  key_insights: true,
-                  attempts_count: true,
-                  understanding_level: true
-                }
-              },
-              student_questions: {
-                allowed: true,
-                scope: {
-                  current_activity: true,
-                  current_moment: true,
-                  current_topic: true,
-                  related_topics: true,
-                  off_topic: false
-                },
-                out_of_scope_strategy: {
-                  acknowledge: true,
-                  brief_answer: true,
-                  redirect: true,
-                  response_templates: {
-                    related_but_future_topic: 'Buena pregunta, pero enfoquémonos en completar tu IPERC.',
-                    related_but_different_course: 'Eso es otro curso.',
-                    tangentially_related: 'Interesante, pero terminemos tu evaluación primero.',
-                    completely_off_topic: 'Mantengamos el foco en tu proyecto IPERC.'
-                  }
-                },
-                expected_question_types: ['clarification', 'example_request', 'application']
-              },
-              guardrails: {
-                prohibited_topics: ['sexual_content', 'violence', 'illegal_activities', 'personal_attacks'],
-                response_on_violation: {
-                  template: 'Mantengamos una conversación profesional.',
-                  log_incident: true,
-                  escalate_after: 3
-                },
-                tone_requirements: {
-                  professional: true,
-                  respectful: true,
-                  encouraging: true,
-                  no_judgment: true
-                }
+                question: 'CASO INTEGRADOR FINAL - Matriz IPERC Completa\n\nObserva la [VER IMAGEN: Caso Práctico: Trabajo Eléctrico en Altura]\n\nEres el supervisor de SSO de una empresa eléctrica. Analiza este escenario:\n\nÁREA: Mantenimiento de líneas de transmisión en postes\nFECHA: 15/01/2025\nACTIVIDAD: Dos trabajadores realizan mantenimiento en poste de 12 metros de altura con líneas energizadas de media tensión (22.9 kV)\n\nCONDICIONES OBSERVADAS EN LA IMAGEN:\n• Trabajadores a 12m de altura\n• Líneas eléctricas energizadas cercanas\n• Uso de arnés y línea de vida\n• Condiciones climáticas: soleado, sin viento\n• Herramientas dieléctricas visibles\n\nELABORA UNA MATRIZ IPERC SIMPLIFICADA:\n\n1. IDENTIFICACIÓN (mínimo 4 peligros):\n   - Identifica los peligros presentes\n   - Clasifica cada uno por tipo (Mecánico, Físico, etc.)\n\n2. EVALUACIÓN (usa matriz 5×5):\n   - Para los 2 peligros MÁS CRÍTICOS:\n     * Severidad (1-5)\n     * Frecuencia (A-E)\n     * Nivel de riesgo (número y color)\n\n3. CONTROLES (jerarquía):\n   - Para cada uno de los 2 peligros más críticos:\n     * Controles existentes que observas\n     * 2 controles adicionales que propondrías (indica nivel de jerarquía)\n\n4. CONCLUSIÓN:\n   - ¿Este trabajo es de ALTO RIESGO? ¿Por qué?\n   - ¿Los controles actuales son suficientes? ¿Qué falta?\n\nFormato libre pero estructurado. Demuestra dominio completo de IPERC.'
               },
               metadata: {
                 estimated_minutes: 20,
                 difficulty: 'hard',
-                max_reprompts: 5,
-                allow_skip: false,
+                max_reprompts: 3,
                 required_for_completion: true
               }
             }

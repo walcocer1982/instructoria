@@ -243,6 +243,18 @@ npm run db:studio
 
 ## 📋 CHANGELOG
 
+### v1.6.0 (2025-10-22)
+- **Feature:** Refactor de contenido educativo IPERC con estructura simplificada
+  - Migración a estructura estilo INSPECCIÓN (sin `success_criteria` ni `reprompt_strategy`)
+  - Todas las preguntas de verificación ahora son abiertas y prácticas (no sí/no)
+  - Agregados 5 imágenes educativas desde MCP Server (matriz 5×5, jerarquía controles, casos prácticos)
+  - Referencias visuales usando `[VER IMAGEN: título]` en preguntas de verificación
+  - Control de extensión con `target_length` para respuestas concisas del instructor
+  - Casos integradores basados en imágenes reales (soldadura, trabajo eléctrico en altura)
+- **Fix:** Corregir error de React hooks en MessageWithImageRefs
+  - Mover `useEffect` fuera del bloque condicional
+  - Soluciona "Rendered more hooks than during the previous render"
+
 ### v1.5.1 (2025-10-21)
 - **Fix:** Prevenir memory leak en useVoiceRecognition hook
   - Agregar isMountedRef para verificar si componente está montado

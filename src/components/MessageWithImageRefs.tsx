@@ -40,20 +40,23 @@ export function MessageWithImageRefs({
 
   // Solo procesar la PRIMERA referencia de imagen
   const match = content.match(imageRefRegex)
+  const trimmedTitle = match ? match[1].trim() : null
+
+  console.log('[MessageWithImageRefs] 🔍 Match result:', match ? 'FOUND' : 'NOT FOUND')
+
+  // ✅ HOOK MOVIDO FUERA DEL CONDICIONAL - Siempre se llama en el mismo orden
+  useEffect(() => {
+    if (trimmedTitle && onImageMentioned && notifiedImageRef.current !== trimmedTitle) {
+      notifiedImageRef.current = trimmedTitle
+      onImageMentioned(trimmedTitle)
+      console.log(`[MessageWithImageRefs] 📸 Image mentioned: ${trimmedTitle}`)
+    }
+  }, [trimmedTitle, onImageMentioned])
 
   if (match) {
+    console.log('[MessageWithImageRefs] 🎯 Image detected:', match[1])
     const [fullMatch, imageTitle] = match
     const matchIndex = match.index!
-    const trimmedTitle = imageTitle.trim()
-
-    // Notificar automáticamente que se mencionó una imagen (solo UNA vez por imagen)
-    useEffect(() => {
-      if (onImageMentioned && notifiedImageRef.current !== trimmedTitle) {
-        notifiedImageRef.current = trimmedTitle
-        onImageMentioned(trimmedTitle)
-        console.log(`[MessageWithImageRefs] 📸 Image mentioned: ${trimmedTitle}`)
-      }
-    }, [trimmedTitle, onImageMentioned])
 
     // Agregar texto antes del match (con markdown)
     if (matchIndex > 0) {
@@ -116,6 +119,7 @@ export function MessageWithImageRefs({
   }
 
   // Si no hay matches, retornar el contenido con renderizado de markdown
+  console.log('[MessageWithImageRefs] ❌ No image in this message')
   return (
     <div className={`${textSizeClass} ${textColorClass} ${leadingClass}`}>
       <ReactMarkdown
