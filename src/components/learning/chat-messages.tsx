@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { AvatarInstructor } from './avatar-instructor'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { MessageWithImageRefs } from '@/components/MessageWithImageRefs'
 import { cn } from '@/lib/utils'
@@ -77,15 +78,14 @@ export function ChatMessages({
             }
 
             return (
-              <div key={idx} className="flex flex-col gap-2 max-w-4xl group">
+              <div key={idx} className="flex flex-col gap-2 w-[90%] group me-auto">
 
                 {isLastMessage && (
-                <Avatar className="h-10 w-10 flex-shrink-0">
-                  <AvatarImage src={sessionInfo.instructor.avatar} />
-                  <AvatarFallback className="bg-instructor-100 text-instructor-700 border-2 border-instructor-300 text-sm font-semibold">
-                    {sessionInfo.instructor.name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+                  <AvatarInstructor
+                    name={sessionInfo.instructor.name}
+                    avatar={sessionInfo.instructor.avatar}
+                    state="speaking"
+                  />
                 )}
 
                 <div
@@ -148,12 +148,11 @@ export function ChatMessages({
         {/* Typing indicator */}
         {loading && messages[messages.length - 1]?.content === '' && (
           <div className="flex items-center gap-4 max-w-4xl mb-6">
-            <Avatar className="h-10 w-10 flex-shrink-0">
-              <AvatarImage src={sessionInfo.instructor.avatar} />
-              <AvatarFallback className="bg-instructor-100 text-instructor-700 text-sm font-semibold">
-                {sessionInfo.instructor.name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+            <AvatarInstructor
+              name={sessionInfo.instructor.name}
+              avatar={sessionInfo.instructor.avatar}
+              state="thinking"
+            />
             <div className="flex-1">
               <div className="flex items-center space-x-2">
                 <div className="flex space-x-1">

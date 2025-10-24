@@ -35,7 +35,7 @@ export function Navbar() {
   }
 
   return (
-    <header className="h-14 border-b bg-white flex items-center justify-between px-6 sticky top-0 z-50">
+    <header className="h-14 border-b  bg-white flex items-center justify-between px-6 sticky top-0 z-50">
       {/* Logo */}
       <Link href="/" className="flex items-center gap-6">
         <div className="h-10 w-fit bg-gradient-to-r from-cyan-700 to-teal-700 rounded-md flex items-center justify-center gap-2 hover:shadow-md transition-shadow px-4">
@@ -67,7 +67,7 @@ export function Navbar() {
           }`}
         >
           <BookOpen className="h-4 w-4" />
-          Temas
+          Clases
         </Link>
       </nav>
 
@@ -85,7 +85,7 @@ export function Navbar() {
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
+          <DropdownMenuContent className="w-56 bg-white border-slate-200" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">{session.user.name || 'Usuario'}</p>

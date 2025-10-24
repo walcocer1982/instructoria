@@ -45,7 +45,7 @@ export function ImageGalleryPanel({ images, onImageClick, isOpen, onClose, curre
   return (
     <aside
       className={cn(
-        'border-l bg-white transition-all duration-300 flex flex-col',
+        'border-l bg-white  transition-all duration-300 flex flex-col',
         isCollapsed ? 'w-16' : 'w-80',
         // Mobile: hidden por default, fixed cuando está abierto
         'hidden sm:flex',
@@ -53,7 +53,7 @@ export function ImageGalleryPanel({ images, onImageClick, isOpen, onClose, curre
       )}
     >
         {/* Header con toggle */}
-        <div className="h-14 border-b flex items-center justify-between px-4">
+        <div className="h-14 border-b  flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
             {/* Botón colapsar (solo desktop) */}
             <Button
@@ -91,7 +91,7 @@ export function ImageGalleryPanel({ images, onImageClick, isOpen, onClose, curre
 
         {/* Botones de acción - Solo cuando expandido */}
         {!isCollapsed && (
-          <div className="px-4 py-2 border-b border-gray-200 flex items-center gap-2">
+          <div className="px-4 py-2 border-b border-gray-200 flex justify-between items-center gap-2">
             <p className="text-sm text-gray-500">
               {currentImage && !showAllImages
                 ? `Mostrando 1 de ${images.length}`
@@ -105,7 +105,7 @@ export function ImageGalleryPanel({ images, onImageClick, isOpen, onClose, curre
             {currentImage && !showAllImages && (
               <button
                 onClick={onToggleShowAll}
-                className="px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition"
+                className="cursor-pointer px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition"
               >
                 Ver todas
               </button>
@@ -113,7 +113,7 @@ export function ImageGalleryPanel({ images, onImageClick, isOpen, onClose, curre
             {showAllImages && currentImage && (
               <button
                 onClick={onToggleShowAll}
-                className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition"
+                className="cursor-pointer px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition"
               >
                 Solo actual
               </button>
@@ -136,7 +136,7 @@ export function ImageGalleryPanel({ images, onImageClick, isOpen, onClose, curre
                 <button
                   key={image.id}
                   onClick={() => onImageClick(image)}
-                  className="w-full group block bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:border-gray-300 transition"
+                  className="w-full cursor-pointer group block bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:border-gray-300 transition"
                 >
                   {/* Imagen preview */}
                   <div className="relative w-full h-32 bg-gray-100">

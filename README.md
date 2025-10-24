@@ -209,12 +209,27 @@ El sistema incluye múltiples capas de seguridad:
 3. **Logging de incidentes**: Registra intentos de contenido prohibido
 4. **Escalación**: Notifica después de múltiples violaciones
 
-## 📊 Visualizar Datos
-
-Para ver los datos en Prisma Studio:
+## 📊 Comandos Útiles
 
 ```bash
-npm run db:studio
+# Desarrollo
+npm run dev                 # Iniciar servidor de desarrollo
+npm run build              # Build de producción
+npm start                  # Iniciar servidor de producción
+npm run lint               # Ejecutar ESLint
+
+# Base de Datos
+npm run db:push            # Sincronizar schema con base de datos
+npm run db:studio          # Abrir Prisma Studio (GUI para BD)
+npm run db:seed            # Cargar datos de ejemplo
+npm run db:clean           # Limpiar sesiones y mensajes (mantiene usuarios y cursos)
+
+# Testing
+npm run test:session       # Crear sesión de prueba automáticamente
+
+# Deployment
+vercel                     # Deploy a Vercel
+vercel --prod             # Deploy a producción
 ```
 
 ## 🐛 Troubleshooting
@@ -226,22 +241,58 @@ npm run db:studio
 ### Error de conexión a la base de datos
 - Verifica que `DATABASE_URL` sea correcto
 - Asegúrate de que tu IP esté permitida en Neon
+- Prueba con `npm run db:studio` para verificar conexión
 
 ### El instructor no responde bien
 - Verifica el `systemPromptBase` del instructor
 - Revisa los logs en la consola
 - Ajusta `temperature` y `maxTokens` si es necesario
 
-## 📝 Próximas Características
+### Port 3000 already in use
+```bash
+# Mac/Linux
+lsof -ti:3000 | xargs kill
 
+# Windows
+netstat -ano | findstr :3000
+taskkill /PID [numero] /F
+```
+
+## 📝 Roadmap
+
+### Alta Prioridad
 - [ ] Autenticación con Google OAuth
-- [ ] Dashboard del estudiante con progreso
+- [ ] Dashboard del estudiante con progreso visual
 - [ ] Certificados al completar temas
-- [ ] Más especialidades (Tecnología, Negocios)
-- [ ] Sistema de evaluación automática
-- [ ] Exportar progreso a PDF
+- [ ] Más temas para SSO (Plan de Seguridad, EPP, Primeros Auxilios)
+
+### Media Prioridad
+- [ ] Sistema de evaluación automática con IA
+- [ ] Exportar conversaciones y progreso a PDF
+- [ ] Más especialidades (Tecnología, Marketing, Idiomas)
+- [ ] Analytics y reportes para administradores
+- [ ] API pública para empresas
+
+### Baja Prioridad
+- [ ] Gamificación (puntos, badges, leaderboard)
+- [ ] Foros de discusión entre estudiantes
+- [ ] Progressive Web App (PWA)
+- [ ] Modo oscuro
+- [ ] Internacionalización (i18n)
 
 ## 📋 CHANGELOG
+
+### v1.6.0 (2025-10-22)
+- **Feature:** Refactor de contenido educativo IPERC con estructura simplificada
+  - Migración a estructura estilo INSPECCIÓN (sin `success_criteria` ni `reprompt_strategy`)
+  - Todas las preguntas de verificación ahora son abiertas y prácticas (no sí/no)
+  - Agregados 5 imágenes educativas desde MCP Server (matriz 5×5, jerarquía controles, casos prácticos)
+  - Referencias visuales usando `[VER IMAGEN: título]` en preguntas de verificación
+  - Control de extensión con `target_length` para respuestas concisas del instructor
+  - Casos integradores basados en imágenes reales (soldadura, trabajo eléctrico en altura)
+- **Fix:** Corregir error de React hooks en MessageWithImageRefs
+  - Mover `useEffect` fuera del bloque condicional
+  - Soluciona "Rendered more hooks than during the previous render"
 
 ### v1.5.1 (2025-10-21)
 - **Fix:** Prevenir memory leak en useVoiceRecognition hook

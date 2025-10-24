@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, Target } from 'lucide-react'
 
 interface LearningObjectivesCardProps {
   objectives: string[]
@@ -10,10 +10,10 @@ interface LearningObjectivesCardProps {
 export function LearningObjectivesCard({ objectives }: LearningObjectivesCardProps) {
   if (!objectives || objectives.length === 0) {
     return (
-      <Card className="border-slate-300 bg-white shadow-none">
+      <Card className="border-slate-300  shadow-none">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-learning-700 flex items-center gap-2">
-            <span className="text-lg">🎯</span>
+            <Target className="h-4 w-4" />
             Aprendizaje Esperado
           </CardTitle>
         </CardHeader>
@@ -25,10 +25,10 @@ export function LearningObjectivesCard({ objectives }: LearningObjectivesCardPro
   }
 
   return (
-    <Card className="border-slate-300 bg-white shadow-none">
+    <Card className="border-slate-300  shadow-none">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-semibold text-learning-700 flex items-center gap-2">
-          <span className="text-lg">🎯</span>
+          <Target className="h-4 w-4" />
           Aprendizaje Esperado
         </CardTitle>
       </CardHeader>

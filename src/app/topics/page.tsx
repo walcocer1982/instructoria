@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import Loader from '@/components/ui/loader'
 
 interface Topic {
   id: string
@@ -52,6 +53,9 @@ export default function TopicsPage() {
 
       if (!userData.user) {
         alert('Error: Usuario no encontrado')
+        // Solo ocultar Loader en caso de error
+        setStartingTopic(false)
+        setLoadingTopicId(null)
         return
       }
 
@@ -69,14 +73,18 @@ export default function TopicsPage() {
       const data = await response.json()
 
       if (data.success && data.sessionId) {
+        // NO ocultar Loader aquí - dejar que la navegación desmonte el componente
         router.push(`/learn/${data.sessionId}`)
       } else {
         alert('Error creando sesión: ' + (data.error || 'Unknown'))
+        // Solo ocultar Loader en caso de error
+        setStartingTopic(false)
+        setLoadingTopicId(null)
       }
     } catch (error) {
       console.error('Error iniciando tema:', error)
       alert('Error iniciando tema')
-    } finally {
+      // Solo ocultar Loader en caso de excepción
       setStartingTopic(false)
       setLoadingTopicId(null)
     }
@@ -85,10 +93,11 @@ export default function TopicsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando temas...</p>
-        </div>
+        <Loader
+          title="Cargando catálogo"
+          subtitle="Preparando las clases disponibles para ti"
+          size="md"
+        />
       </div>
     )
   }
@@ -98,18 +107,18 @@ export default function TopicsPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Temas Disponibles</h1>
-          <p className="text-gray-600">Selecciona un tema para comenzar tu aprendizaje</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Clases Disponibles</h1>
+          <p className="text-gray-600">Selecciona una clase para comenzar tu aprendizaje</p>
         </div>
 
-        {/* Overlay de carga cuando se está iniciando un tema */}
+        {/* Overlay de carga cuando se está iniciando una clase */}
         {startingTopic && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-8 shadow-xl text-center max-w-sm mx-4">
-              <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-900 font-semibold text-lg">Cargando Clase...</p>
-              <p className="text-gray-500 text-sm mt-2">Preparando tu sesión de aprendizaje</p>
-            </div>
+          <div className="fixed inset-0 bg-gray-50/95 backdrop-blur-sm z-50 flex items-center justify-center">
+            <Loader
+              title="Iniciando sesión"
+              subtitle="Preparando tu experiencia de aprendizaje personalizada"
+              size="lg"
+            />
           </div>
         )}
 
@@ -160,8 +169,8 @@ export default function TopicsPage() {
                     className={cn(
                       "flex-1 py-3 rounded-lg font-semibold transition",
                       startingTopic && loadingTopicId === topic.id
-                        ? "bg-blue-400 text-white cursor-wait"
-                        : "bg-blue-600 text-white hover:bg-blue-700",
+                        ? "bg-blue-700 text-white cursor-wait"
+                        : "bg-blue-800 text-white hover:bg-blue-900",
                       startingTopic && "disabled:opacity-50 disabled:cursor-not-allowed"
                     )}
                   >
