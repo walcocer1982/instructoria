@@ -49,7 +49,7 @@ export function LearningSidebar({
       )}
     >
       {/* Header con toggle */}
-      <div className="h-14 border-b flex items-center justify-between px-4">
+      <div className="h-14 border-b  flex items-center justify-between px-4">
         {!isCollapsed && (
           <span className="text-sm font-semibold text-gray-700">Panel de Aprendizaje</span>
         )}

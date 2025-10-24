@@ -1,42 +1,137 @@
-# CLAUDE.md
+# CLAUDE.md - Guía Completa para LLMs trabajando con Instructoria
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Este archivo proporciona toda la información necesaria para que Claude Code (claude.ai/code) u otros LLMs puedan trabajar eficientemente con este repositorio.
 
-## Proyecto
+## 🎯 Contexto del Proyecto
 
-Instructoria es una plataforma educativa que utiliza instructores IA conversacionales (Claude de Anthropic) para crear experiencias de aprendizaje personalizadas. El sistema incluye verificación de comprensión automática, memoria persistente, moderación de contenido y manejo inteligente de preguntas on-topic y off-topic.
+**Instructoria** es una plataforma educativa que utiliza instructores IA conversacionales (Claude de Anthropic) para crear experiencias de aprendizaje personalizadas. El sistema incluye verificación de comprensión automática, memoria persistente, moderación de contenido y manejo inteligente de preguntas on-topic y off-topic.
 
-## Stack Tecnológico
+### Características Principales
+- ✅ Instructores IA especializados por materia (SSO, Tecnología, etc.)
+- ✅ Conversación natural con preguntas y repreguntas
+- ✅ Verificación de comprensión automática mediante IA
+- ✅ Memoria persistente para cada estudiante
+- ✅ Moderación de contenido en tiempo real
+- ✅ Manejo inteligente de preguntas on-topic y off-topic
+- ✅ Guardrails contra contenido inapropiado
+- ✅ Tracking de progreso granular por actividad
 
-- **Frontend:** Next.js 14 (App Router), React, TypeScript, TailwindCSS
+## 🛠️ Stack Tecnológico
+
+- **Frontend:** Next.js 14 (App Router), React, TypeScript, TailwindCSS, shadcn/ui
 - **Backend:** Next.js API Routes
 - **Base de Datos:** PostgreSQL (Neon) con Prisma ORM
 - **IA:** Anthropic Claude API (claude-sonnet-4-5-20250929)
 - **Autenticación:** NextAuth.js con Google OAuth (preparado pero no implementado aún)
 - **Imágenes:** MCP Server personalizado que sirve imágenes educativas desde Azure Blob Storage
+- **Deployment:** Vercel
 
-## 📝 Convenciones de Nomenclatura
+## 📁 Estructura Detallada del Proyecto
 
-### Regla de Oro: kebab-case para archivos, PascalCase para componentes
+```
+instructoria/
+├── 📄 Archivos de Configuración
+│   ├── package.json              # Dependencias y scripts
+│   ├── tsconfig.json             # Configuración TypeScript
+│   ├── next.config.js            # Configuración Next.js
+│   ├── tailwind.config.ts        # Configuración TailwindCSS
+│   ├── postcss.config.js         # Configuración PostCSS
+│   ├── components.json           # Configuración shadcn/ui
+│   ├── .env                      # Variables de entorno (NO COMMIT)
+│   ├── .env.example              # Ejemplo de variables
+│   └── .gitignore                # Archivos ignorados por git
+│
+├── 🗄️ prisma/
+│   ├── schema.prisma             # ⭐ Schema completo de la BD
+│   └── seed.ts                   # ⭐ Datos iniciales (SSO + IPERC)
+│
+├── 🔧 scripts/
+│   ├── test-session.ts           # ⭐ Crear sesión de prueba
+│   ├── db-clean.ts               # Limpiar base de datos
+│   └── check-env.js              # Verificar variables de entorno
+│
+└── 💻 src/
+    ├── 📱 app/                   # Next.js App Router
+    │   ├── api/                  # 🌐 API Routes
+    │   │   ├── chat/
+    │   │   │   └── route.ts      # ⭐ POST /api/chat
+    │   │   ├── session/
+    │   │   │   ├── start/
+    │   │   │   │   └── route.ts  # ⭐ POST /api/session/start
+    │   │   │   └── [sessionId]/
+    │   │   │       └── info/
+    │   │   │           └── route.ts  # GET /api/sessions/[id]/info
+    │   │   ├── topics/
+    │   │   │   └── route.ts      # ⭐ GET /api/topics
+    │   │   └── audit/
+    │   │       └── page-exit/
+    │   │           └── route.ts  # POST /api/audit/page-exit
+    │   │
+    │   ├── learn/
+    │   │   └── [sessionId]/
+    │   │       └── page.tsx      # ⭐ Página del Chat
+    │   │
+    │   ├── topics/
+    │   │   └── page.tsx          # Página de selección de temas
+    │   │
+    │   ├── layout.tsx            # Layout principal
+    │   ├── page.tsx              # ⭐ Landing page
+    │   └── globals.css           # Estilos globales
+    │
+    ├── 🎨 components/
+    │   ├── learning/             # Componentes del chat
+    │   │   ├── chat-interface.tsx
+    │   │   ├── chat-messages.tsx
+    │   │   ├── image-gallery-panel.tsx
+    │   │   ├── instructor-avatar.tsx
+    │   │   ├── learning-layout.tsx
+    │   │   ├── learning-sidebar.tsx
+    │   │   ├── MessageWithImageRefs.tsx
+    │   │   ├── progress-modal.tsx
+    │   │   └── ProgressSection.tsx
+    │   └── ui/                   # Componentes shadcn/ui
+    │       ├── button.tsx
+    │       ├── card.tsx
+    │       ├── toast.tsx
+    │       └── ...
+    │
+    ├── 🔌 lib/
+    │   ├── prisma.ts             # ⭐ Cliente de Prisma
+    │   ├── anthropic.ts          # ⭐ Cliente de Anthropic
+    │   ├── type-helpers.ts       # ⭐ Parsers de JSON a tipos TypeScript
+    │   ├── session-cache.ts      # Cache en memoria para topic context
+    │   ├── message-summarizer.ts # Utilidades de resumen
+    │   └── utils.ts              # Utilidades generales (cn)
+    │
+    ├── ⚙️ services/
+    │   ├── chat.ts               # ⭐ Servicio principal de chat
+    │   ├── moderation.ts         # ⭐ Moderación de contenido
+    │   ├── intent-classification.ts  # ⭐ Clasificación de intención
+    │   ├── verification.ts       # ⭐ Verificación de comprensión
+    │   ├── prompt-builder.ts     # ⭐ Constructor de prompts
+    │   ├── progress.ts           # Actualización de progreso
+    │   └── mcp-client.ts         # Cliente para MCP Server de imágenes
+    │
+    ├── 🪝 hooks/
+    │   ├── use-image-gallery.ts           # Hook para galería de imágenes
+    │   ├── use-soft-page-exit-tracking.ts # Tracking de salida de página
+    │   ├── use-toast.ts                   # Hook para notificaciones
+    │   └── use-voice-recognition.ts       # Web Speech API
+    │
+    └── 📐 types/
+        └── topic-content.ts      # ⭐ Tipos de estructura de temas
+```
+
+## 📋 Convenciones de Nomenclatura
+
+### Regla de Oro: `kebab-case` para archivos, `PascalCase` para componentes
 
 **Seguimos el estándar de shadcn/ui y Next.js moderno:**
 
-#### ✅ Archivos de Componentes: `kebab-case.tsx`
-```
-src/components/
-├── learning/
-│   ├── chat-messages.tsx           ✅ kebab-case
-│   ├── instructor-card.tsx         ✅ kebab-case
-│   └── learning-sidebar.tsx        ✅ kebab-case
-└── ui/                             (shadcn/ui)
-    ├── button.tsx                  ✅ kebab-case
-    └── avatar.tsx                  ✅ kebab-case
-```
-
-#### ✅ Nombres de Componentes: `PascalCase`
-```tsx
+```typescript
+// ✅ CORRECTO:
 // Archivo: instructor-card.tsx
-export function InstructorCard({ ... }) {  // ✅ PascalCase
+export function InstructorCard({ ... }) {  // PascalCase
   return <div>...</div>
 }
 
@@ -44,327 +139,110 @@ export function InstructorCard({ ... }) {  // ✅ PascalCase
 import { InstructorCard } from '@/components/learning/instructor-card'
 ```
 
-#### ✅ Páginas y Rutas: `kebab-case`
 ```
-src/app/
-├── learn/[sessionId]/page.tsx      ✅ kebab-case en carpetas
-├── user-profile/page.tsx           ✅ kebab-case
-└── api/chat/route.ts               ✅ kebab-case
-```
+✅ Archivos de Componentes: kebab-case.tsx
+src/components/learning/chat-messages.tsx
+src/components/ui/button.tsx
 
-#### ✅ Utilities y Libs: `kebab-case.ts`
-```
-src/lib/
-├── anthropic.ts                    ✅ kebab-case
-├── type-helpers.ts                 ✅ kebab-case
-└── session-cache.ts                ✅ kebab-case
-```
+✅ Nombres de Componentes: PascalCase
+export function ChatMessages()
+export function Button()
 
-#### ✅ Hooks Personalizados: `use-nombre.ts`
-```
-src/hooks/
-├── use-image-gallery.ts            ✅ use-* + kebab-case
-└── use-soft-page-exit-tracking.ts  ✅ use-* + kebab-case
-```
+✅ Páginas y Rutas: kebab-case
+src/app/learn/[sessionId]/page.tsx
+src/app/user-profile/page.tsx
 
-#### ✅ Servicios: `kebab-case.ts`
-```
-src/services/
-├── chat.ts                         ✅ kebab-case
-├── prompt-builder.ts               ✅ kebab-case
-└── intent-classification.ts        ✅ kebab-case
+✅ Utilities y Libs: kebab-case.ts
+src/lib/anthropic.ts
+src/lib/type-helpers.ts
+
+✅ Hooks Personalizados: use-nombre.ts
+src/hooks/use-image-gallery.ts
+src/hooks/use-soft-page-exit-tracking.ts
+
+❌ EVITAR:
+PascalCase para archivos: UserProfile.tsx
+camelCase para componentes: userProfile.tsx
+snake_case: user_profile.tsx
+Mezclar convenciones
 ```
 
-### Razones para kebab-case:
+## 🎨 Componentes UI Personalizados
 
-1. **Consistencia con shadcn/ui**: Todos los componentes de shadcn usan kebab-case
-2. **Compatibilidad con file systems**: Evita problemas en sistemas case-insensitive (macOS, Windows)
-3. **URLs y routing**: Consistente con rutas web (`/user-profile` vs `/UserProfile`)
-4. **Tendencia moderna**: Next.js 13+, Vercel templates, y proyectos modernos usan kebab-case
-5. **Legibilidad**: Más fácil de leer nombres largos (`learning-objectives-card.tsx` vs `LearningObjectivesCard.tsx`)
+### AvatarInstructor
 
-### ❌ Evitar:
+Componente animado para representar al instructor IA con efecto "particle shimmer" que transmite que la IA está "viva" y pensando.
 
-- ❌ PascalCase para archivos: `UserProfile.tsx`
-- ❌ camelCase para componentes: `userProfile.tsx`
-- ❌ snake_case: `user_profile.tsx`
-- ❌ Mezclar convenciones en el mismo proyecto
+**Ubicación:** [src/components/learning/avatar-instructor.tsx](src/components/learning/avatar-instructor.tsx)
 
-## Comandos de Desarrollo
-
-### Desarrollo Local
-```bash
-npm run dev              # Iniciar servidor de desarrollo (localhost:3000)
-npm run build            # Build de producción (incluye prisma generate)
-npm start                # Iniciar servidor de producción
-npm run lint             # Ejecutar ESLint
+**Props:**
+```typescript
+interface AvatarInstructorProps {
+  name: string           // Nombre del instructor (se muestra inicial)
+  avatar?: string        // URL de imagen (opcional)
+  state?: 'idle' | 'thinking' | 'speaking'  // Estado de la animación
+  className?: string     // Clases adicionales
+}
 ```
 
-### Base de Datos (Prisma)
-```bash
-npm run db:push          # Sincronizar schema con base de datos
-npm run db:studio        # Abrir Prisma Studio (GUI para BD)
-npm run db:seed          # Cargar datos de ejemplo (seed.ts)
+**Estados de Animación:**
+
+1. **`idle`** (Reposo - muy sutil)
+   - Usado en: `instructor-card.tsx` (sidebar)
+   - Efecto: Glow pulse muy suave, sin partículas
+   - Velocidad: 4s por ciclo
+   - Propósito: Presencia sutil sin distraer
+
+2. **`thinking`** (Pensando - animación activa)
+   - Usado en: `chat-messages.tsx` (typing indicator)
+   - Efecto: 4 partículas flotantes rápidas + glow intenso
+   - Velocidad: 1.9s - 2.3s por ciclo
+   - Propósito: Indicar que la IA está procesando
+
+3. **`speaking`** (Hablando - animación intermedia)
+   - Usado en: `chat-messages.tsx` (último mensaje del chat)
+   - Efecto: 3 partículas flotantes lentas + glow medio
+   - Velocidad: 4s - 5s por ciclo
+   - Propósito: Presencia activa pero no distractora
+
+**Uso:**
+```tsx
+import { AvatarInstructor } from '@/components/learning/avatar-instructor'
+
+// En instructor card (sidebar)
+<AvatarInstructor
+  name="Paloma"
+  avatar="/avatars/paloma.png"
+  state="idle"
+/>
+
+// En typing indicator
+<AvatarInstructor
+  name="Paloma"
+  state="thinking"
+/>
+
+// En último mensaje
+<AvatarInstructor
+  name="Paloma"
+  state="speaking"
+/>
 ```
 
-### Testing
-```bash
-npm run test:session     # Probar creación de sesión de aprendizaje (scripts/test-session.ts)
-```
-
-## 🔢 Protocolo de Versionamiento
-
-### Regla de Oro: Un Commit = Una Versión
-
-**IMPORTANTE:** Cada commit debe representar una versión funcional y debe incluir:
-1. Actualización de `package.json` (versión)
-2. Actualización de `README.md` (CHANGELOG)
-3. Sistema completamente funcional verificado
-
-### Semver (Semantic Versioning)
-
-Seguimos `MAJOR.MINOR.PATCH`:
-
-- **PATCH** (1.0.0 → 1.0.1): Bug fixes, correcciones menores
-  - Ejemplos: Fix typo en prompt, corregir error de validación, ajustar estilos
-
-- **MINOR** (1.0.0 → 1.1.0): Nuevas features sin breaking changes
-  - Ejemplos: Nuevo tema educativo, nueva API endpoint, mejora de UI
-
-- **MAJOR** (1.0.0 → 2.0.0): Breaking changes
-  - Ejemplos: Cambio de estructura de contentJson, cambio en API contracts, migración de BD
-
-### Flujo de Trabajo por Implementación
-
-#### 1. Antes de Empezar
-```bash
-# Verificar versión actual
-cat package.json | grep version
-
-# Verificar que estamos en un estado limpio
-git status
-npm run build  # Debe pasar sin errores
-```
-
-#### 2. Durante el Desarrollo
-- Implementar la feature/fix completamente
-- Probar manualmente que funciona
-- Ejecutar `npm run lint` y `npx tsc --noEmit`
-
-#### 3. Al Terminar la Implementación
-
-**Paso 1: Actualizar package.json**
-```bash
-# Editar manualmente o usar npm version
-npm version patch  # para 1.0.0 → 1.0.1
-npm version minor  # para 1.0.0 → 1.1.0
-npm version major  # para 1.0.0 → 2.0.0
-```
-
-**Paso 2: Actualizar README.md - Sección CHANGELOG**
-
-Agregar entrada al inicio del CHANGELOG:
-```markdown
-### v1.0.1 (2025-10-19)
-- **Fix:** Descripción concisa del bug corregido
-```
-
-O para features:
-```markdown
-### v1.1.0 (2025-10-19)
-- **Feature:** Nueva funcionalidad de [X]
-- **Mejora:** Optimización en [Y]
-```
-
-**Paso 3: Verificación Final**
-```bash
-# Verificar que todo funciona
-npm run build
-npm run dev  # Probar manualmente
-
-# Verificar cambios
-git diff package.json
-git diff README.md
-```
-
-**Paso 4: Commit**
-
-Claude debe sugerir el commit con formato:
-```bash
-git add package.json README.md [archivos modificados]
-git commit -m "v1.0.1: [Descripción concisa]
-
-- Detalle 1 del cambio
-- Detalle 2 del cambio
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
-```
-
-### Ejemplos de Mensajes de Commit
-
-**PATCH (Bug Fix):**
-```
-v1.0.1: Fix moderación de contenido en mensajes largos
-
-- Corregir timeout en moderateContent para mensajes >1000 chars
-- Agregar fallback graceful si moderación falla
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
-
-**MINOR (Nueva Feature):**
-```
-v1.1.0: Agregar tema de Primeros Auxilios
-
-- Implementar nuevo tema con 5 clases y 12 actividades
-- Crear instructor especializado en salud ocupacional
-- Agregar imágenes educativas al MCP Server
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
-
-**MAJOR (Breaking Change):**
-```
-v2.0.0: Migrar contentJson a nueva estructura
-
-- BREAKING: Cambiar Activities.verification.criteria de array a objeto
-- Migración automática de datos existentes
-- Actualizar tipos TypeScript y validaciones Zod
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
-
-### Checklist Pre-Commit (Claude)
-
-Antes de sugerir commit, Claude debe verificar:
-- [ ] `package.json` tiene nueva versión
-- [ ] `README.md` tiene entrada en CHANGELOG
-- [ ] `npm run build` pasa sin errores
-- [ ] Sistema es funcional (se probó manualmente)
-- [ ] Mensaje de commit es descriptivo y sigue el formato
-
-## 🚀 Protocolo de Release
-
-### Checklist Pre-Release
-
-Antes de crear un nuevo release, ejecutar estos pasos en orden:
-
-#### 1. 🧹 Limpieza de Código
-```bash
-# Buscar y eliminar console.logs innecesarios (MANTENER console.error/warn)
-grep -r "console\.log\|console\.debug" --include="*.ts" --include="*.tsx" src/
-
-# Buscar comentarios TODO/FIXME
-grep -r "TODO\|FIXME" --include="*.ts" --include="*.tsx" src/
-
-# Buscar código comentado sin explicación
-# IMPORTANTE: NO eliminar comentarios explicativos de arquitectura
-# Solo eliminar código muerto comentado
-grep -r "^[[:space:]]*//" --include="*.ts" --include="*.tsx" src/app/ src/components/ src/services/
-```
-
-**Tipos de Comentarios:**
-
-✅ **MANTENER:**
-- Comentarios de arquitectura y patrones
-- JSDoc para funciones públicas
-- Comentarios de secciones (ej: `// === MODERACIÓN ===`)
-- Explicaciones de lógica compleja del chat/verificación
-
-❌ **ELIMINAR:**
-- `console.log()` y `console.debug()` (mantener error/warn)
-- Código comentado no utilizado
-- TODOs temporales resueltos
-- Comentarios redundantes
-
-#### 2. 🔍 Verificación de Calidad
-```bash
-# Ejecutar linter
-npm run lint
-
-# Verificar tipos TypeScript
-npx tsc --noEmit
-
-# Verificar schema de Prisma
-npm run db:push -- --dry-run
-
-# Build de producción (incluye prisma generate)
-npm run build
-```
-
-#### 3. 📝 Actualización de Documentación
-
-**CLAUDE.md:**
-- [ ] Agregar nuevos patrones de prompts o servicios
-- [ ] Actualizar comandos si cambiaron
-- [ ] Documentar cambios en estructura de contenido educativo
-- [ ] Agregar soluciones a problemas encontrados
-
-**package.json:**
-- [ ] Incrementar versión siguiendo semver:
-  - PATCH: bug fixes (1.0.0 → 1.0.1)
-  - MINOR: nuevas features (1.0.0 → 1.1.0)
-  - MAJOR: cambios breaking (1.0.0 → 2.0.0)
-
-**README.md:**
-- [ ] Actualizar características si se agregaron nuevas
-- [ ] Actualizar documentación de instalación si cambió
-- [ ] Agregar notas sobre nuevos temas/carreras disponibles
-
-#### 4. 🧪 Testing Manual
-```bash
-# Iniciar servidor de desarrollo
-npm run dev
-
-# Verificar flujos principales:
-# - Crear usuario de prueba (npm run db:seed)
-# - Iniciar sesión de aprendizaje (POST /api/session/start)
-# - Chatear con instructor (POST /api/chat)
-# - Verificar moderación con mensaje inapropiado
-# - Verificar que imágenes se carguen desde MCP Server
-```
-
-#### 5. ✅ Verificación de Deployment (Vercel)
-```bash
-# Verificar que build funciona sin DATABASE_URL (Vercel build)
-# Prisma debe generar cliente sin error
-npm run build
-
-# Verificar que no hay errores de TypeScript
-# Verificar que next.config.js tiene configuración correcta de imágenes
-```
-
-#### 6. 📋 Changelog
-
-Agregar entrada al README.md o crear CHANGELOG.md:
-```markdown
-### Versión X.X.X (YYYY-MM-DD)
-- **Feature:** [Descripción de nueva funcionalidad]
-- **Fix:** [Bug corregido]
-- **Mejora:** [Optimización implementada]
-- **Breaking:** [Cambio breaking si aplica]
-```
-
-## Arquitectura del Sistema
-
-### Flujo de Conversación
-
-El flujo principal del chat sigue estos pasos (implementado en [src/services/chat.ts](src/services/chat.ts)):
-
-1. **Moderación de contenido**: Detecta contenido inapropiado usando Claude API ([src/services/moderation.ts](src/services/moderation.ts))
-2. **Clasificación de intención**: Determina si es una pregunta on-topic, off-topic, o respuesta a verificación ([src/services/intent-classification.ts](src/services/intent-classification.ts))
-3. **Construcción de prompt**: Genera system prompt dinámico con contexto del tema, actividad actual e historial ([src/services/prompt-builder.ts](src/services/prompt-builder.ts))
-4. **Llamada a Claude API**: Envía mensaje y contexto a Claude
-5. **Análisis de respuesta**: Si es verificación, analiza la comprensión del estudiante ([src/services/verification.ts](src/services/verification.ts))
-6. **Actualización de progreso**: Guarda mensajes y actualiza ActivityProgress si completó criterios ([src/services/progress.ts](src/services/progress.ts))
+**Animaciones CSS:**
+- Definidas en: [src/app/globals.css](src/app/globals.css) (líneas 126-304)
+- Keyframes: `particle-float-slow-*` y `particle-float-fast-*`
+- Clases: `.particle-slow-1`, `.particle-fast-1`, etc.
+- Efectos: Partículas con box-shadow (glow) y fade in/out
+
+**Decisiones de Diseño:**
+- ✅ Pure CSS (sin librerías externas)
+- ✅ Colores alineados al tema: fuchsia, violet, cyan
+- ✅ Performance optimizado (GPU-accelerated transforms)
+- ✅ Mantiene inicial del instructor para identificación
+- ✅ Estados reflejan el comportamiento real de la IA
+
+## 🏗️ Arquitectura del Sistema
 
 ### Jerarquía de Contenido
 
@@ -378,7 +256,41 @@ Career (Carrera ej: SSO)
                                 └── Activities (Actividades con teaching, verification, guardrails)
 ```
 
-El contenido educativo está almacenado en `Topic.contentJson` como JSON estructurado. Ver [prisma/seed.ts](prisma/seed.ts) para ejemplos de cómo estructurar contenido.
+El contenido educativo está almacenado en `Topic.contentJson` como JSON estructurado. Ver `prisma/seed.ts` para ejemplos de cómo estructurar contenido.
+
+### Flujo de Conversación
+
+El flujo principal del chat sigue estos pasos (implementado en `src/services/chat.ts`):
+
+```
+1. Estudiante envía mensaje
+         ↓
+2. MODERACIÓN (detectar contenido inapropiado)
+         ↓
+   ¿Es seguro? ──NO──→ Respuesta de guardrail + Log
+         ↓ SÍ
+3. CLASIFICACIÓN DE INTENCIÓN
+   - answer_verification
+   - ask_question
+   - off_topic
+         ↓
+4. CONSTRUCCIÓN DE PROMPT
+   - Contexto del tema
+   - Actividad actual
+   - Historial reciente
+   - Instrucciones específicas
+         ↓
+5. LLAMADA A CLAUDE API
+         ↓
+6. GUARDAR MENSAJES EN BD
+         ↓
+7. SI ES VERIFICACIÓN:
+   - Analizar respuesta
+   - Actualizar ActivityProgress
+   - Determinar si puede avanzar
+         ↓
+8. RESPONDER AL ESTUDIANTE
+```
 
 ### Tracking de Progreso
 
@@ -391,18 +303,229 @@ User
                     └── ActivityProgress[] (evidencias y verificaciones)
 ```
 
-### Sistema de Imágenes (MCP Server)
+### Sistema de Memoria
 
-El proyecto usa un MCP Server personalizado que sirve imágenes educativas desde Azure:
-- Endpoint: `MCP_SERVER_URL` (por defecto: http://instructoria-mcp.eastus.azurecontainer.io:8080)
-- Las imágenes se cargan por tema usando `get_images_by_topic`
-- Cliente en [src/services/mcp-client.ts](src/services/mcp-client.ts)
-- Las imágenes se cachean en `Topic.images` (JSON)
+El instructor IA mantiene múltiples niveles de contexto:
 
-## API Endpoints Principales
+1. **Perfil del estudiante**: nombre, progreso, actividades completadas
+2. **Ubicación actual**: tema, momento, actividad
+3. **Historial conversacional**: últimos 10-20 mensajes
+4. **Evidencias recolectadas**: intentos y análisis por actividad
+5. **Metadatos de actividad**: teaching, verification, guardrails
+
+## 🔧 Comandos de Desarrollo
+
+```bash
+# Desarrollo
+npm run dev              # Iniciar servidor de desarrollo (localhost:3000)
+npm run build            # Build de producción (incluye prisma generate)
+npm start                # Iniciar servidor de producción
+npm run lint             # Ejecutar ESLint
+
+# Base de Datos (Prisma)
+npm run db:push          # Sincronizar schema con base de datos
+npm run db:studio        # Abrir Prisma Studio (GUI para BD)
+npm run db:seed          # Cargar datos de ejemplo (seed.ts)
+npm run db:clean         # Limpiar sesiones y mensajes
+
+# Testing
+npm run test:session     # Probar creación de sesión de aprendizaje
+
+# TypeScript
+npx tsc --noEmit        # Verificar tipos sin compilar
+```
+
+## 🔑 Variables de Entorno Requeridas
+
+```env
+# Base de datos (Neon PostgreSQL)
+DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
+
+# Anthropic API Key
+ANTHROPIC_API_KEY="sk-ant-..."
+
+# NextAuth (opcional, no implementado aún)
+NEXTAUTH_SECRET="..."
+NEXTAUTH_URL="http://localhost:3000"
+
+# MCP Server (opcional, usa default si no está definido)
+MCP_SERVER_URL="http://instructoria-mcp.eastus.azurecontainer.io:8080"
+```
+
+## 💻 Protocolo de Desarrollo
+
+### 1. Antes de Empezar
+```bash
+# Verificar versión actual
+cat package.json | grep version
+
+# Verificar que estamos en un estado limpio
+git status
+npm run build  # Debe pasar sin errores
+```
+
+### 2. Durante el Desarrollo
+- Implementar la feature/fix completamente
+- Probar manualmente que funciona
+- Ejecutar `npm run lint` y `npx tsc --noEmit`
+- Actualizar tipos si es necesario
+
+### 3. Protocolo de Commits
+
+**Formato:**
+```bash
+type: descripción concisa
+
+- Detalle 1 del cambio
+- Detalle 2 del cambio
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+**Types:**
+- `feat:` Nueva funcionalidad
+- `fix:` Corrección de bug
+- `refactor:` Refactorización
+- `style:` Cambios de formato
+- `docs:` Documentación
+- `test:` Pruebas
+- `chore:` Mantenimiento
+- `perf:` Mejoras de rendimiento
+
+### 4. Versionamiento (Semver)
+
+Seguimos `MAJOR.MINOR.PATCH`:
+
+- **PATCH** (1.0.0 → 1.0.1): Bug fixes, correcciones menores
+- **MINOR** (1.0.0 → 1.1.0): Nuevas features sin breaking changes
+- **MAJOR** (1.0.0 → 2.0.0): Breaking changes
+
+**Al versionar:**
+1. Actualizar `package.json` - versión
+2. Actualizar `README.md` - CHANGELOG
+3. Commit con formato: `v1.0.1: Descripción concisa`
+
+## 🌟 Servicios Principales
+
+### chat.ts - Flujo Principal
+```typescript
+async function processStudentMessage(message: string, sessionId: string) {
+  // 1. Cargar contexto de la sesión
+  // 2. Moderación de contenido
+  // 3. Clasificar intención del mensaje
+  // 4. Construir system prompt dinámico
+  // 5. Llamar a Claude API
+  // 6. Guardar mensajes en BD
+  // 7. Si es verificación, analizar comprensión
+  // 8. Retornar respuesta estructurada
+}
+```
+
+### prompt-builder.ts - System Prompts
+```typescript
+function buildSystemPrompt(context: PromptContext) {
+  // Construye prompt dinámico con:
+  // - Información del instructor
+  // - Contexto del tema y actividad actual
+  // - Historial de conversación
+  // - Instrucciones específicas según momento
+  // - Guardrails activos
+  // - Imágenes disponibles
+}
+```
+
+### verification.ts - Análisis de Comprensión
+```typescript
+function analyzeStudentResponse(activity, message, history) {
+  // Retorna:
+  // - criteria_met: number[]
+  // - completeness_percentage: 0-100
+  // - understanding_level: "memorized" | "understood" | "applied" | "analyzed"
+  // - ready_to_advance: boolean
+  // - feedback_for_instructor: string
+}
+```
+
+### moderation.ts - Moderación de Contenido
+```typescript
+function moderateContent(message: string, context: ModerationContext) {
+  // Detecta:
+  // - sexual_content
+  // - violence
+  // - illegal_activities
+  // - personal_attacks
+  // - hate_speech
+  // - spam
+  // Retorna: { is_safe: boolean, violations: string[], severity: string }
+}
+```
+
+## 🛡️ Sistema de Seguridad
+
+### Capas de Seguridad
+1. **Moderación de entrada**: Detecta contenido sexual, violencia, actividades ilegales, etc.
+2. **Clasificación de intención**: Identifica on-topic, off-topic, small_talk
+3. **Prompt engineering**: Instruye al modelo sobre límites y comportamiento
+4. **Guardrails en respuesta**: Valida que la respuesta sea apropiada
+5. **Logging de incidentes**: Registra violaciones en tabla SecurityIncident
+
+### Respuesta ante Violaciones
+```typescript
+if (contenido_inapropiado) {
+  // 1. Respuesta estándar al estudiante
+  responder("No puedo ayudarte con ese tema...")
+
+  // 2. Registrar incidente
+  await prisma.securityIncident.create({
+    sessionId,
+    incidentType: 'content_violation',
+    severity: 'high',
+    details: { message, violations }
+  })
+
+  // 3. Escalar si es reincidente
+  if (incidents.count >= 3) {
+    notifyAdministrator()
+  }
+}
+```
+
+## 📐 Tipos TypeScript Importantes
+
+```typescript
+// topic-content.ts
+interface TopicContent {
+  topic: TopicInfo
+  classes: Class[]
+}
+
+interface Activity {
+  id: string
+  type: 'explanation' | 'question' | 'practice'
+  teaching: TeachingConfig
+  verification: VerificationConfig
+  student_questions: StudentQuestionHandling
+  guardrails: Guardrail[]
+  suggested_image_ids?: string[]
+}
+
+interface VerificationConfig {
+  question: string
+  criteria: string[]
+  target_length?: 'short' | 'medium' | 'long'
+  hints?: string[]
+}
+
+// Type helpers para Prisma JSON
+import { parseTopicContent, parseEvidenceData, createEvidenceData } from '@/lib/type-helpers'
+```
+
+## 🚀 API Endpoints
 
 ### POST /api/session/start
-Inicia una nueva sesión de aprendizaje para un usuario y tema.
+Inicia una nueva sesión de aprendizaje.
 
 **Request:**
 ```json
@@ -417,8 +540,8 @@ Inicia una nueva sesión de aprendizaje para un usuario y tema.
 {
   "success": true,
   "sessionId": "session_xxx",
-  "topic": { ... },
-  "instructor": { ... },
+  "topic": { "id": "...", "title": "IPERC" },
+  "instructor": { "name": "Prof. Claude", "specialty": "SSO" },
   "welcomeMessage": "¡Hola! Soy..."
 }
 ```
@@ -445,108 +568,184 @@ Procesa mensaje del estudiante y retorna respuesta del instructor IA.
 }
 ```
 
-## Variables de Entorno Requeridas
+**Tipos de respuesta:**
+- `normal`: Respuesta estándar
+- `guardrail`: Contenido bloqueado
+- `verification_response`: Respuesta a pregunta de verificación
+- `question_response`: Respuesta a pregunta del estudiante
 
-```env
-# Base de datos (Neon PostgreSQL)
-DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
+## 🎨 Crear Nuevo Contenido Educativo
 
-# Anthropic API Key
-ANTHROPIC_API_KEY="sk-ant-..."
+Para agregar un nuevo tema:
 
-# NextAuth (opcional, no implementado aún)
-NEXTAUTH_SECRET="..."
-NEXTAUTH_URL="http://localhost:3000"
-
-# MCP Server (opcional, usa default si no está definido)
-MCP_SERVER_URL="http://instructoria-mcp.eastus.azurecontainer.io:8080"
+1. Define el contenido en JSON siguiendo la estructura en `prisma/seed.ts`:
+```typescript
+const topicContent = {
+  topic: {
+    title: "Mi Tema",
+    description: "...",
+    duration_minutes: 45
+  },
+  classes: [{
+    id: "class_001",
+    title: "Introducción",
+    moments: [{
+      id: "moment_001",
+      title: "Conceptos básicos",
+      activities: [{
+        id: "activity_001",
+        type: "explanation",
+        teaching: {
+          main_topic: "...",
+          key_points: ["..."],
+          approach: "conversational"
+        },
+        verification: {
+          question: "...",
+          criteria: ["..."],
+        },
+        student_questions: {
+          approach: "answer_then_redirect",
+          max_tangent_responses: 2
+        },
+        guardrails: [{
+          trigger: "inappropriate_content",
+          response: "..."
+        }]
+      }]
+    }]
+  }]
+}
 ```
 
-## Estructura de Código
-
-```
-src/
-├── app/
-│   ├── api/
-│   │   ├── chat/          # Endpoint de chat (/api/chat)
-│   │   ├── session/       # Manejo de sesiones (/api/session/start)
-│   │   ├── topics/        # Listado de temas
-│   │   └── auth/          # NextAuth (preparado)
-│   ├── learn/[sessionId]/ # Página del chat
-│   └── page.tsx           # Home
-├── lib/
-│   ├── prisma.ts          # Cliente de Prisma (singleton)
-│   ├── anthropic.ts       # Cliente de Anthropic
-│   ├── type-helpers.ts    # Parsers de JSON a tipos TypeScript
-│   └── session-cache.ts   # Cache en memoria para topic context
-├── services/
-│   ├── chat.ts            # Servicio principal de chat (processStudentMessage)
-│   ├── moderation.ts      # Moderación de contenido con Claude
-│   ├── intent-classification.ts  # Clasificación de intención del mensaje
-│   ├── verification.ts    # Verificación de comprensión del estudiante
-│   ├── prompt-builder.ts  # Constructor de system prompts dinámicos
-│   ├── progress.ts        # Actualización de progreso y actividades
-│   └── mcp-client.ts      # Cliente para MCP Server de imágenes
-└── types/
-    └── topic-content.ts   # Tipos TypeScript para contenido educativo
+2. Crea el tema usando Prisma:
+```typescript
+await prisma.topic.create({
+  data: {
+    title: "Mi Tema",
+    contentJson: topicContent,
+    courseId: "...",
+    instructorId: "..."
+  }
+})
 ```
 
-## Configuración de Prisma
+3. Opcionalmente, carga imágenes usando el MCP Server o almacénalas en `Topic.images`
+
+## 🐛 Troubleshooting Común
+
+### TypeScript - Tipos de Prisma JSON
+```typescript
+// ❌ NO hagas esto:
+const content = topic.contentJson as TopicContent
+
+// ✅ HAZ esto:
+import { parseTopicContent } from '@/lib/type-helpers'
+const content = parseTopicContent(topic.contentJson)
+```
+
+### Prisma Client no generado
+```bash
+npx prisma generate
+```
+
+### Puerto 3000 ocupado
+```bash
+# Mac/Linux
+lsof -ti:3000 | xargs kill
+
+# Windows
+netstat -ano | findstr :3000
+taskkill /PID [numero] /F
+```
+
+### El instructor no responde bien
+- Verifica `systemPromptBase` del instructor
+- Revisa logs en la consola
+- Ajusta `temperature` y `maxTokens` si es necesario
+
+### Build de Vercel falla
+- Verificar `postinstall` script ejecuta `prisma generate`
+- Verificar binaryTargets incluye `debian-openssl-3.0.x`
+- Marcar páginas dinámicas con `export const dynamic = 'force-dynamic'`
+
+## 🔄 Flujo de Testing
+
+1. **Crear sesión de prueba:**
+```bash
+npm run test:session
+# Abre el link generado
+```
+
+2. **Verificar en Prisma Studio:**
+```bash
+npm run db:studio
+# Revisar tablas: LearningSession, Message, ActivityProgress
+```
+
+3. **Casos de prueba:**
+- ✅ Respuesta correcta → avanza
+- ✅ Respuesta incorrecta → da pistas
+- ✅ Pregunta on-topic → responde
+- ✅ Pregunta off-topic → redirige
+- ✅ Contenido inapropiado → bloquea
+
+## 📦 Configuración de Prisma
 
 El schema usa PostgreSQL con las siguientes características:
 - `binaryTargets = ["native", "debian-openssl-3.0.x"]` para soporte Vercel
 - `prisma generate` se ejecuta automáticamente en `postinstall` y `build`
 - Seed con datos de ejemplo: Carrera SSO, Curso "Fundamentos de SSO", Tema "IPERC"
 
-## Consideraciones de Seguridad
-
-El sistema incluye múltiples capas de seguridad:
-1. **Moderación de contenido**: Detecta contenido sexual, violencia, actividades ilegales, ataques personales, discurso de odio y spam
-2. **Guardrails**: Respuestas automáticas ante violaciones con mensajes apropiados
-3. **Logging de incidentes**: Registra intentos de contenido prohibido en tabla `SecurityIncident`
-4. **Escalación**: Sistema preparado para notificar después de múltiples violaciones
-
-## Deployment (Vercel)
+## 🚀 Deployment (Vercel)
 
 El proyecto está configurado para Vercel:
 - `build` script ejecuta `prisma generate` antes de `next build`
-- `postinstall` también ejecuta `prisma generate` para asegurar que el cliente Prisma esté disponible
-- Configuración en [next.config.js](next.config.js) incluye soporte para imágenes de Azure Blob Storage
-- La página de login está marcada como dinámica para evitar errores de build
+- `postinstall` también ejecuta `prisma generate`
+- Configuración en `next.config.js` incluye soporte para imágenes de Azure
+- Páginas dinámicas marcadas con `export const dynamic = 'force-dynamic'`
 
-## Notas Importantes
+### Variables de entorno en Vercel:
+```
+DATABASE_URL
+ANTHROPIC_API_KEY
+NEXTAUTH_SECRET
+MCP_SERVER_URL (opcional)
+```
 
-- **System Prompts**: El instructor IA usa prompts dinámicos construidos en [src/services/prompt-builder.ts](src/services/prompt-builder.ts) que incluyen contexto del tema, actividad actual, historial y guardrails
-- **Optimización de Performance**: El sistema usa cache en memoria para topic context ([src/lib/session-cache.ts](src/lib/session-cache.ts)) y ejecuta moderación + clasificación en paralelo
-- **Type Safety**: Todo el contenido JSON se parsea a tipos TypeScript usando Zod schemas en [src/lib/type-helpers.ts](src/lib/type-helpers.ts)
-- **Path Aliases**: Usa `@/*` para referenciar archivos en `src/` (configurado en [tsconfig.json](tsconfig.json))
+## 🌐 Sistema de Imágenes (MCP Server)
 
-## Crear Nuevo Contenido Educativo
+El proyecto usa un MCP Server personalizado (opcional):
+- Endpoint: `MCP_SERVER_URL` (por defecto: http://instructoria-mcp.eastus.azurecontainer.io:8080)
+- Las imágenes se cargan por tema usando `get_images_by_topic`
+- Cliente en `src/services/mcp-client.ts`
+- Las imágenes se cachean en `Topic.images` (JSON)
+- Si el MCP Server no está disponible, el sistema continúa sin imágenes
 
-Para agregar un nuevo tema:
+## 📊 Optimizaciones de Performance
 
-1. Define el contenido en JSON siguiendo la estructura en [prisma/seed.ts](prisma/seed.ts):
-   - `Classes`: Clases del tema
-   - `Moments`: Momentos dentro de cada clase
-   - `Activities`: Actividades con `teaching`, `verification`, `student_questions`, `guardrails`
+- **Cache en memoria** para topic context (`session-cache.ts`)
+- **Ejecución en paralelo**: moderación + clasificación con Promise.all
+- **Type Safety**: Todo el contenido JSON se parsea con Zod schemas
+- **Path Aliases**: `@/*` para referenciar archivos en `src/`
+- **Lazy loading** de componentes pesados
+- **Debounce** en input del chat
 
-2. Crea el tema usando Prisma:
-   ```typescript
-   await prisma.topic.create({
-     data: {
-       title: "Mi Tema",
-       contentJson: { topic: {...}, classes: [...] },
-       courseId: "...",
-       instructorId: "..."
-     }
-   })
-   ```
+## ⚠️ Consideraciones Importantes
 
-3. Opcionalmente, carga imágenes usando el MCP Server o almacénalas directamente en `Topic.images`
+1. **System Prompts**: Son dinámicos, se construyen en `prompt-builder.ts` con contexto actual
+2. **Optimización de Performance**: Cache en memoria y ejecución paralela de servicios
+3. **Type Safety**: Todo JSON de Prisma debe parsearse con helpers de `type-helpers.ts`
+4. **Path Aliases**: Usa `@/*` para imports desde `src/`
+5. **Claude API**: Modelo por defecto es `claude-sonnet-4-5-20250929`
+6. **Moderación Context-aware**: Se adapta automáticamente al tema del curso
+7. **Verificación Flexible**: Evalúa comprensión, no formato perfecto (umbral 70%)
 
-## Documentación Adicional
+## 📚 Referencias
 
-- [README.md](README.md): Instalación y uso básico
-- [ARCHITECTURE.md](ARCHITECTURE.md): Arquitectura detallada del sistema
-- [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md): Estructura completa del proyecto
-- [QUICK_START.md](QUICK_START.md): Guía rápida de inicio
+- [Prisma Docs](https://www.prisma.io/docs)
+- [Next.js 14 Docs](https://nextjs.org/docs)
+- [Anthropic API Docs](https://docs.anthropic.com/)
+- [Neon Docs](https://neon.tech/docs/introduction)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [TailwindCSS](https://tailwindcss.com/docs)

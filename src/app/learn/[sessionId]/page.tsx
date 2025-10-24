@@ -12,6 +12,7 @@ import { ProgressModal } from '@/components/learning/progress-modal'
 import { ChatMessages } from '@/components/learning/chat-messages'
 import { ChatInput } from '@/components/learning/chat-input'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import Loader from '@/components/ui/loader'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -287,12 +288,13 @@ export default function LearnPage() {
 
   if (!sessionInfo) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-instructor-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando sesión...</p>
-        </div>
-      </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+              <Loader
+                title="Cargando sesión de clase"
+                subtitle="Preparando todos los recursos para tu aprendizaje"
+                size="md"
+              />
+            </div>
     )
   }
 

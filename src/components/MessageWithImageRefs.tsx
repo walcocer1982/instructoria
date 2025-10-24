@@ -32,7 +32,7 @@ export function MessageWithImageRefs({
   const notifiedImageRef = useRef<string | null>(null)
 
   // Estilos según variant
-  const textSizeClass = variant === 'plain' ? 'text-lg' : 'text-sm'
+  const textSizeClass = variant === 'plain' ? 'text-base' : 'text-sm'
   const textColorClass = variant === 'plain' ? 'text-gray-800' : 'text-gray-900'
   const leadingClass = variant === 'plain' ? 'leading-relaxed' : 'leading-normal'
 
@@ -65,7 +65,7 @@ export function MessageWithImageRefs({
           key="before"
           remarkPlugins={[remarkGfm]}
           components={{
-            p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+            p: ({ children }) => <p className="leading-7 mb-1.5 last:mb-0">{children}</p>,
             strong: ({ children }) => <strong className="font-bold text-gray-900">{children}</strong>,
             em: ({ children }) => <em className="italic">{children}</em>,
             hr: () => <hr className="my-2 border-gray-300" />,

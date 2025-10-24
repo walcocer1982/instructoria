@@ -209,12 +209,27 @@ El sistema incluye múltiples capas de seguridad:
 3. **Logging de incidentes**: Registra intentos de contenido prohibido
 4. **Escalación**: Notifica después de múltiples violaciones
 
-## 📊 Visualizar Datos
-
-Para ver los datos en Prisma Studio:
+## 📊 Comandos Útiles
 
 ```bash
-npm run db:studio
+# Desarrollo
+npm run dev                 # Iniciar servidor de desarrollo
+npm run build              # Build de producción
+npm start                  # Iniciar servidor de producción
+npm run lint               # Ejecutar ESLint
+
+# Base de Datos
+npm run db:push            # Sincronizar schema con base de datos
+npm run db:studio          # Abrir Prisma Studio (GUI para BD)
+npm run db:seed            # Cargar datos de ejemplo
+npm run db:clean           # Limpiar sesiones y mensajes (mantiene usuarios y cursos)
+
+# Testing
+npm run test:session       # Crear sesión de prueba automáticamente
+
+# Deployment
+vercel                     # Deploy a Vercel
+vercel --prod             # Deploy a producción
 ```
 
 ## 🐛 Troubleshooting
@@ -226,20 +241,44 @@ npm run db:studio
 ### Error de conexión a la base de datos
 - Verifica que `DATABASE_URL` sea correcto
 - Asegúrate de que tu IP esté permitida en Neon
+- Prueba con `npm run db:studio` para verificar conexión
 
 ### El instructor no responde bien
 - Verifica el `systemPromptBase` del instructor
 - Revisa los logs en la consola
 - Ajusta `temperature` y `maxTokens` si es necesario
 
-## 📝 Próximas Características
+### Port 3000 already in use
+```bash
+# Mac/Linux
+lsof -ti:3000 | xargs kill
 
+# Windows
+netstat -ano | findstr :3000
+taskkill /PID [numero] /F
+```
+
+## 📝 Roadmap
+
+### Alta Prioridad
 - [ ] Autenticación con Google OAuth
-- [ ] Dashboard del estudiante con progreso
+- [ ] Dashboard del estudiante con progreso visual
 - [ ] Certificados al completar temas
-- [ ] Más especialidades (Tecnología, Negocios)
-- [ ] Sistema de evaluación automática
-- [ ] Exportar progreso a PDF
+- [ ] Más temas para SSO (Plan de Seguridad, EPP, Primeros Auxilios)
+
+### Media Prioridad
+- [ ] Sistema de evaluación automática con IA
+- [ ] Exportar conversaciones y progreso a PDF
+- [ ] Más especialidades (Tecnología, Marketing, Idiomas)
+- [ ] Analytics y reportes para administradores
+- [ ] API pública para empresas
+
+### Baja Prioridad
+- [ ] Gamificación (puntos, badges, leaderboard)
+- [ ] Foros de discusión entre estudiantes
+- [ ] Progressive Web App (PWA)
+- [ ] Modo oscuro
+- [ ] Internacionalización (i18n)
 
 ## 📋 CHANGELOG
 

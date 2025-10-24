@@ -1,7 +1,7 @@
 'use client'
 
 import { ArrowUp } from 'lucide-react'
-import { VoiceButton } from './voice-button'
+// import { VoiceButton } from './voice-button'
 
 interface ChatInputProps {
   input: string
@@ -20,7 +20,7 @@ export function ChatInput({
   isRecording,
   onInputChange,
   onSend,
-  onToggleVoice,
+  // onToggleVoice,
   isModalOpen,
   onModalClose
 }: ChatInputProps) {
@@ -70,7 +70,7 @@ export function ChatInput({
             onKeyDown={handleKeyPress}
             onPaste={handlePaste}
             placeholder="Escribe aquí..."
-            className="w-full px-4 py-4 font-sans pr-24 border border-slate-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-transparent resize-none text-xl transition-all"
+            className="w-full px-4 py-4 font-sans pr-24 border bg-white border-slate-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-transparent resize-none text-xl transition-all"
             style={{
               minHeight: '120px',
               maxHeight: '120px',
