@@ -12,6 +12,7 @@ interface ChatInputProps {
   onToggleVoice: () => void
   isModalOpen: boolean
   onModalClose: () => void
+  textareaRef?: React.RefObject<HTMLTextAreaElement>
 }
 
 export function ChatInput({
@@ -22,7 +23,8 @@ export function ChatInput({
   onSend,
   // onToggleVoice,
   isModalOpen,
-  onModalClose
+  onModalClose,
+  textareaRef
 }: ChatInputProps) {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -65,12 +67,13 @@ export function ChatInput({
 
         <div className="relative">
           <textarea
+            ref={textareaRef}
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyPress}
             onPaste={handlePaste}
             placeholder="Escribe aquí..."
-            className="w-full px-4 py-4 font-sans pr-24 border bg-white border-slate-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-transparent resize-none text-xl transition-all"
+            className="w-full px-4 py-4 font-sans pr-24 border bg-white border-slate-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-slate-700 focus:border-transparent resize-none text-xl transition-all"
             style={{
               minHeight: '120px',
               maxHeight: '120px',
