@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { User, LogOut, Settings, Home, BookOpen, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import { nameInitials } from '@/lib/utils'
 
 export function Navbar() {
   const { data: session } = useSession()
@@ -40,8 +41,7 @@ export function Navbar() {
       <Link href="/" className="flex items-center gap-6">
         <div className="h-10 w-fit bg-gradient-to-r from-cyan-700 to-teal-700 rounded-md flex items-center justify-center gap-2 hover:shadow-md transition-shadow px-4">
           <Sparkles className='size-4 text-white' />
-          <span className="text-white font-bold text-xs hidden lg:block">Instructor IA</span>
-          <span className="text-white font-bold text-xs block lg:hidden">I-IA</span>
+          <span className="text-white font-bold text-xs hidden sm:block">Sophia</span>
         </div>
       </Link>
 
@@ -76,7 +76,8 @@ export function Navbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 rounded-xl flex items-center gap-2 px-4 ring-0">
-              <span className='text-xs'>{session.user.name || ''}</span>
+              <span className='text-xs hidden sm:block'>{session.user.name || ''}</span>
+              <span className='text-xs block sm:hidden'>{nameInitials(session.user.name || '')}</span>
               <Avatar className="size-8">
                 <AvatarImage src={session.user.image || undefined} alt={session.user.name || 'Usuario'} />
                 <AvatarFallback className="bg-student-100 text-student-700">

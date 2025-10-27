@@ -194,7 +194,7 @@ export function ChatMessages({
                   }}
                 >
                   {/* Solo mostrar avatar si hay contenido (evitar duplicación con skeleton) */}
-                  {hasContent && (
+                  {hasContent && isLastMessage && (
                     <div className="flex gap-3 items-center">
                       <AvatarInstructor
                         name={sessionInfo.instructor.name}
@@ -238,7 +238,7 @@ export function ChatMessages({
 
                   {/* Solo mostrar timestamp si hay contenido y no está loading */}
                   {hasContent && !isStreamingLastMessage && (
-                    <span className={cn('text-xs text-gray-400 mt-0 block', (!isLastMessage) ? 'scale-0 group-hover:scale-100' : 'text-slate-500')}>
+                    <span className={cn('text-xs text-gray-400 mt-0 block', (!isLastMessage) ? 'scale-0 group-hover:scale-100' : 'text-slate-500 pb-8')}>
                       {new Date(msg.timestamp).toLocaleTimeString('es-PE', {
                         hour: '2-digit',
                         minute: '2-digit'

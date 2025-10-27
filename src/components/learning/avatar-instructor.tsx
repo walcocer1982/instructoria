@@ -39,7 +39,7 @@ export function AvatarInstructor({
       case 'idle':
       default:
         // Negro/blanco, regular - estado por defecto
-        return { speed: 'regular' as const, color: 'black' as const }
+        return { speed: 'slow' as const, color: 'black' as const }
     }
   }
 
