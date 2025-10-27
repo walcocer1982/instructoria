@@ -47,3 +47,8 @@ flatrepo_*
 !package-lock.json
 !tsconfig.json
 !components.json
+
+# Claude development files
+CLAUDE.md
+TODOS.md
+RINGS_API.md

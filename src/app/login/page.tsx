@@ -22,7 +22,7 @@ export default function LoginPage() {
 
         <CardContent className="space-y-4">
           {/* Google OAuth - DESHABILITADO (solo usuarios corporativos) */}
-          {/* <form
+          <form
             action={async () => {
               'use server'
               await signIn('google', { redirectTo: '/topics' })
@@ -57,7 +57,7 @@ export default function LoginPage() {
               </svg>
               Continuar con Google
             </Button>
-          </form> */}
+          </form>
 
           <form
             action={async () => {

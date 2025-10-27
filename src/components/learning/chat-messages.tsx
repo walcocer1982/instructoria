@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AvatarInstructor } from './avatar-instructor'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -41,6 +41,93 @@ interface ChatMessagesProps {
   onImageMentioned: (imageTitle: string) => void
 }
 
+/**
+ * Hook para rotar palabras animadas durante el loading
+ */
+function useRotatingWords(words: string[], intervalMs: number = 1500) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % words.length)
+    }, intervalMs)
+
+    return () => clearInterval(interval)
+  }, [words.length, intervalMs])
+
+  return words[currentIndex]
+}
+
+/**
+ * Skeleton loader para mostrar mientras el instructor genera la respuesta
+ * Usa posicionamiento absoluto con máximo 40vh para evitar doble renderizado
+ */
+function MessageSkeleton({
+  sessionInfo,
+  fadeOut = false,
+  isAbsolute = false
+}: {
+  sessionInfo: SessionInfo
+  fadeOut?: boolean
+  isAbsolute?: boolean
+}) {
+  const thinkingWords = [
+    'pensando...',
+    'analizando...',
+    'generando respuesta...',
+    'reflexionando...',
+    'preparando contenido...'
+  ]
+
+  const currentWord = useRotatingWords(thinkingWords, 1500)
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col gap-4 animate-pulse transition-opacity duration-300",
+        "min-h-[55vh] max-h-[55vh] sm:min-h-[40vh] sm:max-h-[40vh]",
+        isAbsolute && "absolute inset-0 z-10 bg-transparent"
+      )}
+      style={{
+        opacity: fadeOut ? 0 : 1
+      }}
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+      aria-label="El instructor está pensando su respuesta"
+    >
+      <div className="flex flex-col gap-2 w-[90%] me-auto">
+        <div className="flex gap-3 items-center">
+          <AvatarInstructor
+            name={sessionInfo.instructor.name}
+            avatar={sessionInfo.instructor.avatar}
+            state="thinking"
+          />
+          {/* Palabras animadas rotativas */}
+          <span
+            className="text-gray-500 dark:text-gray-400 italic text-sm transition-opacity duration-300"
+            key={currentWord}
+          >
+            {currentWord}
+          </span>
+        </div>
+        <div className="flex-1 space-y-3 pt-2">
+          {/* Líneas de skeleton con diferentes anchos para simular párrafos */}
+          <div className={`h-4 rounded w-1/5 ${fadeOut ? 'bg-transparent' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+          <div className={`h-4 rounded w-2/5 ${fadeOut ? 'bg-transparent' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+          <div className={`h-4 rounded w-full ${fadeOut ? 'bg-transparent' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+          <div className={`h-4 rounded w-3/4 ${fadeOut ? 'bg-transparent' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+          <div className={`h-4 rounded w-5/6 ${fadeOut ? 'bg-transparent' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+          <div className={`h-4 rounded w-2/3 bg-gray-200 dark:bg-gray-700`}></div>
+          <div className={`h-4 rounded w-full bg-gray-200 dark:bg-gray-700`}></div>
+          <div className={`h-4 rounded w-5/6 bg-gray-200 dark:bg-gray-700`}></div>
+          <div className={`h-4 rounded w-2/3 bg-gray-200 dark:bg-gray-700`}></div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function ChatMessages({
   messages,
   loading,
@@ -54,66 +141,120 @@ export function ChatMessages({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  const streamingWords = [
+    'escribiendo...',
+    'generando...',
+    'perfeccionando...',
+  ]
+
+  const currentWord = useRotatingWords(streamingWords, 2500)
+
+  // Scroll cuando cambian los mensajes o cuando empieza el loading
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [messages, loading])
 
   return (
     <ScrollArea className="flex-1 h-[70vh]">
       <div className="max-w-4xl mx-auto p-6 space-y-4">
         {messages.map((msg, idx) => {
-          // No mostrar mensajes del asistente vacios mientras esta loading (se muestra el typing indicator)
-          if (msg.role === 'assistant' && msg.content === '' && loading) {
-            return null
-          }
-
           // Detectar si es lastMessage:
           const isLastMessage = idx === messages.length - 1
 
           // Mensaje del Instructor (sin burbuja)
           if (msg.role === 'assistant') {
-            // No mostrar mensajes vacios (zombie messages)
-            if (!msg.content || msg.content.trim() === '') {
+            // Para el último mensaje durante loading, usar wrapper con position relative
+            const isStreamingLastMessage = isLastMessage && loading
+            const hasContent = msg.content && msg.content.trim() !== ''
+
+            // No mostrar mensajes vacios (zombie messages) - EXCEPTO si es el último durante loading
+            if (!hasContent && !isStreamingLastMessage) {
               return null
             }
 
             return (
-              <div key={idx} className="flex flex-col gap-2 w-[90%] group me-auto">
-
-                {isLastMessage && (
-                  <AvatarInstructor
-                    name={sessionInfo.instructor.name}
-                    avatar={sessionInfo.instructor.avatar}
-                    state="speaking"
-                  />
-                )}
-
+              <div
+                key={idx}
+                className="relative"
+                style={{
+                  // Reservar máximo 40vh para el área del mensaje
+                  maxHeight: isLastMessage ? '40vh' : undefined,
+                  minHeight: isLastMessage && (hasContent || loading) ? '40vh' : undefined,
+                }}
+              >
+                {/* Contenedor del mensaje real */}
                 <div
-                  className="flex-1 select-none"
-                  onCopy={(e) => {
-                    e.preventDefault()
-                    console.log('[Security] Intento de copiar mensaje del instructor bloqueado')
-                  }}
-                  onCut={(e) => {
-                    e.preventDefault()
-                    console.log('[Security] Intento de cortar mensaje del instructor bloqueado')
+                  className={cn(
+                    "flex flex-col gap-2 w-[90%] group me-auto",
+                    // Transparente durante streaming para no mezclar con skeleton
+                    isStreamingLastMessage && "bg-transparent"
+                  )}
+                  style={{
+                    transition: 'min-height 0.3s ease-out, background-color 0.3s ease-out'
                   }}
                 >
-                  <MessageWithImageRefs
-                    content={msg.content}
-                    onImageClick={onImageRefClick}
-                    onImageMentioned={onImageMentioned}
-                    variant="plain"
-                  />
-                  
+                  {/* Solo mostrar avatar si hay contenido (evitar duplicación con skeleton) */}
+                  {hasContent && (
+                    <div className="flex gap-3 items-center">
+                      <AvatarInstructor
+                        name={sessionInfo.instructor.name}
+                        avatar={sessionInfo.instructor.avatar}
+                        state={isStreamingLastMessage ? "thinking" : "speaking"}
+                      />
+                      {/* Palabras animadas rotativas */}
+                      {isStreamingLastMessage && (
+                      <span
+                        className="text-gray-500 dark:text-gray-400 italic text-sm transition-opacity duration-300"
+                        key={currentWord}
+                      >
+                        {currentWord}
+                      </span>
+                      )}
+                    </div>
+
+                  )}
+
+                  {/* Contenido del mensaje */}
+                  {hasContent && (
+                    <div
+                      className="flex-1 select-none"
+                      onCopy={(e) => {
+                        e.preventDefault()
+                        console.log('[Security] Intento de copiar mensaje del instructor bloqueado')
+                      }}
+                      onCut={(e) => {
+                        e.preventDefault()
+                        console.log('[Security] Intento de cortar mensaje del instructor bloqueado')
+                      }}
+                    >
+                      <MessageWithImageRefs
+                        content={msg.content}
+                        onImageClick={onImageRefClick}
+                        onImageMentioned={onImageMentioned}
+                        variant="plain"
+                      />
+                    </div>
+                  )}
+
+                  {/* Solo mostrar timestamp si hay contenido y no está loading */}
+                  {hasContent && !isStreamingLastMessage && (
+                    <span className={cn('text-xs text-gray-400 mt-0 block', (!isLastMessage) ? 'scale-0 group-hover:scale-100' : 'text-slate-500')}>
+                      {new Date(msg.timestamp).toLocaleTimeString('es-PE', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  )}
                 </div>
 
-                <span className={cn('text-xs text-gray-400 mt-0 block' ,  (!isLastMessage) ? 'scale-0 group-hover:scale-100' : 'text-slate-500')}>
-                    {new Date(msg.timestamp).toLocaleTimeString('es-PE', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </span>
+                {/* Skeleton con posicionamiento absoluto durante loading */}
+                {isStreamingLastMessage && (!hasContent || msg.content.length < 100) && (
+                  <MessageSkeleton
+                    sessionInfo={sessionInfo}
+                    fadeOut={msg.content?.length > 10}
+                    isAbsolute={true}
+                  />
+                )}
               </div>
             )
           }
@@ -135,7 +276,7 @@ export function ChatMessages({
                 </div>
               </div>
 
-              <Avatar className="h-10 w-10 flex-shrink-0">
+              <Avatar className="h-10 w-10 shrink-0">
                 <AvatarImage src={sessionInfo.user.avatar || undefined} alt={sessionInfo.user.name || 'Usuario'} />
                 <AvatarFallback className="bg-slate-300 text-gray-700 text-sm">
                   {sessionInfo.user.name.charAt(0).toUpperCase()}
@@ -144,36 +285,6 @@ export function ChatMessages({
             </div>
           )
         })}
-
-        {/* Typing indicator */}
-        {loading && messages[messages.length - 1]?.content === '' && (
-          <div className="flex items-center gap-4 max-w-4xl mb-6">
-            <AvatarInstructor
-              name={sessionInfo.instructor.name}
-              avatar={sessionInfo.instructor.avatar}
-              state="thinking"
-            />
-            <div className="flex-1">
-              <div className="flex items-center space-x-2">
-                <div className="flex space-x-1">
-                  <div
-                    className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
-                    style={{ animationDelay: '0ms' }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
-                    style={{ animationDelay: '150ms' }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-instructor-500 rounded-full animate-bounce"
-                    style={{ animationDelay: '300ms' }}
-                  ></div>
-                </div>
-                <span className="text-sm text-gray-500">{sessionInfo.instructor.name} esta escribiendo...</span>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div ref={messagesEndRef} />
       </div>

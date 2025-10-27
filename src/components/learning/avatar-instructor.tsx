@@ -15,9 +15,9 @@ interface AvatarInstructorProps {
  * Avatar animado para instructor IA con anillos orbitales
  *
  * Estados:
- * - idle: Sin anillos (instructor-card sidebar)
- * - thinking: Anillos rápidos (typing indicator)
- * - speaking: Anillos normales (último mensaje del chat)
+ * - idle: Anillos negros normales (instructor-card sidebar)
+ * - thinking: Anillos azules rápidos (typing indicator)
+ * - speaking: Anillos verdes medio (último mensaje del chat)
  */
 export function AvatarInstructor({
   name,
@@ -27,13 +27,28 @@ export function AvatarInstructor({
 }: AvatarInstructorProps) {
   const initial = name.charAt(0).toUpperCase()
 
-  // Mapear estado a velocidad de los anillos
-  const ringSpeed = state === 'thinking' ? 'fast' : state === 'speaking' ? 'normal' : 'slow'
+  // Mapear estado del instructor a props genéricos de Rings
+  const getRingProps = () => {
+    switch(state) {
+      case 'thinking':
+        // Azul, muy rápido - IA procesando
+        return { speed: 'faster' as const, color: 'orange' as const }
+      case 'speaking':
+        // Verde, rápido - IA generando respuesta
+        return { speed: 'fast' as const, color: 'green' as const }
+      case 'idle':
+      default:
+        // Negro/blanco, regular - estado por defecto
+        return { speed: 'regular' as const, color: 'black' as const }
+    }
+  }
+
+  const ringProps = getRingProps()
 
   return (
     <div className={className}>
       <Avatar className="h-10 w-10 relative overflow-visible">
-        <Rings size={40} speed={ringSpeed} />
+        <Rings size={40} {...ringProps} />
         <AvatarImage src={avatar} alt={name} />
         <AvatarFallback
           className="bg-instructor-100 text-instructor-700 text-sm font-semibold"

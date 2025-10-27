@@ -2,6 +2,26 @@
 
 Este archivo proporciona toda la información necesaria para que Claude Code (claude.ai/code) u otros LLMs puedan trabajar eficientemente con este repositorio.
 
+## ⚠️ REGLA IMPORTANTE: NO INICIAR SERVIDOR DE DESARROLLO
+
+**NUNCA ejecutes `npm run dev` automáticamente.** En su lugar:
+
+1. Realiza todos los cambios de código necesarios
+2. Verifica tipos con `npx tsc --noEmit`
+3. Al finalizar, indica al usuario:
+   ```
+   ✅ Cambios completados
+
+   Para probar, ejecuta:
+   npm run dev
+
+   Luego visita: http://localhost:3000
+   ```
+
+**Razón:** Múltiples instancias del servidor causan conflictos de puertos y el usuario debe tener control manual del proceso de desarrollo.
+
+---
+
 ## 🎯 Contexto del Proyecto
 
 **Instructoria** es una plataforma educativa que utiliza instructores IA conversacionales (Claude de Anthropic) para crear experiencias de aprendizaje personalizadas. El sistema incluye verificación de comprensión automática, memoria persistente, moderación de contenido y manejo inteligente de preguntas on-topic y off-topic.
@@ -350,6 +370,52 @@ NEXTAUTH_URL="http://localhost:3000"
 
 # MCP Server (opcional, usa default si no está definido)
 MCP_SERVER_URL="http://instructoria-mcp.eastus.azurecontainer.io:8080"
+
+# Testing & Development
+# Mock streaming endpoint (no consume tokens de Claude)
+NEXT_PUBLIC_STREAM_MOCK_TEST="false"
+# Delay entre chunks del mock (en ms) - default: 60
+MOCK_CHUNK_DELAY="60"
+```
+
+## 🎭 Mock Mode para Testing (Sin Consumir Tokens)
+
+Para testing de UX (skeleton, throttle, auto-focus) sin consumir tokens de Claude:
+
+**Activación:**
+```bash
+# En tu archivo .env
+NEXT_PUBLIC_STREAM_MOCK_TEST="true"
+```
+
+**Características:**
+- ✅ Streaming simulado de ~100 palabras con formato educativo
+- ✅ Delay configurable entre chunks (variable `MOCK_CHUNK_DELAY`)
+- ✅ NO consume tokens de la API de Anthropic
+- ✅ NO guarda mensajes en la base de datos
+- ✅ Útil para probar mejoras UX sin costo
+- ✅ Contenido claramente marcado como "MOCK MODE"
+
+**Endpoint:** `/api/chat/stream-mock`
+
+**Uso:**
+```bash
+# 1. Activar mock mode
+echo 'NEXT_PUBLIC_STREAM_MOCK_TEST="true"' >> .env
+
+# 2. (Opcional) Ajustar velocidad del streaming
+echo 'MOCK_CHUNK_DELAY="80"' >> .env  # Más lento
+
+# 3. Reiniciar servidor
+npm run dev
+
+# 4. Usar chat normalmente - verás 🎭 MOCK MODE en las respuestas
+```
+
+**Desactivación:**
+```bash
+# Cambiar a false o comentar la variable
+NEXT_PUBLIC_STREAM_MOCK_TEST="false"
 ```
 
 ## 💻 Protocolo de Desarrollo

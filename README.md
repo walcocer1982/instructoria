@@ -282,6 +282,34 @@ taskkill /PID [numero] /F
 
 ## 📋 CHANGELOG
 
+### v1.7.0 (2025-10-27)
+- **Feature:** Skeleton loader mejorado con posicionamiento absoluto
+  - Cambiado de 50vh a máximo 40vh para mejor proporción visual
+  - Implementado posicionamiento absoluto (Opción B) para evitar doble renderizado
+  - Resuelto problema de 100vh (skeleton + mensaje vacío)
+  - Backgrounds transparentes durante streaming para evitar mezcla de caracteres
+  - Transición suave con fade-out cuando aparece contenido
+- **Feature:** Endpoint mock para testing sin consumir tokens de Claude
+  - Creado `/api/chat/stream-mock` para desarrollo y pruebas
+  - Delay inicial configurable de 3 segundos para simular "pensamiento"
+  - Streaming configurable con chunks de 10 caracteres cada 40ms
+  - Activable vía variable de entorno `NEXT_PUBLIC_STREAM_MOCK_TEST=true`
+- **Feature:** Mejoras UX en chat interface
+  - Auto-focus en textarea después de completar streaming
+  - Throttle del streaming 20% más lento para mejor legibilidad
+  - Avatar muestra estado "thinking" durante procesamiento
+  - Timestamp solo visible después de completar el mensaje
+- **Refactor:** Componente Rings completamente agnóstico
+  - Eliminada lógica específica de instructor del componente UI
+  - Nueva API genérica: `speed`, `color`, `size` (antes usaba `state`)
+  - Ahora reutilizable en cualquier contexto (botones, indicadores, avatares)
+  - Lógica de negocio movida a `avatar-instructor.tsx`
+  - 4 velocidades disponibles: slow, regular, fast, faster
+  - 4 colores disponibles: black, blue, green, orange
+- **Fix:** Corrección de warning de Tailwind v4
+  - Migrado de `bg-gradient-to-b` a `bg-linear-to-b`
+- **Docs:** Agregada documentación RINGS_API.md con ejemplos de uso
+
 ### v1.6.0 (2025-10-22)
 - **Feature:** Refactor de contenido educativo IPERC con estructura simplificada
   - Migración a estructura estilo INSPECCIÓN (sin `success_criteria` ni `reprompt_strategy`)
