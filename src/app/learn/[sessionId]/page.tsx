@@ -13,6 +13,7 @@ import { ChatMessages } from '@/components/learning/chat-messages'
 import { ChatInput } from '@/components/learning/chat-input'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Loader from '@/components/ui/loader'
+import { StreamProcessor, STREAMING_DEFAULTS } from '@/lib/streaming-utils'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -180,21 +181,6 @@ export default function LearnPage() {
       },
     ])
 
-    // Función para throttle del streaming (20% más lento para mejor lectura)
-    const throttleStream = (delayMs: number = 60) => {
-      let lastTime = 0
-      return async (): Promise<void> => {
-        const now = Date.now()
-        const timeSinceLastChunk = now - lastTime
-
-        if (timeSinceLastChunk < delayMs) {
-          await new Promise(resolve => setTimeout(resolve, delayMs - timeSinceLastChunk))
-        }
-
-        lastTime = Date.now()
-      }
-    }
-
     try {
       // Determinar endpoint según feature flag (mock o real)
       const endpoint = process.env.NEXT_PUBLIC_STREAM_MOCK_TEST === 'true'
@@ -220,117 +206,70 @@ export default function LearnPage() {
       }
 
       const reader = response.body?.getReader()
-      const decoder = new TextDecoder()
 
       if (!reader) {
         throw new Error('No se pudo obtener el reader del stream')
       }
 
-      const throttle = throttleStream(100) // 100ms entre actualizaciones (20% más lento)
-      let fullContent = ''
-      let chunkBuffer = ''
-      let done = false
-
-      while (!done) {
-        const { value, done: readerDone } = await reader.read()
-        done = readerDone
-
-        if (value) {
-          const chunk = decoder.decode(value, { stream: true })
-          const lines = chunk.split('\n')
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6))
-
-                if (data.type === 'chunk') {
-                  // Acumular chunks pequeños para evitar actualizaciones muy frecuentes
-                  chunkBuffer += data.content
-
-                  // Actualizar cada 3+ caracteres o en puntuación para mejor lectura
-                  if (chunkBuffer.length >= 3 || /[.!?;,\n]$/.test(chunkBuffer)) {
-                    await throttle() // Aplicar delay de throttle
-                    fullContent += chunkBuffer
-                    const contentToRender = fullContent
-                    chunkBuffer = ''
-
-                    // Actualizar el mensaje en tiempo real
-                    setMessages((prev) => {
-                      const updated = [...prev]
-                      updated[assistantMessageIndex] = {
-                        role: 'assistant',
-                        content: contentToRender,
-                        timestamp: new Date(),
-                      }
-                      return updated
-                    })
-                  }
-                } else if (data.type === 'done') {
-                  // Flush del buffer antes de terminar
-                  if (chunkBuffer) {
-                    fullContent += chunkBuffer
-                    chunkBuffer = ''
-                    setMessages((prev) => {
-                      const updated = [...prev]
-                      updated[assistantMessageIndex] = {
-                        role: 'assistant',
-                        content: fullContent,
-                        timestamp: new Date(),
-                      }
-                      return updated
-                    })
-                  }
-
-                  // Streaming completado
-                  console.log('[STREAM] Completado:', data)
-                  // Recargar info de sesión para actualizar progreso
-                  loadSessionInfo()
-                  done = true
-
-                  // Auto-focus en textarea para continuar la conversación
-                  setTimeout(() => {
-                    textareaRef.current?.focus()
-                  }, 150)
-                } else if (data.type === 'guardrail') {
-                  // Contenido bloqueado por moderación
-                  fullContent = data.content
-                  setMessages((prev) => {
-                    const updated = [...prev]
-                    updated[assistantMessageIndex] = {
-                      role: 'assistant',
-                      content: fullContent,
-                      timestamp: new Date(),
-                    }
-                    return updated
-                  })
-                  alert('⚠️ Contenido inapropiado detectado')
-                  done = true
-                } else if (data.type === 'error') {
-                  throw new Error(data.error)
-                }
-              } catch (e) {
-                // Ignorar líneas que no son JSON válido
-                console.debug('Línea no JSON:', line)
-              }
+      // Usar el nuevo StreamProcessor
+      const streamProcessor = new StreamProcessor({
+        chunkSize: STREAMING_DEFAULTS.CHUNK_SIZE,
+        throttleDelayMs: STREAMING_DEFAULTS.THROTTLE_DELAY_MS,
+        onChunk: (_chunk, total) => {
+          // Actualizar el mensaje en tiempo real
+          setMessages((prev) => {
+            const updated = [...prev]
+            updated[assistantMessageIndex] = {
+              role: 'assistant',
+              content: total,
+              timestamp: new Date(),
             }
-          }
-        }
-      }
+            return updated
+          })
+        },
+        onComplete: (fullContent) => {
+          // Streaming completado
+          console.log('[STREAM] Completado')
 
-      // Flush cualquier buffer restante
-      if (chunkBuffer) {
-        fullContent += chunkBuffer
-        setMessages((prev) => {
-          const updated = [...prev]
-          updated[assistantMessageIndex] = {
-            role: 'assistant',
-            content: fullContent,
-            timestamp: new Date(),
-          }
-          return updated
-        })
-      }
+          // Actualizar mensaje final
+          setMessages((prev) => {
+            const updated = [...prev]
+            updated[assistantMessageIndex] = {
+              role: 'assistant',
+              content: fullContent,
+              timestamp: new Date(),
+            }
+            return updated
+          })
+
+          // Recargar info de sesión para actualizar progreso
+          loadSessionInfo()
+
+          // Auto-focus en textarea para continuar la conversación
+          setTimeout(() => {
+            textareaRef.current?.focus()
+          }, 150)
+        },
+        onGuardrail: (message) => {
+          // Contenido bloqueado por moderación
+          setMessages((prev) => {
+            const updated = [...prev]
+            updated[assistantMessageIndex] = {
+              role: 'assistant',
+              content: message,
+              timestamp: new Date(),
+            }
+            return updated
+          })
+          alert('⚠️ Contenido inapropiado detectado')
+        },
+        onError: (error) => {
+          throw new Error(error)
+        }
+      })
+
+      // Procesar el stream
+      await streamProcessor.processStream(reader)
     } catch (error) {
       console.error('Error en streaming:', error)
 

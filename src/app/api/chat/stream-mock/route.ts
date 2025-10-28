@@ -10,14 +10,15 @@
  */
 
 import { NextRequest } from 'next/server'
+import { STREAMING_DEFAULTS } from '@/lib/streaming-utils'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 // Delays configurables (en ms)
 const MOCK_INITIAL_DELAY = 3000 // Delay inicial para simular "pensamiento" del modelo
-const MOCK_CHUNK_DELAY = 60     // Delay entre chunks durante streaming
-const MOCK_CHUNK_SIZE = 8      // Tamaño de cada chunk de texto
+const MOCK_CHUNK_DELAY = STREAMING_DEFAULTS.THROTTLE_DELAY_MS  // Usar valor centralizado
+const MOCK_CHUNK_SIZE = STREAMING_DEFAULTS.CHUNK_SIZE          // Usar valor centralizado
 
 // Contenido mock de ~100 palabras con estructura educativa
 const MOCK_CONTENT = `🎭 **MOCK MODE ACTIVADO** - Este es un texto de prueba para testing.
