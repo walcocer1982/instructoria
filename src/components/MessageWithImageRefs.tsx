@@ -42,19 +42,21 @@ export function MessageWithImageRefs({
   const match = content.match(imageRefRegex)
   const trimmedTitle = match ? match[1].trim() : null
 
-  console.log('[MessageWithImageRefs] 🔍 Match result:', match ? 'FOUND' : 'NOT FOUND')
+  // Solo logear si encuentra una imagen (evita spam en consola)
+  // if (match) {
+  //   console.log('[MessageWithImageRefs] 🎯 Image reference found:', match[1])
+  // }
 
   // ✅ HOOK MOVIDO FUERA DEL CONDICIONAL - Siempre se llama en el mismo orden
   useEffect(() => {
     if (trimmedTitle && onImageMentioned && notifiedImageRef.current !== trimmedTitle) {
       notifiedImageRef.current = trimmedTitle
       onImageMentioned(trimmedTitle)
-      console.log(`[MessageWithImageRefs] 📸 Image mentioned: ${trimmedTitle}`)
+      // console.log(`[MessageWithImageRefs] 📸 Image mentioned: ${trimmedTitle}`)
     }
   }, [trimmedTitle, onImageMentioned])
 
   if (match && trimmedTitle) {
-    console.log('[MessageWithImageRefs] 🎯 Image detected:', match[1])
     const [fullMatch, imageTitle] = match
     const matchIndex = match.index!
 
@@ -119,7 +121,6 @@ export function MessageWithImageRefs({
   }
 
   // Si no hay matches, retornar el contenido con renderizado de markdown
-  console.log('[MessageWithImageRefs] ❌ No image in this message')
   return (
     <div className={`${textSizeClass} ${textColorClass} ${leadingClass}`}>
       <ReactMarkdown

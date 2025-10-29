@@ -1,6 +1,7 @@
 'use client'
 
 import { ArrowUp } from 'lucide-react'
+import { debugLog } from '@/lib/debug-utils'
 // import { VoiceButton } from './voice-button'
 
 interface ChatInputProps {
@@ -48,8 +49,17 @@ export function ChatInput({
   }
 
   const handlePaste = (e: React.ClipboardEvent) => {
+    // Permitir paste si la variable de entorno está activada
+    const allowPaste = process.env.NEXT_PUBLIC_ALLOW_PASTE_INPUT === 'true' || process.env.NEXT_PUBLIC_ALLOW_PASTE_INPUT === '1'
+
+    if (allowPaste) {
+      debugLog('SECURITY', 'Paste permitido (ALLOW_PASTE_INPUT activado)')
+      return // Permitir el comportamiento por defecto del paste
+    }
+
+    // Bloquear paste por defecto
     e.preventDefault()
-    console.log('[Security] Intento de pegar bloqueado - usa tus propias palabras o el microfono')
+    debugLog('SECURITY', 'Intento de pegar bloqueado - usa tus propias palabras o el microfono')
   }
 
   return (

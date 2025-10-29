@@ -1,6 +1,7 @@
 import { anthropic, DEFAULT_MODEL } from '@/lib/anthropic'
 import { Activity, VerificationResult } from '@/types/topic-content'
 import { Message } from '@prisma/client'
+import { debugLog, debugError } from '@/lib/debug-utils'
 
 /**
  * Extrae JSON de texto que puede contener explicaciones adicionales
@@ -31,9 +32,16 @@ export async function analyzeStudentResponse(
   conversationHistory: Message[]
 ): Promise<VerificationResult> {
   // Valores por defecto si no existen success_criteria (JSON simplificado)
-  const minCompleteness = activity.verification.success_criteria?.min_completeness || 70
+  const minCompleteness = activity.verification.success_criteria?.min_completeness || 60
   const requiredLevel = activity.verification.success_criteria?.understanding_level || 'applied'
   const mustInclude = activity.verification.success_criteria?.must_include || []
+
+  debugLog('VERIFICATION', '🎯 Criterios de éxito', {
+    activityId: activity.id,
+    minCompleteness,
+    requiredLevel,
+    mustIncludeCount: mustInclude.length
+  })
 
   const analysisPrompt = `Analiza si la respuesta del estudiante cumple los criterios de éxito de esta actividad.
 
@@ -65,6 +73,8 @@ IMPORTANTE: Responde ÚNICAMENTE con el objeto JSON, sin texto adicional, sin ma
 Formato de respuesta:
 {"criteria_met": [0], "criteria_missing": [1], "completeness_percentage": 80, "understanding_level": "applied", "needs_reprompt": false, "suggested_reprompt_type": "correct", "key_insights": ["concepto1"], "ready_to_advance": true}`
 
+  let rawResponse = ''
+
   try {
     const response = await anthropic.messages.create({
       model: DEFAULT_MODEL, // Haiku 3.5 v2 (20250110)
@@ -77,12 +87,29 @@ Formato de respuesta:
       throw new Error('Respuesta inesperada de la API')
     }
 
+    rawResponse = content.text // Guardar para logging en caso de error
+
     // Extraer JSON del texto de forma robusta
     const jsonText = extractJSON(content.text)
+
+    // 🔍 DEBUG: Log del JSON antes de parsear
+    debugLog('VERIFICATION', '🔍 JSON extraído', jsonText.substring(0, 200))
+
     const result = JSON.parse(jsonText) as VerificationResult
+
+    // 🔍 DEBUG: Log del resultado parseado
+    debugLog('VERIFICATION', '✅ Resultado parseado', {
+      ready_to_advance: result.ready_to_advance,
+      completeness_percentage: result.completeness_percentage,
+      understanding_level: result.understanding_level
+    })
+
     return result
   } catch (error) {
-    console.error('Error en verificación:', error)
+    debugError('VERIFICATION', 'Error en verificación', error)
+    if (rawResponse) {
+      debugError('VERIFICATION', 'Respuesta cruda de Claude', rawResponse.substring(0, 500))
+    }
     // Valor por defecto conservador
     const mustInclude = activity.verification.success_criteria?.must_include || []
     return {

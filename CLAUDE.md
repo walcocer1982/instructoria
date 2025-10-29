@@ -376,6 +376,10 @@ MCP_SERVER_URL="http://instructoria-mcp.eastus.azurecontainer.io:8080"
 NEXT_PUBLIC_STREAM_MOCK_TEST="false"
 # Delay entre chunks del mock (en ms) - default: 60
 MOCK_CHUNK_DELAY="60"
+
+# Security & UX
+# Permitir paste en chat input (false por defecto para fomentar respuestas genuinas)
+NEXT_PUBLIC_ALLOW_PASTE_INPUT="false"
 ```
 
 ## 🎭 Mock Mode para Testing (Sin Consumir Tokens)
@@ -416,6 +420,249 @@ npm run dev
 ```bash
 # Cambiar a false o comentar la variable
 NEXT_PUBLIC_STREAM_MOCK_TEST="false"
+```
+
+## 🐛 Sistema Centralizado de Debug Logs
+
+El proyecto usa un sistema centralizado de logging (`src/lib/debug-utils.ts`) para mantener la consola limpia en producción y activar logs detallados solo cuando se necesitan.
+
+### Activación de Debug Logs
+
+```bash
+# En tu archivo .env
+NEXT_PUBLIC_DEBUG_LOGS="true"
+```
+
+### Funciones Disponibles
+
+```typescript
+import { debugLog, debugSuccess, debugError, debugWarn, debugGroup, debugGroupEnd, debugSeparator } from '@/lib/debug-utils'
+
+// Log estándar (solo se muestra si DEBUG_LOGS=true)
+debugLog('NAMESPACE', 'Mensaje', { data })
+
+// Log de éxito
+debugSuccess('NAMESPACE', 'Operación completada', { result })
+
+// Log de error (SIEMPRE se muestra, incluso si DEBUG_LOGS=false)
+debugError('NAMESPACE', 'Error en operación', error)
+
+// Log de advertencia
+debugWarn('NAMESPACE', 'Advertencia', { details })
+
+// Grupos colapsables
+debugGroup('NAMESPACE', 'Título del grupo')
+debugLog('NAMESPACE', 'Item 1')
+debugLog('NAMESPACE', 'Item 2')
+debugGroupEnd()
+
+// Separador visual
+debugSeparator('NAMESPACE')
+```
+
+### Namespaces Usados
+
+- `VERIFICATION`: Análisis de comprensión del estudiante
+- `PROGRESS`: Cálculo y actualización de progreso
+- `STREAM`: Flujo de streaming de Claude
+- `API`: Endpoints de la API
+- `UI`: Componentes de interfaz
+- `SECURITY`: Validaciones de seguridad
+- `SESSION`: Gestión de sesiones
+- `PRISMA`: Queries de base de datos
+
+### Ejemplo de Logs en Producción
+
+**Con `NEXT_PUBLIC_DEBUG_LOGS="false"` (default):**
+```
+✅ Consola limpia
+❌ Solo errores visibles (debugError)
+```
+
+**Con `NEXT_PUBLIC_DEBUG_LOGS="true"`:**
+```
+[VERIFICATION] 🎯 Criterios de éxito { activityId: '...', minCompleteness: 60 }
+[VERIFICATION] 🔍 JSON extraído { ... }
+[VERIFICATION] ✅ Resultado parseado { ready_to_advance: true, ... }
+[PROGRESS] 📊 Cálculo { topicEnrollmentId: '...', completedCount: 1, ... }
+[STREAM] ✅ Activity completed! Updating topic progress...
+[STREAM] 📊 Topic progress updated to 20%
+```
+
+## 📝 Sistema de Transcripts de Conversaciones (Development Only)
+
+El proyecto incluye un sistema de transcript automático que genera archivos `.md` con el log completo de las conversaciones. **Solo funciona en development** y está controlado por variable de entorno.
+
+### Activación
+
+```bash
+# En tu archivo .env
+WRITE_LESSON_TXT="1"
+```
+
+**IMPORTANTE:**
+- ⚠️ Solo funciona si `NODE_ENV !== "production"` (doble seguridad)
+- ✅ Ideal para debugging de flujo conversacional
+- ✅ Útil para analizar interacciones estudiante-instructor
+- ✅ Archivos ignorados por git (carpeta `/tmp/`)
+
+### Ubicación de Archivos
+
+Los transcripts se generan en:
+```
+/tmp/LESSON_{sessionId}.md
+```
+
+Ejemplo:
+```
+/tmp/LESSON_cmhb0of7a0005qkdv5ujvugke.md
+```
+
+### Formato de Transcript
+
+**Estructura del archivo:**
+
+```markdown
+# Sesión: cmhb0of7a0005qkdv5ujvugke
+Estudiante: Bruno Díaz (bruno@enter.edu.pe)
+Tema: IPERC - Identificación de Peligros, Evaluación y Control de Riesgos
+Instructor: Prof. Claude
+Fecha: 2025-01-28 15:30
+---
+
+**LLM:**
+¡Hola! Soy Prof. Claude - Instructor de SSO, tu instructor especializado en Seguridad y Salud Ocupacional.
+
+Bienvenido al tema: "IPERC - Identificación de Peligros, Evaluación y Control de Riesgos"
+
+Este tema forma parte del curso "Fundamentos de Seguridad y Salud Ocupacional" de la carrera de Seguridad y Salud Ocupacional.
+
+Duración estimada: 69 minutos.
+
+Aprende la metodología IPERC según normativa peruana
+
+Estoy aquí para guiarte paso a paso en este aprendizaje. Puedes hacer preguntas en cualquier momento y avanzaremos juntos a tu ritmo.
+
+¿Estás listo para comenzar?
+> 15:30
+---
+**USER:**
+si
+> 15:31
+---
+**LLM:**
+Perfecto. Vamos a comenzar explicando los conceptos fundamentales de IPERC.
+
+IPERC significa Identificación de Peligros, Evaluación y Control de Riesgos. Es una metodología sistemática establecida en la Ley 29783 de Seguridad y Salud en el Trabajo en Perú, diseñada para prevenir accidentes y enfermedades laborales.
+
+La clave está en entender dos conceptos cruciales: PELIGRO y RIESGO. Un PELIGRO es la fuente o situación con potencial de causar daño. Es algo que ya existe en el ambiente de trabajo. Ejemplos:
+
+- Un piso mojado
+- Un cable eléctrico pelado
+- Una máquina sin protección
+
+El RIESGO, en cambio, es la probabilidad de que ese peligro cause un daño específico, es decir, la posibilidad de que alguien se lesione por ese piso mojado, se electrocute con el cable o sea atrapado por la máquina.
+
+[...]
+> 15:31
+---
+```
+
+### Características
+
+**Metadata incluida:**
+- ✅ ID de sesión
+- ✅ Datos del estudiante (nombre y email)
+- ✅ Título del tema
+- ✅ Nombre del instructor
+- ✅ Fecha y hora de inicio
+
+**Formato de mensajes:**
+- `**LLM:**` para mensajes del instructor
+- `**USER:**` para mensajes del estudiante
+- `> HH:mm` timestamp en cada mensaje
+- `---` separador entre mensajes
+
+**Escritura:**
+- ⚡ **Tiempo real (append)** - Cada mensaje se escribe inmediatamente después de guardarse en BD
+- 🔒 **Fail-safe** - Si falla la escritura del transcript, NO afecta el flujo principal
+- 📝 **Inicialización automática** - Se crea el archivo con metadata en el primer mensaje de la sesión
+
+### Implementación Técnica
+
+**Archivo:** `src/lib/lesson-transcript.ts`
+
+**Funciones principales:**
+```typescript
+// Verifica si está habilitado (WRITE_LESSON_TXT=1 y NODE_ENV !== production)
+isTranscriptEnabled(): boolean
+
+// Inicializa archivo con metadata (se llama una vez al inicio de sesión)
+initTranscript(sessionId: string, metadata: SessionMetadata): Promise<void>
+
+// Agrega mensaje al transcript (se llama después de cada mensaje guardado en BD)
+appendMessage(sessionId: string, role: 'LLM' | 'USER', content: string, timestamp: Date): Promise<void>
+```
+
+**Integración en stream/route.ts:**
+
+1. **Inicialización** (línea ~76):
+```typescript
+// Al detectar primera vez (session.messages.length === 0)
+if (session.messages.length === 0) {
+  await initTranscript(sessionId, {
+    userName: session.user.name,
+    email: session.user.email,
+    topicTitle: session.topicEnrollment.topic.title,
+    instructorName: session.topicEnrollment.topic.instructor.name
+  })
+}
+```
+
+2. **Append de mensajes** (línea ~366, dentro de saveToDatabase):
+```typescript
+// Después de prisma.message.createMany()
+await appendMessage(sessionId, 'USER', studentMessage, userTimestamp)
+await appendMessage(sessionId, 'LLM', instructorMessage, assistantTimestamp)
+```
+
+### Casos de Uso
+
+**Debugging del flujo conversacional:**
+```bash
+# 1. Activar transcripts
+echo 'WRITE_LESSON_TXT="1"' >> .env
+
+# 2. Iniciar sesión de prueba
+npm run test:session
+
+# 3. Conversar con el instructor
+
+# 4. Analizar transcript
+cat tmp/LESSON_*.md
+```
+
+**Análisis de verificaciones:**
+- Ver cuándo el instructor hace preguntas de verificación
+- Revisar respuestas del estudiante
+- Identificar patrones de "¿Te gustaría profundizar?" vs preguntas directas
+- Verificar timestamps y orden de mensajes
+
+**Documentación de interacciones:**
+- Ejemplos reales de conversaciones para documentación
+- Material de testing para QA
+- Análisis de experiencia de usuario
+
+### Limpieza de Transcripts
+
+Los archivos de transcript NO se limpian automáticamente. Para limpiar:
+
+```bash
+# Eliminar todos los transcripts
+rm -rf tmp/
+
+# Eliminar transcripts específicos
+rm tmp/LESSON_cmhb0of7a0005qkdv5ujvugke.md
 ```
 
 ## 💻 Protocolo de Desarrollo
