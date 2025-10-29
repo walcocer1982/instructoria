@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { parseTopicContent } from '@/lib/type-helpers'
+import { debugLog } from '@/lib/debug-utils'
 
 /**
  * Calcula y actualiza el progreso de un TopicEnrollment basándose en las actividades completadas
@@ -113,6 +114,15 @@ export async function calculateTopicProgress(topicEnrollmentId: string): Promise
   const progress = totalActivities > 0
     ? Math.round((completedActivities / totalActivities) * 100)
     : 0
+
+  // 🔍 DEBUG: Log del cálculo
+  debugLog('PROGRESS', '📊 Cálculo', {
+    topicEnrollmentId,
+    completedActivityIds: enrollment.activities.map(a => a.activityId),
+    completedCount: completedActivities,
+    totalActivities,
+    calculatedProgress: progress
+  })
 
   return {
     progress,

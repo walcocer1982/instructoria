@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { calculateTopicProgress } from '@/services/progress'
+import { debugLog } from '@/lib/debug-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -122,6 +123,15 @@ export async function GET(
     // Calcular progreso en tiempo real
     const progressData = await calculateTopicProgress(session.topicEnrollmentId)
     const progress = progressData.progress
+
+    // 🔍 DEBUG: Log del progreso calculado
+    debugLog('API', '📊 /sessions/info - Progreso calculado', {
+      topicEnrollmentId: session.topicEnrollmentId,
+      progress: progress,
+      completed: progressData.completed,
+      total: progressData.total,
+      activitiesCount: activities.length
+    })
 
     return NextResponse.json({
       session: {

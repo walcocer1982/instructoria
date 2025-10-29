@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { CheckCircle2, Circle, Clock } from 'lucide-react'
+import { debugLog } from '@/lib/debug-utils'
 
 interface Activity {
   id: string
@@ -24,6 +25,13 @@ interface ProgressModalProps {
 }
 
 export function ProgressModal({ isOpen, onClose, progress, activities = [] }: ProgressModalProps) {
+  // 🔍 DEBUG: Log de props recibidas
+  debugLog('UI', '📊 ProgressModal - Props recibidas', {
+    progress,
+    activitiesCount: activities.length,
+    activities: activities.map(a => ({ id: a.id, status: a.status }))
+  })
+
   const getStatusIcon = (status: Activity['status']) => {
     switch (status) {
       case 'completed':

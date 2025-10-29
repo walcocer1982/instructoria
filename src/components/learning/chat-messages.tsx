@@ -6,6 +6,7 @@ import { AvatarInstructor } from './avatar-instructor'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { MessageWithImageRefs } from '@/components/MessageWithImageRefs'
 import { cn } from '@/lib/utils'
+import AITextLoading from '@/components/ui/text-loading'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -42,23 +43,6 @@ interface ChatMessagesProps {
 }
 
 /**
- * Hook para rotar palabras animadas durante el loading
- */
-function useRotatingWords(words: string[], intervalMs: number = 1500) {
-  const [currentIndex, setCurrentIndex] = useState(0)
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % words.length)
-    }, intervalMs)
-
-    return () => clearInterval(interval)
-  }, [words.length, intervalMs])
-
-  return words[currentIndex]
-}
-
-/**
  * Skeleton loader para mostrar mientras el instructor genera la respuesta
  * Usa posicionamiento absoluto con máximo 40vh para evitar doble renderizado
  */
@@ -71,6 +55,7 @@ function MessageSkeleton({
   fadeOut?: boolean
   isAbsolute?: boolean
 }) {
+
   const thinkingWords = [
     'pensando...',
     'analizando...',
@@ -78,8 +63,6 @@ function MessageSkeleton({
     'reflexionando...',
     'preparando contenido...'
   ]
-
-  const currentWord = useRotatingWords(thinkingWords, 1500)
 
   return (
     <div
@@ -104,12 +87,8 @@ function MessageSkeleton({
             state="thinking"
           />
           {/* Palabras animadas rotativas */}
-          <span
-            className="text-gray-500 dark:text-gray-400 italic text-sm transition-opacity duration-300"
-            key={currentWord}
-          >
-            {currentWord}
-          </span>
+
+          <AITextLoading texts={thinkingWords} />
         </div>
         <div className="flex-1 space-y-3 pt-2">
           {/* Líneas de skeleton con diferentes anchos para simular párrafos */}
@@ -146,8 +125,6 @@ export function ChatMessages({
     'generando...',
     'perfeccionando...',
   ]
-
-  const currentWord = useRotatingWords(streamingWords, 2500)
 
   // Scroll cuando cambian los mensajes o cuando empieza el loading
   useEffect(() => {
@@ -203,12 +180,7 @@ export function ChatMessages({
                       />
                       {/* Palabras animadas rotativas */}
                       {isStreamingLastMessage && (
-                      <span
-                        className="text-gray-500 dark:text-gray-400 italic text-sm transition-opacity duration-300"
-                        key={currentWord}
-                      >
-                        {currentWord}
-                      </span>
+                        <AITextLoading texts={streamingWords} />
                       )}
                     </div>
 
