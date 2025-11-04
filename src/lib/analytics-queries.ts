@@ -329,6 +329,11 @@ export async function getTemporalDistribution(): Promise<TemporalDistributionDat
 }
 
 /**
+ * Tipo de retorno de getAllAnalytics()
+ */
+export type AnalyticsResponse = Awaited<ReturnType<typeof getAllAnalytics>>
+
+/**
  * Obtener todas las métricas en una sola llamada (transacción)
  */
 export async function getAllAnalytics() {

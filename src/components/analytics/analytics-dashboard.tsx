@@ -22,82 +22,9 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts'
+import type { AnalyticsResponse } from '@/lib/analytics-queries'
 
-interface AnalyticsData {
-  timestamp: string
-  metadata: {
-    total_students: number
-    data_range: string
-  }
-  metrics: {
-    completion_rate: {
-      completed: number
-      abandoned: number
-      completion_rate_percent: number
-    }
-    session_duration: {
-      avg_duration_minutes: number | null
-      min_duration_minutes: number | null
-      max_duration_minutes: number | null
-      completed_sessions: number
-      active_sessions: number
-    }
-    messages_by_student: Array<{
-      student_name: string
-      email: string
-      message_count: number
-      avg_message_length: number
-    }>
-    activities_progress: Array<{
-      user_id: string
-      activity_id: string
-      completed: boolean
-      attempts: number
-    }>
-    retry_rate: Array<{
-      activity_id: string
-      avg_attempts: number
-      total_students_attempted: number
-      students_completed: number
-    }>
-    progress_average: {
-      avg_progress: number
-      min_progress: number
-      max_progress: number
-      median_progress: number
-      high_progress_count: number
-      medium_progress_count: number
-      low_progress_count: number
-    }
-    abandonment_points: Array<{
-      activity_id: string
-      started_count: number
-      not_completed_count: number
-      abandonment_rate: number
-    }>
-    message_length: {
-      avg_length_chars: number
-      avg_length_words: number
-      min_length: number
-      max_length: number
-      short_responses: number
-      medium_responses: number
-      long_responses: number
-    }
-    engagement: {
-      avg_gap_minutes: number | null
-      median_gap_minutes: number | null
-      fast_responses: number
-      normal_responses: number
-      slow_responses: number
-    }
-    temporal_distribution: Array<{
-      hour: number
-      session_count: number
-      period: string
-    }>
-  }
-}
+type AnalyticsData = AnalyticsResponse
 
 const COLORS = {
   emerald: '#10b981',
@@ -209,7 +136,7 @@ export function AnalyticsDashboard({ data }: { data: AnalyticsData }) {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) => `${name}: ${((percent as number) * 100).toFixed(0)}%`}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
@@ -318,7 +245,7 @@ export function AnalyticsDashboard({ data }: { data: AnalyticsData }) {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) => `${name}: ${((percent as number) * 100).toFixed(0)}%`}
                 outerRadius={70}
                 fill="#8884d8"
                 dataKey="value"
@@ -347,7 +274,7 @@ export function AnalyticsDashboard({ data }: { data: AnalyticsData }) {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) => `${name}: ${((percent as number) * 100).toFixed(0)}%`}
                 outerRadius={70}
                 fill="#8884d8"
                 dataKey="value"
